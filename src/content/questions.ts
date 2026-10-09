@@ -1,3 +1,5 @@
+import { MEAS_MODULES } from './meas';
+
 /** Otázky s výberom odpovede. Prvá možnosť je vždy správna – pri zobrazení sa zamiešajú. */
 export interface StaticQuestion {
   lessonId: string;
@@ -6,7 +8,7 @@ export interface StaticQuestion {
   explanation: string;
 }
 
-export const QUESTIONS: readonly StaticQuestion[] = [
+const BASE_QUESTIONS: readonly StaticQuestion[] = [
   // Elektrické veličiny a jednotky
   {
     lessonId: 'zaklady',
@@ -405,3 +407,5 @@ export const QUESTIONS: readonly StaticQuestion[] = [
     explanation: 'Zaokrúhľujeme nahor, aby prúd LED neprekročil povolenú hodnotu.',
   },
 ];
+
+export const QUESTIONS: readonly StaticQuestion[] = [...BASE_QUESTIONS, ...MEAS_MODULES.flatMap((m) => m.questions)];

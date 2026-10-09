@@ -19,7 +19,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 export function lessonsView(): HTMLElement {
   const p = getProgress();
   return h('div', { class: 'view view-lessons' },
-    pageHead('Kurz', 'Lekcie', 'Lekcie idú za sebou od základných veličín po striedavé obvody. Každá obsahuje teóriu, vzorce, riešené príklady a krátky test.'),
+    pageHead('Kurz', 'Lekcie', 'Lekcie idú za sebou od základných veličín cez striedavé obvody až po elektrotechnické merania. Každá obsahuje teóriu, vzorce, riešené príklady a krátky test.'),
     CHAPTERS.map((ch) =>
       h('section', { class: 'chapter-block', 'aria-labelledby': `ch-${ch.id}` },
         h('div', { class: 'chapter-block-head' },
@@ -112,7 +112,7 @@ function renderBlock(b: Block): HTMLElement {
       );
     case 'figure':
       return h('figure', { class: 'fig' },
-        h('div', { class: 'sch-panel' }, FIGURES[b.fig]()),
+        h('div', { class: 'sch-panel' }, typeof b.fig === 'function' ? b.fig() : FIGURES[b.fig]()),
         b.caption ? h('figcaption', null, rich(b.caption)) : null,
       );
     case 'colortable':

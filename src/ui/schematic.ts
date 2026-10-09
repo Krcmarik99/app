@@ -8,18 +8,18 @@ export type Pt = [number, number];
 
 export type CompKind =
   | 'resistor' | 'varres' | 'capacitor' | 'ecap' | 'inductor' | 'battery' | 'acsource'
-  | 'lamp' | 'ammeter' | 'voltmeter' | 'diode' | 'led' | 'switch' | 'fuse';
+  | 'lamp' | 'ammeter' | 'voltmeter' | 'ohmmeter' | 'diode' | 'led' | 'switch' | 'button' | 'fuse';
 
 /** Polovičná dĺžka tela súčiastky v smere vodiča. */
 const HALF: Record<CompKind, number> = {
   resistor: 18, varres: 18, capacitor: 4, ecap: 5, inductor: 20, battery: 4, acsource: 13,
-  lamp: 11, ammeter: 11, voltmeter: 11, diode: 8, led: 8, switch: 13, fuse: 15,
+  lamp: 11, ammeter: 11, voltmeter: 11, ohmmeter: 11, diode: 8, led: 8, switch: 13, button: 13, fuse: 15,
 };
 
 /** Polovičná šírka tela kolmo na vodič – podľa nej sa odsadí popis. */
 const PERP: Record<CompKind, number> = {
   resistor: 7, varres: 12, capacitor: 12, ecap: 12, inductor: 6, battery: 12, acsource: 13,
-  lamp: 11, ammeter: 11, voltmeter: 11, diode: 9, led: 13, switch: 11, fuse: 6,
+  lamp: 11, ammeter: 11, voltmeter: 11, ohmmeter: 11, diode: 9, led: 13, switch: 11, button: 16, fuse: 6,
 };
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -74,6 +74,7 @@ function body(kind: CompKind): SVGElement[] {
       ];
     case 'ammeter':
     case 'voltmeter':
+    case 'ohmmeter':
       return [s('circle', { cx: 0, cy: 0, r: 11, class: 'b' })];
     case 'diode':
       return [
@@ -94,6 +95,14 @@ function body(kind: CompKind): SVGElement[] {
         s('circle', { cx: -11, cy: 0, r: 2.2, class: 'b' }),
         s('line', { x1: -9.5, y1: -1.5, x2: 12, y2: -11, class: 'w' }),
         s('circle', { cx: 11, cy: 0, r: 2.2, class: 'b' }),
+      ];
+    case 'button':
+      return [
+        s('circle', { cx: -11, cy: 0, r: 2.2, class: 'b' }),
+        s('circle', { cx: 11, cy: 0, r: 2.2, class: 'b' }),
+        s('line', { x1: -13, y1: -7, x2: 13, y2: -7, class: 'w' }),
+        s('line', { x1: 0, y1: -7, x2: 0, y2: -16, class: 'w' }),
+        s('line', { x1: -5, y1: -16, x2: 5, y2: -16, class: 'w' }),
       ];
     case 'fuse':
       return [
@@ -141,8 +150,9 @@ export function comp(kind: CompKind, a: Pt, b: Pt, opts: CompOptions = {}): SVGG
     s('line', { x1: r1(cx + ux * half), y1: r1(cy + uy * half), x2, y2, class: 'w' }),
     s('g', { transform: `translate(${r1(cx)} ${r1(cy)}) rotate(${r1(angle)})` }, ...body(kind)),
   );
-  if (kind === 'ammeter' || kind === 'voltmeter') {
-    g.append(s('text', { x: r1(cx), y: r1(cy + 4.5), 'text-anchor': 'middle', class: 'meter' }, kind === 'ammeter' ? 'A' : 'V'));
+  const meterText = { ammeter: 'A', voltmeter: 'V', ohmmeter: 'Ω' } as Partial<Record<CompKind, string>>;
+  if (meterText[kind]) {
+    g.append(s('text', { x: r1(cx), y: r1(cy + 4.5), 'text-anchor': 'middle', class: 'meter' }, meterText[kind]));
   }
   if (opts.label || opts.value) {
     const horizontal = Math.abs(ux) > Math.abs(uy);
@@ -166,6 +176,16 @@ export function comp(kind: CompKind, a: Pt, b: Pt, opts: CompOptions = {}): SVGG
 
 export function wire(...points: Pt[]): SVGPolylineElement {
   return s('polyline', { points: points.map(([x, y]) => `${x},${y}`).join(' '), class: 'w' });
+}
+
+/** Prerušovaný vodič – voliteľné alebo naznačené spojenie. */
+export function dashedWire(...points: Pt[]): SVGPolylineElement {
+  return s('polyline', { points: points.map(([x, y]) => `${x},${y}`).join(' '), class: 'w dash' });
+}
+
+/** Obyčajný popis v schéme (napr. + a − pri svorkách). */
+export function note(x: number, y: number, text: string, anchor: 'start' | 'middle' | 'end' = 'middle'): SVGTextElement {
+  return s('text', { x: r1(x), y: r1(y), 'text-anchor': anchor, class: 'note' }, text);
 }
 
 export function dot([x, y]: Pt): SVGCircleElement {

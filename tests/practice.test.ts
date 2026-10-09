@@ -33,8 +33,7 @@ describe('generátory príkladov', () => {
             expect(checkNumeric(q, fmt(q.answer, 3)), where).toBe('correct');
             expect(checkNumeric(q, fmt(q.answer * 1.2, 3)), where).toBe('wrong');
             // Odpoveď nesmie byť v absurdných číslach – predpona má udržať rozsah.
-            const fixedUnit = ['€', '%', 'kWh', 'rad/s', 'm', 'Ω', 'N', ''].includes(q.unit) || q.prompt.startsWith('Preveď');
-            if (!fixedUnit) {
+            if (q.autoUnit) {
               expect(q.answer, `${where}: ${q.answer} ${q.unit}`).toBeGreaterThanOrEqual(0.999);
               expect(q.answer, `${where}: ${q.answer} ${q.unit}`).toBeLessThan(1000);
             }

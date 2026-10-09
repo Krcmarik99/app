@@ -739,6 +739,16 @@ dt .frac {
   stroke-width: 1.4;
 }
 
+.sch .w.dash {
+  stroke-dasharray: 4 4;
+}
+
+.sch text.note {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .sch .box {
   fill: none;
   stroke: var(--ink-2);
@@ -897,6 +907,90 @@ dt .frac {
 .chart .marker-label {
   font: 12px var(--font-mono);
   fill: var(--ink);
+}
+
+.chart .line.copper {
+  stroke: var(--copper);
+}
+
+.chart .line.dashed {
+  stroke: var(--ink-2);
+  stroke-width: 1.3;
+  stroke-dasharray: 5 4;
+}
+
+/* Číselník analógového prístroja a displej číslicového prístroja. */
+.dial,
+.lcd {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.dial .dial-face {
+  fill: var(--surface);
+  stroke: var(--rule-strong);
+  stroke-width: 1.5;
+}
+
+.dial .dial-arc,
+.dial .dial-tick {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.dial .dial-tick.major {
+  stroke-width: 1.8;
+}
+
+.dial .dial-num {
+  font: 500 12px var(--font-mono);
+  fill: var(--ink);
+}
+
+.dial .dial-sym {
+  font: 600 30px var(--font-display);
+  fill: var(--ink-2);
+}
+
+.dial .dial-small {
+  font: 12px var(--font-mono);
+  fill: var(--ink-2);
+}
+
+.dial .dial-needle {
+  stroke: var(--copper);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.dial .dial-pivot {
+  fill: var(--ink);
+}
+
+/* Displej má vlastné farby skutočného LCD v oboch režimoch. */
+.lcd .lcd-frame {
+  fill: #2b3034;
+}
+
+.lcd .lcd-glass {
+  fill: #b8c3a4;
+}
+
+.lcd .seg-on {
+  fill: #1a2115;
+}
+
+.lcd .seg-off {
+  fill: rgba(26, 33, 21, 0.07);
+}
+
+.lcd .lcd-unit {
+  font: 600 22px var(--font-body);
+  fill: #1a2115;
 }
 
 .chart-panel {
@@ -1182,7 +1276,7 @@ input[type='range'] {
 
 .chapters {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 24px;
 }
 
@@ -1228,9 +1322,9 @@ input[type='range'] {
   vertical-align: -3px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1000px) {
   .chapters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

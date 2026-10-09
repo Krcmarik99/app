@@ -88,7 +88,7 @@ export function homeView(): HTMLElement {
     h('div', { class: 'hero-copy' },
       h('p', { class: 'eyebrow' }, 'Základy elektrotechniky · stredná škola'),
       h('h1', { class: 'hero-title' }, 'Elektrotechnika krok za krokom'),
-      h('p', { class: 'lead' }, `${LESSONS.length} lekcií od Ohmovho zákona po rezonanciu. Ku každej téme riešené príklady, cvičenia s novými hodnotami pri každom pokuse, kalkulačky a kartičky na opakovanie.`),
+      h('p', { class: 'lead' }, `${LESSONS.length} lekcií od Ohmovho zákona po elektrotechnické merania. Ku každej téme riešené príklady, cvičenia s novými hodnotami pri každom pokuse, kalkulačky a kartičky na opakovanie.`),
       h('div', { class: 'hero-actions' },
         linkButton(`#lekcia-${target.id}`, started ? `Pokračovať: ${target.title}` : `Začať: ${target.title}`, 'primary', 'arrow'),
         linkButton('#cvicenie', 'Precvičovať príklady', 'secondary'),

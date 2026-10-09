@@ -1,11 +1,13 @@
+import type { FigureFn } from '../practice/types';
 import type { FigureId } from '../ui/figures';
+import { MEAS_MODULES } from './meas';
 
 /*
  * Obsah lekcií. Vo vzorcoch (v `...` a v blokoch formula) platí zápis z lib/formula.ts:
  * $U je veličina kurzívou, _{1} dolný index, ^{2} horný index, @f{a}{b} zlomok, @s{a} odmocnina.
  */
 
-export type ChapterId = 'dc' | 'fields' | 'ac' | 'parts';
+export type ChapterId = 'dc' | 'fields' | 'ac' | 'parts' | 'meas';
 
 export interface Chapter {
   id: ChapterId;
@@ -18,6 +20,7 @@ export const CHAPTERS: readonly Chapter[] = [
   { id: 'fields', title: 'Elektrické a magnetické pole', blurb: 'Kondenzátor, cievka, elektromagnetická indukcia.' },
   { id: 'ac', title: 'Striedavý prúd', blurb: 'Sínusové veličiny, reaktancia, impedancia a rezonancia.' },
   { id: 'parts', title: 'Súčiastky v praxi', blurb: 'Farebný kód rezistorov, diódy a LED.' },
+  { id: 'meas', title: 'Elektrotechnické merania', blurb: 'Jednotky SI, meracie prístroje, triedy presnosti, chyby merania a meranie odporu.' },
 ];
 
 export type Block =
@@ -28,7 +31,7 @@ export type Block =
   | { t: 'note'; kind: 'tip' | 'warn' | 'remember'; text: string }
   | { t: 'example'; title: string; given: string[]; steps: string[]; result: string }
   | { t: 'table'; head: string[]; rows: string[][] }
-  | { t: 'figure'; fig: FigureId; caption?: string }
+  | { t: 'figure'; fig: FigureId | FigureFn; caption?: string }
   | { t: 'colortable' };
 
 export interface Lesson {
@@ -40,7 +43,7 @@ export interface Lesson {
   blocks: Block[];
 }
 
-export const LESSONS: readonly Lesson[] = [
+const BASE_LESSONS: readonly Lesson[] = [
   {
     id: 'zaklady',
     chapter: 'dc',
@@ -584,6 +587,9 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
 ];
+
+/** Všetky lekcie v poradí kurzu – základy elektrotechniky a za nimi elektrotechnické merania. */
+export const LESSONS: readonly Lesson[] = [...BASE_LESSONS, ...MEAS_MODULES.map((m) => m.lesson)];
 
 export function lessonById(id: string): Lesson | undefined {
   return LESSONS.find((l) => l.id === id);

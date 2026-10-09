@@ -2,67 +2,19 @@
  * Generátory číselných príkladov. Každé volanie vytvorí príklad s inými hodnotami
  * a s postupom riešenia. Hodnoty súčiastok sa berú z rady E12, aby boli realistické.
  */
+import { MEAS_MODULES } from '../content/meas';
 import { bandNames, colorById, encodeBands } from '../lib/colorcode';
 import { E12, nearestStandard } from '../lib/electro';
 import { pick, shuffle, type Rng } from '../lib/random';
-import { fmt, fmtFixed, fmtSci, formatBase, formatSI, scaleExp, siParts, superscript } from '../lib/units';
+import { fmtFixed, fmtSci, superscript } from '../lib/units';
 import {
   dividerFigure, impedanceTriangle, ledFigure, mixedFigure, nodeFigure, parallelFigure, rcFigure,
   resistorBands, seriesFigure,
 } from '../ui/figures';
-import type { ChoiceQuestion, FigureFn, NumericQuestion, Question } from './types';
+import { b, e12, hoursText, n, numeric, q, res, type Generator } from './helpers';
+import type { ChoiceQuestion, FigureFn } from './types';
 
-export type Generator = (rng: Rng) => Question;
-
-/** Hodnota s predponou: 4,7 kΩ. */
-const q = (v: number, unit: string, sig = 3) => formatSI(v, unit, sig);
-/** Hodnota v základnej jednotke: 0,0047 A. */
-const b = (v: number, unit: string, sig = 4) => formatBase(v, unit, sig);
-const n = (v: number, sig = 4) => fmt(v, sig);
-const round3 = (x: number) => Number(x.toPrecision(3));
-
-/** Výsledok v základnej jednotke aj s predponou, ak sa líšia: „0,0255 A = **25,5 mA**“. */
-function res(v: number, unit: string): string {
-  const base = b(v, unit, 3);
-  const pref = q(v, unit);
-  return base === pref ? `**${pref}**` : `${base} = **${pref}**`;
-}
-
-function e12(rng: Rng, decades: readonly number[]): number {
-  return round3(pick(rng, E12) * pick(rng, decades));
-}
-
-interface NumericOptions {
-  figure?: FigureFn;
-  /** Výsledok sa zadáva presne v tejto jednotke (bez automatickej predpony). */
-  fixedUnit?: boolean;
-  tolerance?: number;
-}
-
-function numeric(
-  lessonId: string,
-  prompt: string,
-  valueSI: number,
-  baseUnit: string,
-  solution: string[],
-  opts: NumericOptions = {},
-): NumericQuestion {
-  let unit = baseUnit;
-  let answer = valueSI;
-  if (!opts.fixedUnit) {
-    const { exp, prefix } = siParts(valueSI, 3);
-    unit = prefix + baseUnit;
-    answer = scaleExp(valueSI, exp);
-  }
-  return { kind: 'numeric', lessonId, prompt, figure: opts.figure, unit, answer, tolerance: opts.tolerance ?? 0.02, solution };
-}
-
-function hoursText(h: number): string {
-  if (h < 1) return `${n(h * 60)} minút`;
-  if (h === 1) return '1 hodinu';
-  if (h < 5) return `${n(h)} hodiny`;
-  return `${n(h)} hodín`;
-}
+export type { Generator } from './helpers';
 
 // ---------------------------------------------------------------- Základy
 
@@ -708,6 +660,7 @@ const diodes: Generator[] = [
 ];
 
 export const GENERATORS: Record<string, Generator[]> = {
+  ...Object.fromEntries(MEAS_MODULES.map((m) => [m.lesson.id, m.generators])),
   zaklady,
   'ohmov-zakon': ohm,
   'odpor-vodica': wire,

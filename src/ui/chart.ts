@@ -15,7 +15,7 @@ export interface ChartOptions {
   y: Axis;
   series: { points: [number, number][]; className?: string }[];
   hlines?: { y: number; label: string }[];
-  markers?: { x: number; y: number; label: string }[];
+  markers?: { x: number; y: number; label: string; above?: boolean }[];
   ariaLabel: string;
 }
 
@@ -66,7 +66,7 @@ export function lineChart(o: ChartOptions): SVGSVGElement {
     svg.append(
       s('line', { x1: r1(x), x2: r1(x), y1: r1(y), y2: H - m.b, class: 'drop' }),
       s('circle', { cx: r1(x), cy: r1(y), r: 4, class: 'marker' }),
-      s('text', { x: r1(nearRight ? x - 8 : x + 8), y: r1(y + 15), 'text-anchor': nearRight ? 'end' : 'start', class: 'marker-label' }, mk.label),
+      s('text', { x: r1(nearRight ? x - 8 : x + 8), y: r1(mk.above ? y - 9 : y + 15), 'text-anchor': nearRight ? 'end' : 'start', class: 'marker-label' }, mk.label),
     );
   }
   return svg;

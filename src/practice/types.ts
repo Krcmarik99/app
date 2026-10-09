@@ -11,6 +11,8 @@ export interface NumericQuestion {
   answer: number;
   /** Povolená relatívna odchýlka (zaokrúhľovanie medzivýsledkov). */
   tolerance: number;
+  /** Jednotka s predponou bola zvolená automaticky (výsledok je potom v rozsahu 1 až 999). */
+  autoUnit?: boolean;
   solution: string[];
 }
 
