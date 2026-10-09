@@ -18,7 +18,7 @@ function figureBox(q: Question): HTMLElement | null {
 }
 
 function answerText(q: NumericQuestion): string {
-  const value = fmt(q.answer, 4);
+  const value = fmt(q.answer, 5);
   return q.unit ? `${value} ${q.unit}` : value;
 }
 

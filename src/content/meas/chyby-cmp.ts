@@ -223,9 +223,9 @@ const generators: Generator[] = [
     const { disp, dm, d, kind, r } = digitSetup(rng);
     const da = clean((d / disp.N) * 100);
     const res = clean(r.XN / disp.N);
-    const check = `Kontrola na rozsahu ${rangeText(r)}: 1 digit = ${n(r.XN)} / ${n(disp.N)} = ${val(res, r.unit)}, ${digits(d)} = ${val(d * res, r.unit)}, čo je ${pct(da)} z ${rangeText(r)}.`;
+    const check = `Kontrola na rozsahu ${rangeText(r)}: 1 digit = ${rangeText(r)} / ${n(disp.N)} = ${val(res, r.unit)}, ${digits(d)} = ${val(d * res, r.unit)}, čo je ${pct(da)} z ${rangeText(r)}.`;
     if (rng() < 0.6) {
-      return numeric(ID, `Výrobca udáva chybu číslicového multimetra ${disp.with} pre meranie ${KIND_GEN[kind]} v tvare ±(${n(dm)} % + ${digits(d)}). Maximálny počet indikovaných jednotiek je ${n(disp.N)}. Akej aditívnej chybe \`$δ_{a}\` (v % z rozsahu) zodpovedá zložka ${digits(d)}?`, da, '%', [
+      return numeric(ID, `Výrobca udáva chybu číslicového multimetra ${disp.with} pre meranie ${KIND_GEN[kind]} v tvare ±(${n(dm)} % + ${digits(d)}). Maximálny počet indikovaných jednotiek je ${n(disp.N)}. Akej aditívnej chybe \`$δ_{a}\` (v % z rozsahu) zodpovedá zložka „${digits(d)}“?`, da, '%', [
         `\`$δ_{a} = @f{$d}{$N_{max}} · 100 % = @f{${d}}{${n(disp.N)}} · 100 %\` = **${pct(da)}**`,
         check,
       ], { fixedUnit: true, tolerance: 0.005 });
@@ -245,7 +245,7 @@ const generators: Generator[] = [
     const term = (da * r.XN) / rd.X;
     const t = approx(term, 4);
     const tot = approx(dm + t.num, 3);
-    return numeric(ID, `Chyba číslicového multimetra ${disp.with} je pre meranie ${KIND_GEN[kind]} v tvare \`$δ_{ČMP}\` = ±(${n(dm)} % + ${digits(d)}). Na meracom rozsahu ${rangeText(r)} ukazuje ${rd.num}${NBSP}${r.unit} (obrázok), maximálny počet indikovaných jednotiek je ${n(disp.N)}. Vypočítaj celkovú relatívnu chybu ČMP.`, dm + term, '%', [
+    return numeric(ID, `Chyba číslicového multimetra ${disp.with} je pre meranie ${KIND_GEN[kind]} v tvare \`$δ_{ČMP}\` = ±(${n(dm)} % + ${digits(d)}). Na meracom rozsahu ${rangeText(r)} multimeter ukazuje ${rd.num}${NBSP}${r.unit} (obrázok), maximálny počet indikovaných jednotiek je ${n(disp.N)}. Vypočítaj celkovú relatívnu chybu ČMP.`, dm + term, '%', [
       `\`$δ_{a} = @f{$d}{$N_{max}} · 100 % = @f{${d}}{${n(disp.N)}} · 100 %\` = ${pct(da)}`,
       `\`$δ_{ČMP} = ±($δ_{m} + $δ_{a} · @f{$X_{N}}{$X_{m}}) = ±(${n(dm)} + ${n(da, 8)} · @f{${n(r.XN)}}{${rd.num}})\` ${t.sym} ±(${n(dm)} + ${t.text}) ${tot.sym} **±${tot.text} %**`,
     ], { fixedUnit: true, tolerance: 0.01, figure: lcdFig(rd, r) });
@@ -261,7 +261,7 @@ const generators: Generator[] = [
     const total = rng() < 0.6;
     const PLACES = ['', 'jedno desatinné miesto', 'dve desatinné miesta', 'tri desatinné miesta', 'štyri desatinné miesta'];
     const steps = [
-      `Údaj ${rd.num}${NBSP}${r.unit} má ${PLACES[rd.dec]}, jeden digit na poslednom mieste je ${val(rd.res, r.unit)} (aj \`@f{$X_{N}}{$N_{max}} = @f{${n(r.XN)}}{${n(disp.N)}}\` = ${val(rd.res, r.unit)}).`,
+      `Údaj ${rd.num}${NBSP}${r.unit} má ${PLACES[rd.dec]}, jeden digit na poslednom mieste je ${val(rd.res, r.unit)} (aj \`@f{$X_{N}}{$N_{max}} = @f{${rangeText(r)}}{${n(disp.N)}}\` = ${val(rd.res, r.unit)}).`,
       total
         ? `\`Δ_{a}\` = ±${d} · ${val(rd.res, r.unit)} = ±${val(Da, r.unit)}`
         : `\`Δ_{a}\` = ±${d} · ${val(rd.res, r.unit)} = ${absResult(Da, r)}`,
@@ -274,7 +274,7 @@ const generators: Generator[] = [
     }
     const ask = total
       ? 'Aká je celková absolútna chyba merania `Δ_{ČMP}`?'
-      : `Akú absolútnu chybu \`Δ_{a}\` predstavuje zložka ${digits(d)}?`;
+      : `Akú absolútnu chybu \`Δ_{a}\` predstavuje zložka „${digits(d)}“?`;
     return numeric(ID, `Číslicový multimeter ${disp.with} má pre meranie ${KIND_GEN[kind]} na rozsahu ${rangeText(r)} chybu ±(${n(dm)} % + ${digits(d)}). Displej ukazuje ${rd.num}${NBSP}${r.unit} (obrázok). ${ask}`,
       clean((total ? Dc : Da) * r.k), r.base, steps, { tolerance: 0.005, figure: lcdFig(rd, r) });
   },
@@ -303,10 +303,10 @@ const generators: Generator[] = [
       const dC = clean(Dm + Da);
       if (Math.max(dA, dC) / Math.min(dA, dC) < 1.15) continue;
       const ampWins = dA < dC;
-      const why = !ampWins ? ''
-        : kind.startsWith('AC') ? ': striedavé veličiny meria cez prevod na jednosmerné napätie, preto má pri nich väčšiu chybu'
-          : X / XN < 0.3 ? ': údaj je ďaleko od konca rozsahu ČMP, takže sa výrazne prejaví aditívna zložka chyby'
-            : '';
+      const reasons: string[] = [];
+      if (ampWins && kind.startsWith('AC')) reasons.push('striedavé veličiny meria cez prevod na jednosmerné napätie, preto má pri nich väčšiu chybu');
+      if (ampWins && X / XN < 0.3) reasons.push(`${reasons.length ? 'navyše je údaj' : 'údaj je'} ďaleko od konca rozsahu ČMP, takže sa výrazne prejaví aditívna zložka chyby`);
+      const why = reasons.length ? `: ${reasons.join('; ')}` : '';
       const dev = volt ? 'voltmetrom' : 'ampérmetrom';
       const options = [`analógovým ${dev} (AMP)`, 'číslicovým multimetrom (ČMP)', 'oboma rovnako presne', 'nedá sa rozhodnúť bez poznania skutočnej hodnoty'];
       if (!ampWins) [options[0], options[1]] = [options[1], options[0]];
@@ -314,7 +314,7 @@ const generators: Generator[] = [
       return choice(
         `${what} približne ${q(X, base, 2)} môžeš zmerať analógovým ${dev} triedy presnosti ${n(TP)} na rozsahu ${q(MR, base)} alebo číslicovým multimetrom (3½ miesta, 2 000 indikovaných jednotiek) na rozsahu ${q(XN, base)} s chybou ±(${n(dm)} % + ${digits(d)}). Ktorým prístrojom ho zmeriaš s menšou chybou?`,
         options,
-        `AMP: \`Δ$X = @f{TP}{100} · $X_{N} = @f{${n(TP)}}{100} · ${n(MRu)}\` = ${val(dA, u)}, relatívne ${n((dA / Xu) * 100, 3)} %. ČMP: 1 digit = ${n(XNu)} / 2 000 = ${val(res, u)}, \`Δ_{ČMP} = @f{${n(dm)}}{100} · ${n(Xu)} + ${d} · ${n(res, 8)}\` = ${n(Dm, 8)} + ${n(Da, 8)} = ${val(dC, u)}, relatívne ${n((dC / Xu) * 100, 3)} %. ${ampWins
+        `AMP: \`Δ$X = ±@f{TP}{100} · $X_{N} = ±@f{${n(TP)}}{100} · ${val(MRu, u)}\` = ±${val(dA, u)}, relatívne ±${n((dA / Xu) * 100, 3)} %. ČMP: 1 digit = ${val(XNu, u)} / 2 000 = ${val(res, u)}, \`Δ_{ČMP} = ±(@f{${n(dm)}}{100} · ${val(Xu, u)} + ${d} · ${val(res, u)})\` = ±(${n(Dm, 8)} + ${n(Da, 8)})${NBSP}${u} = ±${val(dC, u)}, relatívne ±${n((dC / Xu) * 100, 3)} %. ${ampWins
           ? `Presnejšie meria **analógový prístroj** – číslicový prístroj nie je automaticky presnejší${why}.`
           : 'Presnejšie meria **číslicový multimeter** – jeho dvojzložková chyba je tu menšia ako chyba analógového prístroja danej triedy.'}`,
         rng,
@@ -354,11 +354,11 @@ const mod: MeasModule = {
           ['$δ_{m}, $δ_{a}', 'multiplikatívna (rdg) a aditívna (FS) chyba', '%'],
           ['$X_{m}', 'nameraná hodnota', 'jednotka veličiny'],
           ['$X_{N}', 'merací rozsah', 'jednotka veličiny'],
-          ['$d', 'aditívna chyba v digitoch (na poslednom mieste displeja)', 'digit'],
+          ['$d', 'aditívna chyba určená počtom digitov na poslednom mieste displeja (do súčtu s Δm sa dosadí prepočítaná na jednotky veličiny, pozri nižšie)', 'digit'],
         ],
       },
       { t: 'h', text: 'Digity a rozlíšenie displeja' },
-      { t: 'p', text: 'Aditívna zložka sa často zapisuje ako **d** – chyba určená počtom dibitov (digitov) na poslednom mieste displeja, napr. ±(0,5 % + 2 digity). Jeden digit je jednotka posledného zobrazeného miesta, teda **rozlíšenie** displeja na danom rozsahu. Dnešné ČMP majú 3 až 8½ miesta (maximálny údaj 999 až 199 999 999). Často sa používa **3½-miestny displej**: tri plné miesta 0 – 9 a na začiatku „pol miesta“, ktoré môže ukázať iba 1. Pri meracích rozsahoch 200 mV – 2 V – 20 V – 200 V zobrazí najviac číslo 1 999. Prístroj s rozsahmi 500 mV – 5 V – 50 V – 500 V môže zobraziť najviac 4 999.' },
+      { t: 'p', text: 'Aditívna zložka sa často zapisuje ako **d** – chyba určená počtom dibitov (digitov) na poslednom mieste displeja, napr. ±(0,5 % + 2 digity). Jeden digit je jednotka posledného zobrazeného miesta, teda **rozlíšenie** displeja na danom rozsahu. Dnešné ČMP majú 3 až 8½ miesta (maximálny údaj 999 až 199 999 999). Často sa používa **3½-miestny displej**: tri plné miesta 0 – 9 a na začiatku „pol miesta“, ktoré ukáže nanajvýš 1. Pri meracích rozsahoch 200 mV – 2 V – 20 V – 200 V zobrazí najviac číslo 1 999. Prístroj s rozsahmi 500 mV – 5 V – 50 V – 500 V môže zobraziť najviac 4 999.' },
       { t: 'figure', fig: () => lcdDisplay('1.999', 'V'), caption: '3½-miestny displej na rozsahu 2 V s najväčším údajom 1,999 V. Posledné miesto má váhu 1 mV – to je jeden digit.' },
       {
         t: 'table',
@@ -386,7 +386,7 @@ const mod: MeasModule = {
         legend: [['$δ_{ČMP}', 'celková relatívna chyba ČMP', '%']],
       },
       { t: 'p', text: 'Multiplikatívna chyba ku koncu rozsahu narastá, aditívna je na celom rozsahu konštantná. Celková absolútna chyba preto lineárne rastie – od `Δ_{a}` pri nulovom údaji po `Δ_{m} + Δ_{a}` na konci rozsahu. Celková relatívna chyba naopak ku koncu rozsahu klesá: člen `$δ_{a} · @f{$X_{N}}{$X_{m}}` je pri malom údaji veľký a na konci rozsahu (`$X_{m} = $X_{N}`) klesne `$δ_{ČMP}` na `$δ_{m} + $δ_{a}`. Krivka je hyperbola (skriptá jej pokles opisujú ako „exponenciálny“). Aj pri ČMP je preto výhodné merať na **najmenšom rozsahu, ktorý meranú hodnotu ešte obsiahne**.' },
-      { t: 'figure', fig: cmpAbsErrorChart, caption: 'Obr. 6.4 – absolútna chyba voltmetra z príkladu 1 (rozsah 200 V, rdg 0,9 %, FS 0,1 %): aditívna zložka ±0,2 V (čiarkovane) je stála, celková chyba rastie až na ±2 V na konci rozsahu.' },
+      { t: 'figure', fig: cmpAbsErrorChart, caption: 'Obr. 6.4 – absolútna chyba voltmetra z príkladu 1 nižšie (rozsah 200 V, rdg 0,9 %, FS 0,1 %): aditívna zložka ±0,2 V (čiarkovane) je stála, celková chyba rastie až na ±2 V na konci rozsahu.' },
       { t: 'figure', fig: cmpRelErrorChart, caption: 'Obr. 6.5 – relatívna chyba toho istého voltmetra: pri 100 V je ±1,1 %, na konci rozsahu klesne na `$δ_{m} + $δ_{a}` = 1 %.' },
       {
         t: 'example',
@@ -403,7 +403,7 @@ const mod: MeasModule = {
       {
         t: 'example',
         title: 'Príklad 2 – chyba zadaná v digitoch',
-        given: ['číslicový multimeter s 3½-miestnym displejom, meranie striedavého prúdu', 'chyba `$δ_{ČMP}` = ±(1,5 % + 7 dibit)', 'merací rozsah `$X_{N}` = 2 A, odmeraná hodnota `$X_{m}` = 0,6 A', 'maximálny počet indikovaných jednotiek 2 000'],
+        given: ['číslicový multimeter s 3½-miestnym displejom, meranie striedavého prúdu', 'chyba `$δ_{ČMP}` = ±(1,5 % + 7 dibitov)', 'merací rozsah `$X_{N}` = 2 A, odmeraná hodnota `$X_{m}` = 0,6 A', 'maximálny počet indikovaných jednotiek 2 000'],
         steps: [
           '`$δ_{a} = @f{7}{2 000} · 100` = 0,35 %',
           '`$δ_{ČMP} = ±(1,5 + 0,35 · @f{2}{0,6})` = ±2,67 %',
@@ -452,7 +452,7 @@ const mod: MeasModule = {
       lessonId: ID,
       prompt: 'Aké najväčšie číslo zobrazí 3½-miestny displej?',
       options: ['1 999', '999', '19 999', '9 999'],
-      explanation: 'Má tri plné miesta 0 – 9 a „pol miesta“ na začiatku, ktoré ukáže najviac 1. Preto sa vyrába s rozsahmi 200 mV – 2 V – 20 V – 200 V. Číslo 19 999 zobrazí 4½-miestny displej.',
+      explanation: 'Má tri plné miesta 0 – 9 a „pol miesta“ na začiatku, ktoré ukáže najviac 1. Preto majú prístroje s takým displejom rozsahy 200 mV – 2 V – 20 V – 200 V. Číslo 19 999 zobrazí 4½-miestny displej.',
     },
     {
       lessonId: ID,
