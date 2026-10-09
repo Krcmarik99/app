@@ -5,6 +5,7 @@ import { h } from './lib/dom';
 import { sectionOf, startRouter, type Route, type Section } from './router';
 import { icon, logo, type IconName } from './ui/icons';
 import { accountView } from './views/account';
+import { labView } from './views/lab';
 import { calculatorView, calculatorsView, CALCULATORS } from './views/calculators';
 import { flashcardsView } from './views/flashcards';
 import { homeView } from './views/home';
@@ -16,6 +17,7 @@ const NAV: { section: Section; href: string; label: string; icon: IconName }[] =
   { section: 'home', href: '#domov', label: 'Domov', icon: 'home' },
   { section: 'lessons', href: '#lekcie', label: 'Lekcie', icon: 'lessons' },
   { section: 'practice', href: '#cvicenie', label: 'Cvičenie', icon: 'practice' },
+  { section: 'lab', href: '#obvody', label: 'Obvody', icon: 'circuit' },
   { section: 'calcs', href: '#kalkulacky', label: 'Kalkulačky', icon: 'calc' },
   { section: 'cards', href: '#karticky', label: 'Kartičky', icon: 'cards' },
 ];
@@ -30,6 +32,7 @@ function view(route: Route): HTMLElement {
     case 'calc': return calculatorView(route.id);
     case 'cards': return flashcardsView(route.deck);
     case 'account': return accountView(route.mode);
+    case 'lab': return labView();
   }
 }
 
@@ -43,6 +46,7 @@ function pageTitle(route: Route): string {
     case 'calcs': return `Kalkulačky · ${base}`;
     case 'calc': return `${CALCULATORS.find((c) => c.id === route.id)?.title ?? 'Kalkulačka'} · ${base}`;
     case 'cards': return `Kartičky · ${base}`;
+    case 'lab': return `Zapájanie obvodov · ${base}`;
     case 'account':
       if (currentAccount()) return `Účet · ${base}`;
       return `${route.mode === 'register' ? 'Registrácia' : 'Prihlásenie'} · ${base}`;
@@ -53,9 +57,9 @@ function pageTitle(route: Route): string {
 function accountLink(): HTMLAnchorElement {
   const account = currentAccount();
   return account
-    ? h('a', { href: '#ucet', class: 'account-link', title: `Účet: ${account.name}` },
+    ? h('a', { href: '#ucet', class: 'account-link', title: `Účet: ${account.name}`, 'aria-label': `Účet: ${account.name}` },
       avatar(account.name), h('span', { class: 'account-name' }, account.name))
-    : h('a', { href: '#prihlasenie', class: 'account-link is-guest' },
+    : h('a', { href: '#prihlasenie', class: 'account-link is-guest', 'aria-label': 'Prihlásiť sa' },
       icon('user', 18), h('span', { class: 'account-name' }, 'Prihlásiť sa'));
 }
 

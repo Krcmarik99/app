@@ -5,6 +5,9 @@ import { LESSONS } from '../src/content/lessons';
 import { currentAccount, logout, register } from '../src/lib/auth';
 import { formula, rich } from '../src/lib/formula';
 import { accountView } from '../src/views/account';
+import { labView } from '../src/views/lab';
+import { EXAMPLES } from '../src/lab/examples';
+import { PALETTE } from '../src/lab/parts';
 import { calculatorView, calculatorsView, CALCULATORS } from '../src/views/calculators';
 import { flashcardsView } from '../src/views/flashcards';
 import { homeView } from '../src/views/home';
@@ -240,5 +243,38 @@ describe('účet', () => {
     const logoutBtn = [...page.querySelectorAll('button')].find((b) => b.textContent?.includes('Odhlásiť'))!;
     logoutBtn.click();
     expect(currentAccount()).toBeNull();
+  });
+});
+
+describe('zapájanie obvodov', () => {
+  beforeEach(() => {
+    logout();
+    localStorage.clear();
+  });
+
+  it('vykreslí paletu, ukážky a vlastnosti súčiastky', () => {
+    const el = mount(labView());
+    const items = PALETTE.flatMap((g) => g.items);
+    expect(el.querySelectorAll('.lab-palette-btn')).toHaveLength(items.length);
+    expect(items.map((i) => i.label)).toEqual(expect.arrayContaining([
+      'Ampérmeter', 'Voltmeter', 'Multimeter', 'Wattmeter', 'Osciloskop', 'Zdroj DC', 'Zdroj AC', 'Spínač',
+      'Rezistor', 'Kondenzátor', 'Elektrolytický kondenzátor', 'Cievka', 'Dióda', 'LED dióda',
+      'Tranzistor NPN', 'Tranzistor PNP', 'MOSFET N', 'MOSFET P',
+    ]));
+    const select = el.querySelector<HTMLSelectElement>('select[aria-label="Ukážkové zapojenia"]')!;
+    for (const ex of EXAMPLES) {
+      select.value = ex.id;
+      select.dispatchEvent(new Event('change'));
+      expect(el.querySelectorAll('.lab-svg .lab-part-g').length, ex.id).toBe(ex.build().parts.length);
+      expect(el.querySelectorAll('.lab-open'), ex.id).toHaveLength(0);
+      expect(el.querySelectorAll('.scope-panel').length, ex.id).toBe(ex.build().parts.filter((p) => p.kind === 'scope').length);
+    }
+    expect(JSON.parse(localStorage.getItem('elektrolab:lab:guest')!).parts.length).toBe(EXAMPLES[EXAMPLES.length - 1].build().parts.length);
+
+    select.value = '__empty';
+    select.dispatchEvent(new Event('change'));
+    expect(el.querySelectorAll('.lab-svg .lab-part-g')).toHaveLength(0);
+    [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Späť'))!.click();
+    expect(el.querySelectorAll('.lab-svg .lab-part-g').length).toBe(EXAMPLES[EXAMPLES.length - 1].build().parts.length);
   });
 });

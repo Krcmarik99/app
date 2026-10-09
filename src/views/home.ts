@@ -136,5 +136,14 @@ export function homeView(): HTMLElement {
     ),
   );
 
-  return h('div', { class: 'view view-home' }, hero, statsSection(), course, tools, resetControl());
+  const lab = h('section', { class: 'lab-teaser', 'aria-labelledby': 'lab-title' },
+    h('div', null,
+      h('p', { class: 'eyebrow' }, 'Laboratórium'),
+      h('h2', { id: 'lab-title' }, 'Zapájanie obvodov'),
+      h('p', null, 'Poskladaj obvod z rezistorov, kondenzátorov, cievok, diód, LED, tranzistorov a MOSFETov. Meraj ampérmetrom, voltmetrom, multimetrom, wattmetrom aj osciloskopom.'),
+    ),
+    linkButton('#obvody', 'Otvoriť laboratórium', 'primary', 'arrow'),
+  );
+
+  return h('div', { class: 'view view-home' }, hero, statsSection(), course, lab, tools, resetControl());
 }

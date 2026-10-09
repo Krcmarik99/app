@@ -26,6 +26,12 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
   a vlastný pokrok. Pri registrácii sa dá doterajší pokrok preniesť do nového účtu. Účty sa ukladajú
   len v danom prehliadači (žiadny server); heslo sa neukladá, len jeho odtlačok PBKDF2-SHA-256
   s náhodnou soľou. Na inom zariadení treba účet vytvoriť znova.
+- **Zapájanie obvodov** (laboratórium) – súčiastky (rezistor, kondenzátor, elektrolytický kondenzátor,
+  cievka, dióda, LED, tranzistor NPN/PNP, MOSFET N/P), zdroje (DC, AC), spínač a meracie prístroje
+  (ampérmeter, voltmeter, multimeter, wattmeter, dvojkanálový osciloskop) sa vkladajú do mriežky
+  a spájajú vodičmi. Obvod sa simuluje priebežne uzlovou metódou: nelineárne prvky Newtonovou iteráciou,
+  kondenzátory a cievky metódou BDF2. Merače ukazujú stredné aj efektívne hodnoty, aplikácia upozorní
+  na preťaženie, opačne zapojený elektrolyt či ampérmeter zapojený paralelne. Sedem hotových ukážok.
 - **Interaktívny obvod** na úvodnej stránke – napätie 0 až 500 V a odpor 0 Ω až 5 MΩ posuvníkom
   alebo zadaním hodnoty, schéma s rezistorom alebo s LED a predradným rezistorom.
 
@@ -68,7 +74,8 @@ src/
   practice/     generátory číselných príkladov a zostavenie cvičenia
   lib/          výpočty (electro), jednotky a predpony (units), farebný kód, vzorce, pokrok, účty (auth)
   ui/           schémy, grafy, karta otázky, interaktívny obvod na úvodnej stránke
-  views/        stránky: domov, lekcie, cvičenie, kalkulačky, kartičky, účet
+  lab/          zapájanie obvodov: súčiastky, uzly, simulácia, značky, osciloskop, ukážky
+  views/        stránky: domov, lekcie, cvičenie, kalkulačky, kartičky, zapájanie, účet
   router.ts     navigácia cez #kotvy (funguje aj na statickom hostingu)
 tests/          testy (Vitest)
 ```
