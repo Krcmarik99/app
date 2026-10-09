@@ -258,7 +258,7 @@ describe('zapájanie obvodov', () => {
     expect(el.querySelectorAll('.lab-palette-btn')).toHaveLength(items.length);
     expect(items.map((i) => i.label)).toEqual(expect.arrayContaining([
       'Ampérmeter', 'Voltmeter', 'Multimeter', 'Wattmeter', 'Osciloskop', 'Zdroj DC', 'Zdroj AC', 'Spínač',
-      'Rezistor', 'Kondenzátor', 'Elektrolytický kondenzátor', 'Cievka', 'Dióda', 'LED dióda',
+      'Rezistor', 'Žiarovka', 'Kondenzátor', 'Elektrolytický kondenzátor', 'Cievka', 'Dióda', 'LED dióda',
       'Tranzistor NPN', 'Tranzistor PNP', 'MOSFET N', 'MOSFET P',
     ]));
     const select = el.querySelector<HTMLSelectElement>('select[aria-label="Ukážkové zapojenia"]')!;

@@ -3307,6 +3307,36 @@ input[type='checkbox'] {
   fill: var(--copper);
 }
 
+.lab-pending {
+  fill: none;
+  stroke: var(--copper);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.lab-target {
+  fill: color-mix(in srgb, var(--good) 18%, transparent);
+  stroke: var(--good);
+  stroke-width: 2;
+}
+
+.lab-stop {
+  background: var(--surface);
+  border-color: var(--rule-strong);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-stop.is-stopped {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.lab-cancel-wire {
+  color: var(--bad);
+}
+
 .lab-ghost {
   opacity: 0.45;
 }

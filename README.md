@@ -26,12 +26,14 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
   a vlastný pokrok. Pri registrácii sa dá doterajší pokrok preniesť do nového účtu. Účty sa ukladajú
   len v danom prehliadači (žiadny server); heslo sa neukladá, len jeho odtlačok PBKDF2-SHA-256
   s náhodnou soľou. Na inom zariadení treba účet vytvoriť znova.
-- **Zapájanie obvodov** (laboratórium) – súčiastky (rezistor, kondenzátor, elektrolytický kondenzátor,
+- **Zapájanie obvodov** (laboratórium) – súčiastky (rezistor, žiarovka, kondenzátor, elektrolytický kondenzátor,
   cievka, dióda, LED, tranzistor NPN/PNP, MOSFET N/P), zdroje (DC, AC), spínač a meracie prístroje
   (ampérmeter, voltmeter, multimeter, wattmeter, dvojkanálový osciloskop) sa vkladajú do mriežky
   a spájajú vodičmi. Obvod sa simuluje priebežne uzlovou metódou: nelineárne prvky Newtonovou iteráciou,
   kondenzátory a cievky metódou BDF2. Merače ukazujú stredné aj efektívne hodnoty, aplikácia upozorní
-  na preťaženie, opačne zapojený elektrolyt či ampérmeter zapojený paralelne. Sedem hotových ukážok.
+  na preťaženie, opačne zapojený elektrolyt či ampérmeter zapojený paralelne. Osem hotových ukážok.
+  Vodič sa kreslí od svorky so zlommi a dokončí sa až na svorke alebo inom vodiči; pravé tlačidlo myši
+  (alebo Esc) kreslenie zruší. Tlačidlo Stop zastaví čas obvodu a merače ukazujú posledné hodnoty.
 - **Interaktívny obvod** na úvodnej stránke – napätie 0 až 500 V a odpor 0 Ω až 5 MΩ posuvníkom
   alebo zadaním hodnoty, schéma s rezistorom alebo s LED a predradným rezistorom.
 

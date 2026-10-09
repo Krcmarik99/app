@@ -45,6 +45,24 @@ export const EXAMPLES: Example[] = [
     },
   },
   {
+    id: 'lamps',
+    title: 'Žiarovky sériovo a paralelne',
+    description: 'Dve rovnaké žiarovky v sérii majú každá len polovicu napätia, a preto svietia slabo. Žiarovka zapojená samostatne svieti naplno.',
+    build: () => {
+      const { circuit, part, wire } = builder();
+      part('dc', 4, 4, 1, { U: 12 });
+      wire([4, 4], [12, 4], [20, 4]);
+      wire([4, 7], [4, 12], [12, 12], [20, 12]);
+      part('lamp', 12, 4, 1, { U: 12, P: 5 });
+      part('lamp', 12, 7, 1, { U: 12, P: 5 });
+      wire([12, 10], [12, 12]);
+      part('lamp', 20, 4, 1, { U: 12, P: 5 });
+      part('ammeter', 20, 7, 1);
+      wire([20, 10], [20, 12]);
+      return circuit;
+    },
+  },
+  {
     id: 'rc',
     title: 'Nabíjanie a vybíjanie kondenzátora',
     description: 'Zapni spínač S1 a sleduj na osciloskope, ako sa kondenzátor nabíja. Po vypnutí sa vybíja cez R2.',

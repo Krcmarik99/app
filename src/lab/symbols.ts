@@ -52,6 +52,7 @@ export function valueLabel(part: Part): string[] {
   const p = part.props;
   switch (part.kind) {
     case 'resistor': return [formatSI(num(p.R, 1000), 'Ω', 3)];
+    case 'lamp': return [formatSI(num(p.U, 12), 'V', 3), formatSI(num(p.P, 5), 'W', 3)];
     case 'capacitor': return [formatSI(num(p.C, 1e-6), 'F', 3)];
     case 'ecap': return [formatSI(num(p.C, 1e-4), 'F', 3), `${String(p.umax).replace('.', ',')} V`];
     case 'inductor': return [formatSI(num(p.L, 0.1), 'H', 3)];
@@ -76,11 +77,11 @@ function labels(part: Part, anchorLocal: Pt, dirAway: Pt): SVGElement[] {
 
 /** Ako ďaleko od vodiča siaha značka – podľa toho sa odsadí popis. */
 const EXTENT: Partial<Record<Part['kind'], number>> = {
-  resistor: 7, capacitor: 12, ecap: 15, inductor: 6, diode: 9, led: 21, dc: 12, ac: 13, switch: 12,
+  resistor: 7, lamp: 11, capacitor: 12, ecap: 15, inductor: 6, diode: 9, led: 21, dc: 12, ac: 13, switch: 12,
 };
 
 const COMP: Partial<Record<Part['kind'], CompKind>> = {
-  resistor: 'resistor', capacitor: 'capacitor', ecap: 'ecap', inductor: 'inductor',
+  resistor: 'resistor', lamp: 'lamp', capacitor: 'capacitor', ecap: 'ecap', inductor: 'inductor',
   diode: 'diode', led: 'led', dc: 'battery', ac: 'acsource', ammeter: 'ammeter', voltmeter: 'voltmeter',
 };
 
@@ -188,9 +189,12 @@ export function drawPart(part: Part, iconOnly = false): PartDrawing {
     const drawn = comp(kindComp, a, b);
     out.g.append(drawn);
     if (part.kind === 'resistor') out.body = drawn.querySelector('rect') ?? undefined;
-    if (part.kind === 'led') {
+    if (part.kind === 'led' || part.kind === 'lamp') {
       const [cx, cy] = centerOf(part);
-      out.glow = s('circle', { cx, cy, r: 22, class: 'lab-glow', fill: `url(#lab-glow-${part.props.color})`, opacity: 0 });
+      const lamp = part.kind === 'lamp';
+      out.glow = s('circle', {
+        cx, cy, r: lamp ? 30 : 22, class: 'lab-glow', fill: `url(#lab-glow-${lamp ? 'lamp' : part.props.color})`, opacity: 0,
+      });
       out.g.prepend(out.glow);
     }
     if (part.kind === 'dc' && !iconOnly) {

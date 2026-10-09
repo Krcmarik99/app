@@ -131,6 +131,25 @@ describe('simulácia', () => {
     expect(Math.abs(s2.states.get(diode.parts[2].id)!.i)).toBeLessThan(1e-6);
   });
 
+  it('žiarovka má pri menovitom napätí menovitý výkon a pri vyššom sa prepáli', () => {
+    const make = (U: number) => build([
+      { kind: 'dc', nodes: ['+', '0'], props: { U } },
+      { kind: 'lamp', nodes: ['+', '0'], props: { U: 12, P: 5 } },
+    ]);
+    const ok = make(12);
+    const s1 = new Simulator(ok.circuit);
+    run(s1, 0.01);
+    const st = s1.states.get(ok.parts[1].id)!;
+    expect(st.p).toBeCloseTo(5, 1);
+    expect(st.i).toBeCloseTo(5 / 12, 2);
+    expect(s1.warnings()).toEqual([]);
+
+    const over = make(24);
+    const s2 = new Simulator(over.circuit);
+    run(s2, 0.01);
+    expect(s2.warnings().map((w) => w.text).join(' ')).toContain('prepáli');
+  });
+
   it('nabíjanie kondenzátora cez rezistor (τ = RC)', () => {
     const { circuit, parts } = build([
       { kind: 'dc', nodes: ['+', '0'], props: { U: 10 } },

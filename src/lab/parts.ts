@@ -5,7 +5,7 @@
 import { LED_COLORS } from '../lib/electro';
 
 export type PartKind =
-  | 'resistor' | 'capacitor' | 'ecap' | 'inductor' | 'diode' | 'led' | 'bjt' | 'mosfet'
+  | 'resistor' | 'lamp' | 'capacitor' | 'ecap' | 'inductor' | 'diode' | 'led' | 'bjt' | 'mosfet'
   | 'dc' | 'ac' | 'switch'
   | 'ammeter' | 'voltmeter' | 'multimeter' | 'wattmeter' | 'scope';
 
@@ -77,6 +77,14 @@ export const KINDS: Record<PartKind, KindInfo> = {
       { key: 'pmax', label: 'Dovolené zaťaženie', options: [['0.125', '0,125 W'], ['0.25', '0,25 W'], ['0.6', '0,6 W'], ['1', '1 W'], ['2', '2 W'], ['5', '5 W']] },
     ],
     defaults: { R: 1000, pmax: '0.25' },
+  },
+  lamp: {
+    name: 'Žiarovka', prefix: 'Ž', terminals: TWO, terminalNames: ['1', '2'],
+    props: [
+      { key: 'U', label: 'Menovité napätie', unit: 'V', min: 0.5, max: 1000 },
+      { key: 'P', label: 'Menovitý výkon', unit: 'W', min: 0.01, max: 5000 },
+    ],
+    defaults: { U: 12, P: 5 },
   },
   capacitor: {
     name: 'Kondenzátor', prefix: 'C', terminals: TWO, terminalNames: ['1', '2'],
@@ -207,6 +215,7 @@ export const PALETTE: { title: string; items: PaletteItem[] }[] = [
     title: 'Súčiastky',
     items: [
       { id: 'resistor', kind: 'resistor', label: 'Rezistor' },
+      { id: 'lamp', kind: 'lamp', label: 'Žiarovka' },
       { id: 'capacitor', kind: 'capacitor', label: 'Kondenzátor' },
       { id: 'ecap', kind: 'ecap', label: 'Elektrolytický kondenzátor' },
       { id: 'inductor', kind: 'inductor', label: 'Cievka' },

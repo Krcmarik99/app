@@ -7,7 +7,7 @@ import { frag, h, s } from '../lib/dom';
 import { formatSI, parseQuantity } from '../lib/units';
 import { LED_MAX, Simulator, meterReading, type PartState } from '../lab/engine';
 import { EXAMPLES, exampleById } from '../lab/examples';
-import { buildNets, routeWire } from '../lab/netlist';
+import { buildNets, onSegmentInterior, routeWire } from '../lab/netlist';
 import {
   KINDS, PALETTE, createPart, displayName, newId, num, parseCircuit, terminalsOf,
   type Circuit, type PaletteItem, type Part, type PropDef, type Pt, type Rot, type Wire,
@@ -26,6 +26,7 @@ const ZOOMS = [1, 1.5, 2, 2.5, 3];
 
 const HELP: Record<Part['kind'], string> = {
   resistor: 'Obmedzuje prúd. Výkon sa na ňom mení na teplo – pri preťažení sa rezistor sfarbí.',
+  lamp: 'Svieti tým jasnejšie, čím väčší výkon na nej je. Pri menovitom napätí má menovitý výkon. Rozžeravené vlákno má odpor R = U² / P.',
   capacitor: 'Nabíja sa cez rezistor s časovou konštantou τ = R · C. V ustálenom stave jednosmerný prúd neprepúšťa.',
   ecap: 'Má veľkú kapacitu, ale záleží na polarite: vývod + musí byť na vyššom napätí. Neprekroč menovité napätie.',
   inductor: 'Bráni zmenám prúdu. Pri náhlom prerušení prúdu vzniká na cievke napäťová špička.',
@@ -46,6 +47,8 @@ const HELP: Record<Part['kind'], string> = {
 /** Nastavenia, ktoré vydržia aj prechod na inú stránku. */
 let speed = 1;
 let powered = true;
+/** Stop: čas obvodu stojí, merače ukazujú posledné hodnoty. */
+let running = true;
 let zoom: number | null = null;
 
 const storeKey = () => `elektrolab:lab:${currentAccount()?.id ?? 'guest'}`;
@@ -92,7 +95,11 @@ export function labView(): HTMLElement {
   let selected: Selection = null;
   let tool: 'select' | 'wire' = 'select';
   let armed: PaletteItem | null = null;
-  let wireStart: Pt | null = null;
+  /** Rozkreslený vodič: začiatok a zlomy; prázdne = nekreslí sa. */
+  let wirePath: Pt[] = [];
+  let hoverPt: Pt | null = null;
+  /** Zmeny zapojenia počas zastavenia sa prejavia až po spustení. */
+  let dirty = false;
   let drag: Drag = null;
   let slowed = false;
   const history: string[] = [];
@@ -104,7 +111,7 @@ export function labView(): HTMLElement {
   const defs = s('defs', null,
     s('pattern', { id: 'lab-grid', width: G, height: G, patternUnits: 'userSpaceOnUse' },
       s('circle', { cx: G / 2, cy: G / 2, r: 1.1, class: 'lab-grid-dot' })),
-    ...[['red', '#ff3b2f'], ['yellow', '#ffc21a'], ['green', '#22d65a'], ['blue', '#3d7bff'], ['white', '#b9d2ff']].map(([id, color]) =>
+    ...[['red', '#ff3b2f'], ['yellow', '#ffc21a'], ['green', '#22d65a'], ['blue', '#3d7bff'], ['white', '#b9d2ff'], ['lamp', '#ffb22e']].map(([id, color]) =>
       s('radialGradient', { id: `lab-glow-${id}` },
         s('stop', { offset: '0%', 'stop-color': color, 'stop-opacity': 0.95 }),
         s('stop', { offset: '50%', 'stop-color': color, 'stop-opacity': 0.45 }),
@@ -137,7 +144,7 @@ export function labView(): HTMLElement {
     b.addEventListener('click', () => {
       tool = t;
       armed = null;
-      wireStart = null;
+      wirePath = [];
       syncTools();
       renderOverlay(null);
     });
@@ -150,9 +157,26 @@ export function labView(): HTMLElement {
   powerBtn.addEventListener('click', () => {
     powered = !powered;
     sim = null;
+    dirty = false;
     rebuildSim(false);
     syncTools();
   });
+  const stopBtn = h('button', { type: 'button', class: 'btn btn-sm lab-stop' });
+  stopBtn.addEventListener('click', () => {
+    running = !running;
+    if (running && dirty) {
+      dirty = false;
+      rebuildSim(true);
+      renderScopes();
+    }
+    status.textContent = running
+      ? 'Obvod znova beží.'
+      : 'Obvod je zastavený – merače a osciloskop ukazujú hodnoty v okamihu zastavenia. Zmeny v zapojení sa prejavia po spustení.';
+    syncTools();
+  });
+  const cancelWireBtn = h('button', { type: 'button', class: 'btn btn-sm btn-quiet lab-cancel-wire', hidden: true },
+    icon('close', 16), 'Zrušiť vodič');
+  cancelWireBtn.addEventListener('click', () => cancelWire());
   const speedSel = h('select', { class: 'field-input', 'aria-label': 'Rýchlosť simulácie' },
     SPEEDS.map(([v, t]) => h('option', { value: v, selected: v === speed }, t)));
   speedSel.addEventListener('change', () => { speed = Number(speedSel.value); });
@@ -191,15 +215,20 @@ export function labView(): HTMLElement {
     powerBtn.replaceChildren(icon('bolt', 16), powered ? 'Napájanie zapnuté' : 'Napájanie vypnuté');
     powerBtn.className = `btn btn-sm lab-power ${powered ? 'is-on' : ''}`;
     powerBtn.setAttribute('aria-pressed', String(powered));
-    svg.classList.toggle('is-wiring', tool === 'wire' || !!wireStart);
+    stopBtn.replaceChildren(running ? '■ Stop' : '▶ Spustiť');
+    stopBtn.className = `btn btn-sm lab-stop ${running ? '' : 'is-stopped'}`;
+    stopBtn.setAttribute('aria-pressed', String(!running));
+    stopBtn.disabled = !powered;
+    cancelWireBtn.hidden = wirePath.length === 0;
+    svg.classList.toggle('is-wiring', tool === 'wire' || wirePath.length > 0);
     svg.classList.toggle('is-placing', !!armed);
     updateHint();
   }
 
   function updateHint(): void {
-    if (armed) status.textContent = `Klikni do mriežky – vložíš: ${armed.label}. Esc zruší.`;
-    else if (wireStart) status.textContent = 'Klikni na cieľovú svorku alebo bod mriežky. Esc zruší vodič.';
-    else if (tool === 'wire') status.textContent = 'Kreslenie vodičov: klikni na začiatok a potom na koniec vodiča.';
+    if (armed) status.textContent = `Klikni do mriežky – vložíš: ${armed.label}. Pravé tlačidlo alebo Esc zruší.`;
+    else if (wirePath.length) status.textContent = 'Kreslíš vodič: kliknutím do mriežky pridáš zlom, vodič sa dokončí na svorke alebo inom vodiči. Pravé tlačidlo myši alebo Esc ho zruší.';
+    else if (tool === 'wire') status.textContent = 'Kreslenie vodičov: začni na svorke súčiastky alebo na vodiči.';
     else if (!status.textContent) status.textContent = 'Vodič nakreslíš ťahaním od svorky (krúžok) k inej svorke. Súčiastku presunieš ťahaním.';
   }
 
@@ -212,7 +241,7 @@ export function labView(): HTMLElement {
           partIcon(item.kind, item.props), h('span', null, item.label));
         b.addEventListener('click', () => {
           armed = armed?.id === item.id ? null : item;
-          wireStart = null;
+          wirePath = [];
           syncTools();
           renderOverlay(null);
         });
@@ -240,10 +269,17 @@ export function labView(): HTMLElement {
     sim = powered ? new Simulator(clone(circuit), keepState && sim ? sim.exportState() : undefined) : null;
   }
 
-  /** Po každej zmene: uložiť, znova postaviť simuláciu a prekresliť. */
+  /**
+   * Po každej zmene: uložiť, znova postaviť simuláciu a prekresliť. Pri zastavenom obvode
+   * zostanú zobrazené posledné namerané hodnoty a simulácia sa prestavia až po spustení.
+   */
   function commit(keepState: boolean): void {
     saveCircuit(circuit);
-    rebuildSim(keepState);
+    if (!running && keepState && sim) dirty = true;
+    else {
+      dirty = false;
+      rebuildSim(keepState);
+    }
     render();
     renderInspector();
     renderScopes();
@@ -313,18 +349,50 @@ export function labView(): HTMLElement {
     commit(true);
   }
 
-  function finishWire(end: Pt): void {
-    const start = wireStart;
-    wireStart = null;
+  /** Dá sa v bode p pripojiť vodič? Na svorke súčiastky alebo kdekoľvek na existujúcom vodiči. */
+  function isConnectable(p: Pt): boolean {
+    return circuit.parts.some((part) => terminalsOf(part).some((t) => same(t, p)))
+      || circuit.wires.some((w) => same(w.a, p) || same(w.b, p) || onSegmentInterior(p, w));
+  }
+
+  function cancelWire(): void {
+    if (!wirePath.length) return;
+    wirePath = [];
+    drag = null;
     renderOverlay(null);
-    if (!start) return;
-    const segs = routeWire(start, end);
-    if (!segs.length) {
+    status.textContent = 'Kreslenie vodiča je zrušené.';
+    syncTools();
+  }
+
+  /**
+   * Ďalší bod vodiča. Vodič sa dokončí až v bode, kde sa dá pripojiť (svorka alebo vodič);
+   * inde sa len pridá zlom a kreslí sa ďalej.
+   */
+  function wireStep(p: Pt): void {
+    if (!wirePath.length) {
+      wirePath = [p];
+      renderOverlay(hoverPt ?? p);
       syncTools();
       return;
     }
+    const last = wirePath[wirePath.length - 1];
+    if (same(p, last)) return;
+    for (const [, b] of routeWire(last, p)) wirePath.push(b);
+    if (isConnectable(p)) commitWire();
+    else {
+      renderOverlay(hoverPt ?? p);
+      syncTools();
+    }
+  }
+
+  function commitWire(): void {
+    const pts = wirePath;
+    wirePath = [];
+    renderOverlay(null);
     pushHistory();
-    for (const [a, b] of segs) {
+    for (let i = 1; i < pts.length; i++) {
+      const [a, b] = [pts[i - 1], pts[i]];
+      if (same(a, b)) continue;
       const dup = circuit.wires.some((w) => (same(w.a, a) && same(w.b, b)) || (same(w.a, b) && same(w.b, a)));
       if (!dup) circuit.wires.push({ id: newId('w'), a, b });
     }
@@ -367,11 +435,13 @@ export function labView(): HTMLElement {
 
   function renderOverlay(pt: Pt | null): void {
     overlay.replaceChildren();
-    if (wireStart && pt) {
-      for (const [a, b] of routeWire(wireStart, pt)) {
-        overlay.append(s('line', { x1: a[0] * G, y1: a[1] * G, x2: b[0] * G, y2: b[1] * G, class: 'lab-preview' }));
-      }
-      overlay.append(s('circle', { cx: wireStart[0] * G, cy: wireStart[1] * G, r: 4.5, class: 'lab-preview-dot' }));
+    if (wirePath.length) {
+      const seg = (a: Pt, b: Pt, cls: string) => overlay.append(s('line', { x1: a[0] * G, y1: a[1] * G, x2: b[0] * G, y2: b[1] * G, class: cls }));
+      for (let i = 1; i < wirePath.length; i++) seg(wirePath[i - 1], wirePath[i], 'lab-pending');
+      const last = wirePath[wirePath.length - 1];
+      if (pt) for (const [a, b] of routeWire(last, pt)) seg(a, b, 'lab-preview');
+      for (const [x, y] of wirePath) overlay.append(s('circle', { cx: x * G, cy: y * G, r: 3.5, class: 'lab-preview-dot' }));
+      if (pt && isConnectable(pt)) overlay.append(s('circle', { cx: pt[0] * G, cy: pt[1] * G, r: 9, class: 'lab-target' }));
     } else if (armed && pt) {
       const ghost = createPart(circuit, armed.kind, 0, 0, armed.props ?? {});
       const c = centroid(terminalsOf(ghost));
@@ -397,8 +467,10 @@ export function labView(): HTMLElement {
         d.display.textContent = !r ? '—' : r.value === null ? 'OL' : fmtValue(r.value, r.unit);
       }
       if (d.glow) {
-        const i = !st ? 0 : hasAC ? Math.sqrt(Math.max(0, st.mi2)) : Math.max(0, st.i);
-        const b = Math.min(1, i / LED_MAX);
+        // LED: jas podľa prúdu (20 mA = naplno), žiarovka podľa výkonu (menovitý výkon = naplno).
+        const b = !st ? 0 : part.kind === 'lamp'
+          ? Math.min(1, Math.max(0, hasAC ? st.mp : st.p) / num(part.props.P, 5))
+          : Math.min(1, (hasAC ? Math.sqrt(Math.max(0, st.mi2)) : Math.max(0, st.i)) / LED_MAX);
         d.glow.setAttribute('opacity', b < 0.005 ? '0' : String((0.25 + 0.75 * Math.sqrt(b)).toFixed(2)));
       }
       if (d.body && st) {
@@ -416,7 +488,7 @@ export function labView(): HTMLElement {
       renderWarnings();
       updateInspectorLive();
       scopes.forEach((sc) => sc.update(sim));
-      timeOut.textContent = !sim ? 'vypnuté' : `t = ${formatSI(sim.time, 's', 3)}${slowed ? ' · spomalené' : ''}`;
+      timeOut.textContent = !sim ? 'vypnuté' : `t = ${formatSI(sim.time, 's', 3)}${!running ? ' · zastavené' : slowed ? ' · spomalené' : ''}`;
     }
   }
 
@@ -525,6 +597,7 @@ export function labView(): HTMLElement {
           break;
         default:
           rows.push([`Napätie U${suffix}`, fmtValue(u, 'V')], [`Prúd I${suffix}`, fmtValue(i, 'A')], ['Výkon P', fmtValue(p, 'W')]);
+          if (part.kind === 'lamp') rows.push(['Svieti na', `${Math.round((100 * Math.max(0, p)) / num(part.props.P, 5))} % menovitého výkonu`]);
       }
       dl.replaceChildren(...rows.map(([k, v]) => h('div', null, h('dt', null, k), h('dd', null, v))));
     };
@@ -574,9 +647,9 @@ export function labView(): HTMLElement {
       h('h3', null, 'Zapájanie'),
       h('ol', { class: 'lab-steps' },
         h('li', null, 'Vyber súčiastku alebo prístroj v zozname a klikni do mriežky.'),
-        h('li', null, 'Vodič nakreslíš ťahaním od svorky (krúžok na konci vývodu) k druhej svorke. Ide to aj dvoma kliknutiami.'),
+        h('li', null, 'Vodič začni na svorke (krúžok na konci vývodu). Kliknutím do mriežky pridáš zlom – vodič sa dokončí, až keď ho privedieš na svorku alebo iný vodič. Pravé tlačidlo myši alebo Esc kreslenie zruší.'),
         h('li', null, 'Kliknutím súčiastku vyberieš – tu jej nastavíš hodnotu, otočíš ju alebo zmažeš. Ťahaním ju presunieš.'),
-        h('li', null, 'Spínač prepneš kliknutím. Merače ukazujú hodnoty priamo v schéme.'),
+        h('li', null, 'Spínač prepneš kliknutím. Merače ukazujú hodnoty priamo v schéme. Stop zastaví obvod a hodnoty na meračoch ostanú.'),
       ),
       h('p', { class: 'lab-help' }, 'Skratky: R otočí, Delete zmaže, Esc zruší, Ctrl + Z vráti späť.'),
     );
@@ -604,33 +677,54 @@ export function labView(): HTMLElement {
     return [Math.max(0, Math.min(COLS, Math.round(x / G))), Math.max(0, Math.min(ROWS, Math.round(y / G)))];
   };
 
+  const termPoint = (el: Element | null | undefined): Pt | null => {
+    const term = el?.closest?.('[data-term]');
+    if (!term) return null;
+    const [id, k] = term.getAttribute('data-term')!.split(':');
+    const part = partById(id);
+    return part ? terminalsOf(part)[Number(k)] : null;
+  };
+
+  // Pravé tlačidlo myši zruší rozkreslený vodič alebo vkladanie súčiastky.
+  svg.addEventListener('contextmenu', (e) => e.preventDefault());
+
   svg.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) {
+      if (e.button === 2) {
+        e.preventDefault();
+        if (wirePath.length) cancelWire();
+        else if (armed) {
+          armed = null;
+          renderOverlay(null);
+          syncTools();
+        }
+      }
+      return;
+    }
     const pt = toGrid(e);
+    hoverPt = pt;
     const target = e.target as Element;
     if (armed) {
       e.preventDefault();
       placeArmed(pt);
       return;
     }
-    const term = target.closest('[data-term]');
-    if (term || tool === 'wire' || wireStart) {
+    const tp = termPoint(target);
+    if (wirePath.length) {
       e.preventDefault();
-      let p = pt;
-      if (term) {
-        const [id, k] = term.getAttribute('data-term')!.split(':');
-        const part = partById(id);
-        if (part) p = terminalsOf(part)[Number(k)];
-      }
-      if (!wireStart) {
-        wireStart = p;
-        drag = { kind: 'wire', start: p, moved: false };
-        svg.setPointerCapture?.(e.pointerId);
-        renderOverlay(p);
-        syncTools();
-      } else {
-        finishWire(p);
-      }
+      wireStep(tp ?? pt);
+      return;
+    }
+    if (tp || (tool === 'wire' && isConnectable(pt))) {
+      e.preventDefault();
+      const start = tp ?? pt;
+      wireStep(start);
+      drag = { kind: 'wire', start, moved: false };
+      svg.setPointerCapture?.(e.pointerId);
+      return;
+    }
+    if (tool === 'wire') {
+      status.textContent = 'Vodič začni na svorke súčiastky (krúžok) alebo na existujúcom vodiči.';
       return;
     }
     const partEl = target.closest('[data-part]');
@@ -683,8 +777,9 @@ export function labView(): HTMLElement {
       render();
       return;
     }
+    hoverPt = pt;
     if (drag?.kind === 'wire' && !same(pt, drag.start)) drag.moved = true;
-    if (wireStart || armed) renderOverlay(pt);
+    if (wirePath.length || armed) renderOverlay(pt);
   });
 
   const endPointer = (e: PointerEvent) => {
@@ -699,16 +794,10 @@ export function labView(): HTMLElement {
         const part = partById(current.id);
         if (part?.kind === 'switch') setProp(part, 'on', !part.props.on);
       }
-    } else if (current.kind === 'wire' && current.moved && e.type === 'pointerup') {
-      const pt = toGrid(e);
-      const target = document.elementFromPoint?.(e.clientX, e.clientY)?.closest?.('[data-term]');
-      let p = pt;
-      if (target) {
-        const [id, k] = target.getAttribute('data-term')!.split(':');
-        const part = partById(id);
-        if (part) p = terminalsOf(part)[Number(k)];
-      }
-      if (!same(p, current.start)) finishWire(p);
+    } else if (current.kind === 'wire' && current.moved && e.type === 'pointerup' && wirePath.length) {
+      // Ťahanie od svorky: pustenie na svorke alebo vodiči vodič dokončí, inde pridá zlom.
+      const p = termPoint(document.elementFromPoint?.(e.clientX, e.clientY)) ?? toGrid(e);
+      if (!same(p, current.start)) wireStep(p);
     }
   };
   svg.addEventListener('pointerup', endPointer);
@@ -736,7 +825,7 @@ export function labView(): HTMLElement {
       if (selected?.type === 'part') rotateSelected();
     } else if (e.key === 'Escape') {
       armed = null;
-      wireStart = null;
+      cancelWire();
       drag = null;
       renderOverlay(null);
       syncTools();
@@ -750,7 +839,7 @@ export function labView(): HTMLElement {
     if (!root.isConnected && last !== 0) return;
     const realDt = last ? Math.min(0.05, (t - last) / 1000) : 0;
     last = t;
-    if (sim && realDt > 0) slowed = !sim.advance(realDt * speed);
+    if (sim && running && realDt > 0) slowed = !sim.advance(realDt * speed);
     updateLive();
     requestAnimationFrame(frame);
   };
@@ -762,8 +851,8 @@ export function labView(): HTMLElement {
       palette,
       h('div', { class: 'lab-main' },
         h('div', { class: 'lab-toolbar' },
-          h('div', { class: 'lab-tool-group' }, selectTool, wireTool, undoBtn),
-          h('div', { class: 'lab-tool-group' }, powerBtn, h('div', { class: 'field-box lab-select' }, speedSel), timeOut),
+          h('div', { class: 'lab-tool-group' }, selectTool, wireTool, undoBtn, cancelWireBtn),
+          h('div', { class: 'lab-tool-group' }, powerBtn, stopBtn, h('div', { class: 'field-box lab-select' }, speedSel), timeOut),
           h('div', { class: 'lab-tool-group' }, h('div', { class: 'field-box lab-select' }, exampleSel), zoomOut, zoomOutText, zoomIn),
         ),
         canvasWrap,

@@ -42,6 +42,18 @@ describe('ukážkové zapojenia', () => {
     expect(sim.warnings()).toEqual([]);
   });
 
+  it('žiarovky v sérii svietia slabšie ako samostatná', () => {
+    const { circuit, byName } = load('lamps');
+    const sim = new Simulator(circuit);
+    run(sim, 0.05);
+    const p = (n: string) => sim.states.get(byName(n).id)!.p;
+    expect(p('Ž1')).toBeCloseTo(1.25, 1);
+    expect(p('Ž2')).toBeCloseTo(1.25, 1);
+    expect(p('Ž3')).toBeCloseTo(5, 0);
+    expect(show(sim, byName('A1'))).toBeCloseTo(5 / 12, 2);
+    expect(sim.warnings()).toEqual([]);
+  });
+
   it('kondenzátor sa po zapnutí spínača nabíja', () => {
     const { circuit, byName } = load('rc');
     let sim = new Simulator(circuit);

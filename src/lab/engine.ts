@@ -330,6 +330,9 @@ export class Simulator {
       case 'resistor':
         R(a, b, Math.max(1e-6, num(part.props.R, 1000)));
         break;
+      case 'lamp':
+        R(a, b, lampResistance(part));
+        break;
       case 'capacitor':
       case 'ecap':
         this.elems.push({ t: 'C', a, b, c: Math.max(1e-15, num(part.props.C, 1e-6)), part: part.id });
@@ -577,6 +580,9 @@ export class Simulator {
       case 'resistor':
         i = u / Math.max(1e-6, num(part.props.R, 1000));
         break;
+      case 'lamp':
+        i = u / lampResistance(part);
+        break;
       case 'capacitor':
       case 'ecap':
         i = st.extra.ic ?? 0;
@@ -707,6 +713,12 @@ export class Simulator {
           if (pw > pmax) w(`preťažený – mení na teplo ${fmtW(pw)}, znesie len ${fmtW(pmax)}.`);
           break;
         }
+        case 'lamp': {
+          const pn = num(part.props.P, 5);
+          const pw = this.hasAC ? st.mp : st.p;
+          if (pw > pn * 1.3) w(`žiarovka má ${fmtW(pw)}, hoci je len na ${fmtW(pn)} – vlákno sa prepáli. Zníž napätie.`);
+          break;
+        }
         case 'ecap': {
           const umax = num(part.props.umax, 25);
           if (st.u < -1) w('elektrolytický kondenzátor je zapojený opačne! Kladný vývod musí byť na vyššom napätí.');
@@ -783,6 +795,16 @@ export function meterReading(part: Part, st: PartState, hasAC: boolean): MeterRe
     default:
       return null;
   }
+}
+
+/**
+ * Odpor rozžeraveného vlákna žiarovky R = U² / P z menovitých hodnôt. Odpor studeného vlákna
+ * je v skutočnosti asi desaťkrát menší – tu ho pre jednoduchosť považujeme za stály.
+ */
+export function lampResistance(part: Part): number {
+  const U = Math.max(0.01, num(part.props.U, 12));
+  const P = Math.max(1e-4, num(part.props.P, 5));
+  return (U * U) / P;
 }
 
 const fmtW = (w: number) => `${String(Number(w.toPrecision(3))).replace('.', ',')} W`;
