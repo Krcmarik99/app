@@ -5,13 +5,14 @@
 import { currentAccount } from '../lib/auth';
 import { frag, h, s } from '../lib/dom';
 import { formatSI, parseQuantity } from '../lib/units';
-import { LED_MAX, Simulator, meterReading, type PartState } from '../lab/engine';
-import { EXAMPLES, exampleById } from '../lab/examples';
+import { Simulator, glowLevel, meterReading, type PartState } from '../lab/engine';
+import { DEMO_FOR, EXAMPLES, exampleById, paletteIdOf } from '../lab/examples';
 import { buildNets, onSegmentInterior, routeWire } from '../lab/netlist';
 import {
   KINDS, PALETTE, createPart, displayName, newId, num, parseCircuit, terminalsOf,
   type Circuit, type PaletteItem, type Part, type PropDef, type Pt, type Rot, type Wire,
 } from '../lab/parts';
+import { circuitPreview } from '../lab/preview';
 import { scopePanel, type ScopePanel } from '../lab/scope';
 import { G, drawPart, hitBox, partIcon, type PartDrawing } from '../lab/symbols';
 import { icon } from '../ui/icons';
@@ -143,10 +144,12 @@ export function labView(): HTMLElement {
     const b = h('button', { type: 'button', class: 'btn btn-sm lab-tool', 'aria-pressed': String(tool === t) }, icon(iconName, 16), label);
     b.addEventListener('click', () => {
       tool = t;
+      const wasArmed = !!armed;
       armed = null;
       wirePath = [];
       syncTools();
       renderOverlay(null);
+      if (wasArmed) renderInspector();
     });
     return b;
   };
@@ -188,14 +191,22 @@ export function labView(): HTMLElement {
   exampleSel.addEventListener('change', () => {
     const id = exampleSel.value;
     exampleSel.value = '';
-    if (!id) return;
-    pushHistory();
-    circuit = id === '__empty' ? { parts: [], wires: [] } : exampleById(id)!.build();
-    selected = null;
-    const ex = exampleById(id);
-    commit(false);
-    status.textContent = ex ? `${ex.title}: ${ex.description}` : 'Doska je prázdna. Vyber súčiastku vľavo a klikni do mriežky.';
+    if (id) loadExample(id);
   });
+
+  /** Nahradí zapojenie na doske ukážkou; tlačidlo Späť vráti pôvodné. */
+  function loadExample(id: string): void {
+    pushHistory();
+    const ex = exampleById(id);
+    circuit = ex ? ex.build() : { parts: [], wires: [] };
+    selected = null;
+    armed = null;
+    wirePath = [];
+    commit(false);
+    status.textContent = ex
+      ? `${ex.title}: ${ex.description} Tlačidlom Späť sa vrátiš k predchádzajúcemu zapojeniu.`
+      : 'Doska je prázdna. Vyber súčiastku vľavo a klikni do mriežky.';
+  }
   const zoomOut = h('button', { type: 'button', class: 'btn btn-sm btn-quiet', 'aria-label': 'Zmenšiť' }, '−');
   const zoomIn = h('button', { type: 'button', class: 'btn btn-sm btn-quiet', 'aria-label': 'Zväčšiť' }, '+');
   const zoomOutText = h('span', { class: 'lab-zoom' });
@@ -244,6 +255,7 @@ export function labView(): HTMLElement {
           wirePath = [];
           syncTools();
           renderOverlay(null);
+          renderInspector();
         });
         paletteButtons.set(item.id, b);
         return b;
@@ -467,10 +479,7 @@ export function labView(): HTMLElement {
         d.display.textContent = !r ? '—' : r.value === null ? 'OL' : fmtValue(r.value, r.unit);
       }
       if (d.glow) {
-        // LED: jas podľa prúdu (20 mA = naplno), žiarovka podľa výkonu (menovitý výkon = naplno).
-        const b = !st ? 0 : part.kind === 'lamp'
-          ? Math.min(1, Math.max(0, hasAC ? st.mp : st.p) / num(part.props.P, 5))
-          : Math.min(1, (hasAC ? Math.sqrt(Math.max(0, st.mi2)) : Math.max(0, st.i)) / LED_MAX);
+        const b = glowLevel(part, st, hasAC);
         d.glow.setAttribute('opacity', b < 0.005 ? '0' : String((0.25 + 0.75 * Math.sqrt(b)).toFixed(2)));
       }
       if (d.body && st) {
@@ -604,8 +613,67 @@ export function labView(): HTMLElement {
     return { el: dl, set };
   }
 
+  // ------------------------------------------------------------------ ukážky zapojenia
+  const dialogBody = h('div', { class: 'lab-dialog-body' });
+  const dialog = h('dialog', { class: 'lab-dialog', 'aria-label': 'Ukážka zapojenia' },
+    h('div', { class: 'lab-dialog-head' },
+      h('p', { class: 'eyebrow' }, 'Ukážka zapojenia'),
+      h('button', { type: 'button', class: 'btn btn-sm btn-quiet', onClick: () => dialog.close?.() }, icon('close', 16), 'Zavrieť'),
+    ),
+    dialogBody,
+  );
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close?.();
+  });
+
+  /** Náhľad, ako sa súčiastka zapája, s tlačidlom na otvorenie ukážky na doske. */
+  function demoSection(paletteId: string): HTMLElement | null {
+    const ex = exampleById(DEMO_FOR[paletteId] ?? '');
+    const item = PALETTE.flatMap((g) => g.items).find((i) => i.id === paletteId);
+    if (!ex || !item) return null;
+    const focus = (p: Part) => paletteIdOf(p.kind, p.props) === paletteId;
+    const preview = () => circuitPreview(`${ex.id}:${paletteId}`, ex.title, ex.build(), focus);
+    const open = h('button', { type: 'button', class: 'btn btn-sm btn-primary' }, 'Otvoriť ukážku na doske');
+    open.addEventListener('click', () => {
+      dialog.close?.();
+      loadExample(ex.id);
+      canvasWrap.scrollIntoView?.({ block: 'nearest' });
+    });
+    const thumb = h('button', { type: 'button', class: 'lab-demo-thumb', title: 'Zväčšiť ukážku' }, preview());
+    thumb.addEventListener('click', () => {
+      const openBig = h('button', { type: 'button', class: 'btn btn-primary' }, 'Otvoriť ukážku na doske');
+      openBig.addEventListener('click', () => open.click());
+      dialogBody.replaceChildren(
+        h('h3', null, ex.title),
+        h('div', { class: 'lab-dialog-preview' }, preview()),
+        h('p', { class: 'lab-help' }, ex.description),
+        h('p', { class: 'lab-help' }, `${item.label}: ${HELP[item.kind]}`),
+        openBig,
+      );
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+    });
+    return h('section', { class: 'lab-demo', 'aria-label': `Ukážka zapojenia: ${item.label}` },
+      h('p', { class: 'eyebrow' }, 'Ukážka zapojenia'),
+      h('p', { class: 'lab-demo-title' }, ex.title),
+      thumb,
+      h('p', { class: 'lab-help' }, ex.description),
+      open,
+    );
+  }
+
   function renderInspector(): void {
     liveRows = null;
+    if (armed && !(selected?.type === 'part')) {
+      const item = armed;
+      inspector.replaceChildren(frag(
+        h('p', { class: 'eyebrow' }, 'Vkladáš'),
+        h('h3', null, item.label),
+        h('p', { class: 'lab-help' }, HELP[item.kind]),
+        h('p', { class: 'lab-help lab-strong' }, 'Klikni do mriežky na miesto, kam ju chceš dať. Pravé tlačidlo alebo Esc vkladanie zruší.'),
+        demoSection(item.id),
+      ));
+      return;
+    }
     const part = selected?.type === 'part' ? partById(selected.id) : undefined;
     if (part) {
       const rows = readingRows(part);
@@ -628,6 +696,7 @@ export function labView(): HTMLElement {
           h('button', { type: 'button', class: 'btn btn-sm btn-secondary', onClick: rotateSelected }, 'Otočiť (R)'),
           h('button', { type: 'button', class: 'btn btn-sm btn-quiet lab-delete', onClick: deleteSelected }, 'Zmazať (Del)'),
         ),
+        demoSection(paletteIdOf(part.kind, part.props)),
       ));
       rows.set(sim?.states.get(part.id));
       return;
@@ -646,7 +715,7 @@ export function labView(): HTMLElement {
       h('p', { class: 'eyebrow' }, 'Ako na to'),
       h('h3', null, 'Zapájanie'),
       h('ol', { class: 'lab-steps' },
-        h('li', null, 'Vyber súčiastku alebo prístroj v zozname a klikni do mriežky.'),
+        h('li', null, 'Vyber súčiastku alebo prístroj v zozname a klikni do mriežky. Tu vpravo hneď uvidíš ukážku, ako sa zapája.'),
         h('li', null, 'Vodič začni na svorke (krúžok na konci vývodu). Kliknutím do mriežky pridáš zlom – vodič sa dokončí, až keď ho privedieš na svorku alebo iný vodič. Pravé tlačidlo myši alebo Esc kreslenie zruší.'),
         h('li', null, 'Kliknutím súčiastku vyberieš – tu jej nastavíš hodnotu, otočíš ju alebo zmažeš. Ťahaním ju presunieš.'),
         h('li', null, 'Spínač prepneš kliknutím. Merače ukazujú hodnoty priamo v schéme. Stop zastaví obvod a hodnoty na meračoch ostanú.'),
@@ -697,6 +766,7 @@ export function labView(): HTMLElement {
           armed = null;
           renderOverlay(null);
           syncTools();
+          renderInspector();
         }
       }
       return;
@@ -824,11 +894,13 @@ export function labView(): HTMLElement {
     } else if (e.key === 'r' || e.key === 'R') {
       if (selected?.type === 'part') rotateSelected();
     } else if (e.key === 'Escape') {
+      const wasArmed = !!armed;
       armed = null;
       cancelWire();
       drag = null;
       renderOverlay(null);
       syncTools();
+      if (wasArmed) renderInspector();
     }
   };
   document.addEventListener('keydown', onKey);
@@ -862,6 +934,7 @@ export function labView(): HTMLElement {
       ),
       inspector,
     ),
+    dialog,
   );
 
   if (zoom === null) zoom = typeof window !== 'undefined' && window.innerWidth < 760 ? 3 : 1;

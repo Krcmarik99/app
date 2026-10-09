@@ -3478,6 +3478,104 @@ input[type='checkbox'] {
   font-size: 14.5px;
 }
 
+.lab-demo {
+  display: grid;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+
+.lab-demo .btn {
+  justify-self: start;
+}
+
+.lab-demo-title {
+  font-weight: 600;
+}
+
+.lab-demo-thumb {
+  display: block;
+  width: 100%;
+  padding: 6px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  cursor: zoom-in;
+}
+
+.lab-demo-thumb:hover {
+  border-color: var(--copper);
+}
+
+.sch.lab-preview-svg {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  pointer-events: none;
+}
+
+.sch .lab-focus {
+  fill: color-mix(in srgb, var(--copper) 14%, transparent);
+  stroke: var(--copper);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 4;
+}
+
+.lab-strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.lab-dialog {
+  width: min(960px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 18px 20px 22px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+}
+
+.lab-dialog::backdrop {
+  background: rgba(10, 16, 22, 0.55);
+}
+
+.lab-dialog[open] {
+  display: grid;
+}
+
+.lab-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lab-dialog-body {
+  display: grid;
+  gap: 12px;
+}
+
+.lab-dialog-body h3 {
+  font: 600 1.6rem/1.15 var(--font-display);
+}
+
+.lab-dialog-body .btn {
+  justify-self: start;
+}
+
+.lab-dialog-preview {
+  padding: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  overflow: auto;
+}
+
 .lab-scopes {
   display: grid;
   gap: 16px;

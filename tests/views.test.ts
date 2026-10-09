@@ -6,7 +6,7 @@ import { currentAccount, logout, register } from '../src/lib/auth';
 import { formula, rich } from '../src/lib/formula';
 import { accountView } from '../src/views/account';
 import { labView } from '../src/views/lab';
-import { EXAMPLES } from '../src/lab/examples';
+import { DEMO_FOR, EXAMPLES, exampleById } from '../src/lab/examples';
 import { PALETTE } from '../src/lab/parts';
 import { calculatorView, calculatorsView, CALCULATORS } from '../src/views/calculators';
 import { flashcardsView } from '../src/views/flashcards';
@@ -276,5 +276,22 @@ describe('zapájanie obvodov', () => {
     expect(el.querySelectorAll('.lab-svg .lab-part-g')).toHaveLength(0);
     [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Späť'))!.click();
     expect(el.querySelectorAll('.lab-svg .lab-part-g').length).toBe(EXAMPLES[EXAMPLES.length - 1].build().parts.length);
+  });
+
+  it('pri každej súčiastke ukáže ukážku zapojenia a otvorí ju na doske', () => {
+    const el = mount(labView());
+    const buttons = [...el.querySelectorAll<HTMLButtonElement>('.lab-palette-btn')];
+    for (const item of PALETTE.flatMap((g) => g.items)) {
+      buttons.find((b) => b.title === item.label)!.click();
+      const demo = el.querySelector('.lab-inspector .lab-demo');
+      expect(demo, item.id).not.toBeNull();
+      expect(demo!.querySelector('.lab-preview-svg .lab-focus'), item.id).not.toBeNull();
+      expect(demo!.querySelector('.lab-demo-title')?.textContent).toBe(exampleById(DEMO_FOR[item.id])!.title);
+      buttons.find((b) => b.title === item.label)!.click();
+    }
+    buttons.find((b) => b.title === 'Cievka')!.click();
+    [...el.querySelectorAll<HTMLButtonElement>('.lab-demo button')].find((b) => b.textContent === 'Otvoriť ukážku na doske')!.click();
+    expect(el.querySelectorAll('.lab-svg .lab-part-g')).toHaveLength(exampleById('rl')!.build().parts.length);
+    expect(el.querySelector('.lab-status')?.textContent).toContain('Späť');
   });
 });

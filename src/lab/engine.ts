@@ -8,7 +8,7 @@ import { buildNets, type Nets } from './netlist';
 import { num, type Circuit, type Part } from './parts';
 
 export const VT = 0.025852;
-const GMIN = 1e-10;
+const GMIN = 1e-12;
 const R_SOURCE = 0.1;
 export const R_AMMETER = 0.01;
 export const R_VOLTMETER = 1e7;
@@ -477,7 +477,7 @@ export class Simulator {
           const vgs = old[0] + Math.max(-2, Math.min(2, vgsRaw - old[0]));
           if (Math.abs(vgs - vgsRaw) > 1e-9) limited = true;
           limits.set(el.key, [vgs]);
-          sys.conductance(el.d, el.s, 1e-9);
+          sys.conductance(el.d, el.s, GMIN);
           const pair = (n1: number, n2: number, v0: number): [number, number, number] => (p > 0 ? [n1, n2, v0] : [n2, n1, v0]);
           if (vdsRaw >= 0) {
             const m = mosCurrent(vgs, vdsRaw, el.vth);
@@ -754,6 +754,13 @@ export class Simulator {
     }
     return out;
   }
+}
+
+/** Jas LED (podľa prúdu, 20 mA = naplno) alebo žiarovky (podľa výkonu) v rozsahu 0 až 1. */
+export function glowLevel(part: Part, st: PartState | undefined, hasAC: boolean): number {
+  if (!st) return 0;
+  if (part.kind === 'lamp') return Math.min(1, Math.max(0, hasAC ? st.mp : st.p) / num(part.props.P, 5));
+  return Math.min(1, (hasAC ? Math.sqrt(Math.max(0, st.mi2)) : Math.max(0, st.i)) / LED_MAX);
 }
 
 export interface MeterReading {

@@ -31,7 +31,9 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
   (ampérmeter, voltmeter, multimeter, wattmeter, dvojkanálový osciloskop) sa vkladajú do mriežky
   a spájajú vodičmi. Obvod sa simuluje priebežne uzlovou metódou: nelineárne prvky Newtonovou iteráciou,
   kondenzátory a cievky metódou BDF2. Merače ukazujú stredné aj efektívne hodnoty, aplikácia upozorní
-  na preťaženie, opačne zapojený elektrolyt či ampérmeter zapojený paralelne. Osem hotových ukážok.
+  na preťaženie, opačne zapojený elektrolyt či ampérmeter zapojený paralelne. Štrnásť hotových ukážok –
+  každá súčiastka a prístroj má svoju ukážku zapojenia: pri výbere sa zobrazí náhľad schémy so zvýraznenou
+  súčiastkou a nameranými hodnotami a jedným tlačidlom sa ukážka otvorí na doske.
   Vodič sa kreslí od svorky so zlommi a dokončí sa až na svorke alebo inom vodiči; pravé tlačidlo myši
   (alebo Esc) kreslenie zruší. Tlačidlo Stop zastaví čas obvodu a merače ukazujú posledné hodnoty.
 - **Interaktívny obvod** na úvodnej stránke – napätie 0 až 500 V a odpor 0 Ω až 5 MΩ posuvníkom

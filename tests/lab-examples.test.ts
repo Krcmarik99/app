@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Simulator, meterReading } from '../src/lab/engine';
-import { EXAMPLES, exampleById } from '../src/lab/examples';
+import { DEMO_FOR, EXAMPLES, exampleById } from '../src/lab/examples';
+import { PALETTE } from '../src/lab/parts';
 import { buildNets } from '../src/lab/netlist';
 import type { Circuit, Part } from '../src/lab/parts';
 
@@ -121,5 +122,78 @@ describe('ukážkové zapojenia', () => {
     const p = show(sim, byName('W1'));
     expect(p).toBeCloseTo(show(sim, byName('V1')) * show(sim, byName('A1')), 2);
     expect(p).toBeCloseTo(1.44, 2);
+  });
+
+  it('každá súčiastka a prístroj má ukážku zapojenia, v ktorej naozaj je', () => {
+    for (const item of PALETTE.flatMap((g) => g.items)) {
+      const ex = exampleById(DEMO_FOR[item.id]);
+      expect(ex, item.id).toBeDefined();
+      const parts = ex!.build().parts;
+      const has = parts.some((p) => p.kind === item.kind && Object.entries(item.props ?? {}).every(([k, v]) => p.props[k] === v));
+      expect(has, `${item.id} v ukážke ${ex!.id}`).toBe(true);
+    }
+  });
+
+  it('spínač zapne žiarovku', () => {
+    const { circuit, byName } = load('switch');
+    let sim = new Simulator(circuit);
+    run(sim, 0.05);
+    expect(Math.abs(show(sim, byName('A1')))).toBeLessThan(1e-6);
+    sim = toggle(sim, circuit, true);
+    run(sim, 0.05);
+    expect(sim.states.get(byName('Ž1').id)!.p).toBeCloseTo(5, 0);
+  });
+
+  it('delič napätia: U1 + U2 = U a rovnaký prúd', () => {
+    const { circuit, byName } = load('divider');
+    const sim = new Simulator(circuit);
+    run(sim, 0.05);
+    expect(show(sim, byName('A1'))).toBeCloseTo(0.004, 4);
+    expect(show(sim, byName('V1'))).toBeCloseTo(4, 2);
+    expect(show(sim, byName('V2'))).toBeCloseTo(8, 2);
+  });
+
+  it('prúd cievkou narastá s časovou konštantou L/R', () => {
+    const { circuit, byName } = load('rl');
+    let sim = new Simulator(circuit);
+    run(sim, 0.05);
+    sim = toggle(sim, circuit, true);
+    const tau = 2 / 10.11;
+    run(sim, tau, 0.002);
+    const iFinal = 6 / 10.11;
+    expect(show(sim, byName('A1'))).toBeCloseTo(iFinal * (1 - Math.exp(-1)), 2);
+    run(sim, 2, 0.01);
+    expect(show(sim, byName('A1'))).toBeCloseTo(iFinal, 2);
+    expect(sim.warnings()).toEqual([]);
+    sim = toggle(sim, circuit, false);
+    run(sim, 0.05, 0.002);
+    // Po vypnutí prúd cievky preberie nulová dióda a napätie na cievke ostane malé.
+    expect(sim.states.get(byName('D1').id)!.i).toBeGreaterThan(0.4);
+    expect(Math.abs(sim.states.get(byName('L1').id)!.u)).toBeLessThan(1.5);
+  });
+
+  it('tranzistor PNP a MOSFET P spínajú plusovú vetvu', () => {
+    for (const id of ['pnp', 'pmos']) {
+      const { circuit, byName } = load(id);
+      let sim = new Simulator(circuit);
+      run(sim, 0.05);
+      expect(Math.abs(sim.states.get(byName('LED1').id)!.i), id).toBeLessThan(1e-9);
+      sim = toggle(sim, circuit, true);
+      run(sim, 0.05);
+      const i = sim.states.get(byName('LED1').id)!.i;
+      expect(i, id).toBeGreaterThan(0.012);
+      expect(i, id).toBeLessThan(0.02);
+      expect(sim.warnings(), id).toEqual([]);
+    }
+  });
+
+  it('multimeter meria prúd, napätie aj odpor', () => {
+    const { circuit, byName } = load('multimeter');
+    const sim = new Simulator(circuit);
+    run(sim, 0.05);
+    const i = 9 / (470 + 1000 + 0.11);
+    expect(show(sim, byName('MM1'))).toBeCloseTo(i, 5);
+    expect(show(sim, byName('MM2'))).toBeCloseTo(i * 1000, 2);
+    expect(show(sim, byName('MM3'))).toBeCloseTo(4700, -1);
   });
 });

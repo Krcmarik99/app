@@ -188,8 +188,156 @@ export const EXAMPLES: Example[] = [
       return circuit;
     },
   },
+  {
+    id: 'switch',
+    title: 'Spínač a žiarovka',
+    description: 'Spínač je v sérii so žiarovkou. Keď je vypnutý, obvod je prerušený a prúd netečie – klikni naň a žiarovka sa rozsvieti.',
+    build: () => {
+      const { circuit, part, wire } = builder();
+      part('dc', 4, 6, 1, { U: 12 });
+      wire([4, 6], [8, 6]);
+      part('switch', 8, 6, 0, { on: false });
+      wire([11, 6], [14, 6]);
+      part('ammeter', 14, 6, 0);
+      wire([17, 6], [22, 6]);
+      part('lamp', 22, 6, 1, { U: 12, P: 5 });
+      wire([22, 9], [4, 9]);
+      return circuit;
+    },
+  },
+  {
+    id: 'divider',
+    title: 'Rezistory v sérii – delič napätia',
+    description: 'Oboma rezistormi tečie rovnaký prúd (ampérmeter v sérii). Napätie zdroja sa rozdelí v pomere odporov: U₁ + U₂ = U (voltmetre paralelne k rezistorom).',
+    build: () => {
+      const { circuit, part, wire } = builder();
+      part('dc', 4, 6, 1, { U: 12 });
+      wire([4, 6], [8, 6]);
+      part('ammeter', 8, 6, 0);
+      wire([11, 6], [14, 6]);
+      part('resistor', 14, 6, 0, { R: 1000 });
+      wire([17, 6], [20, 6]);
+      part('resistor', 20, 6, 0, { R: 2000 });
+      part('voltmeter', 14, 3, 0);
+      wire([14, 3], [14, 6]);
+      wire([17, 3], [17, 6]);
+      part('voltmeter', 20, 3, 0);
+      wire([20, 3], [20, 6]);
+      wire([23, 3], [23, 6]);
+      wire([23, 6], [28, 6], [28, 9], [4, 9]);
+      return circuit;
+    },
+  },
+  {
+    id: 'rl',
+    title: 'Cievka: oneskorený nábeh prúdu',
+    description: 'Po zapnutí S1 prúd cievkou (ampérmeter) rastie postupne s časovou konštantou τ = L / R ≈ 0,2 s. Dióda pri vypnutí odvedie prúd cievky a chráni spínač pred napäťovou špičkou.',
+    build: () => {
+      const { circuit, part, wire } = builder();
+      part('dc', 4, 6, 1, { U: 6 });
+      wire([4, 6], [7, 6]);
+      part('switch', 7, 6, 0, { on: false });
+      wire([10, 6], [12, 6]);
+      part('ammeter', 12, 6, 0);
+      wire([15, 6], [17, 6]);
+      part('resistor', 17, 6, 0, { R: 10, pmax: '5' });
+      wire([20, 6], [25, 6], [29, 6], [34, 6]);
+      part('inductor', 25, 6, 1, { L: 2 });
+      part('diode', 29, 9, 3);
+      part('scope', 34, 6, 0, { tdiv: '0.1', v1: 'auto', v2: 'auto' });
+      wire([10, 6], [10, 3], [33, 3], [33, 7], [34, 7]);
+      wire([34, 8], [32, 8], [32, 9], [29, 9], [25, 9], [4, 9]);
+      return circuit;
+    },
+  },
+  {
+    id: 'pnp',
+    title: 'Tranzistor PNP ako spínač',
+    description: 'PNP sa otvára, keď je báza zápornejšia ako emitor. Emitor je na plusovej vetve, po zapnutí S1 tečie prúd bázy (A2) do zeme a kolektorom (A1) sa rozsvieti LED. Rezistor R3 drží tranzistor zatvorený, kým je S1 vypnutý.',
+    build: () => {
+      const { circuit, part, wire } = builder();
+      part('dc', 4, 2, 1, { U: 9 });
+      wire([4, 2], [20, 2], [24, 2]);
+      wire([20, 2], [20, 4]);
+      wire([4, 5], [4, 18], [20, 18], [33, 18]);
+      part('bjt', 22, 6, 2, { type: 'pnp', beta: 100 });
+      part('ammeter', 20, 8, 1);
+      part('led', 20, 11, 1, { color: 'yellow' });
+      part('resistor', 20, 14, 1, { R: 470 });
+      wire([20, 17], [20, 18]);
+      wire([22, 6], [24, 6]);
+      part('resistor', 24, 6, 0, { R: 10000 });
+      part('resistor', 24, 2, 1, { R: 100000 });
+      wire([24, 5], [24, 6]);
+      wire([27, 6], [28, 6]);
+      part('ammeter', 28, 6, 0);
+      wire([31, 6], [33, 6]);
+      part('switch', 33, 6, 1, { on: false });
+      wire([33, 9], [33, 18]);
+      return circuit;
+    },
+  },
+  {
+    id: 'pmos',
+    title: 'MOSFET s kanálom P ako spínač',
+    description: 'MOSFET P spína plusovú vetvu: otvorí sa, keď je hradlo aspoň o 2 V zápornejšie ako source. S1 stiahne hradlo k zemi, rezistor 100 kΩ ho po vypnutí vráti na +12 V.',
+    build: () => {
+      const { circuit, part, wire } = builder();
+      part('dc', 4, 2, 1, { U: 12 });
+      wire([4, 2], [20, 2], [26, 2]);
+      wire([20, 2], [20, 4]);
+      wire([4, 5], [4, 18], [20, 18], [26, 18]);
+      part('mosfet', 22, 6, 2, { type: 'p', uth: 2 });
+      part('led', 20, 8, 1, { color: 'red' });
+      part('resistor', 20, 11, 1, { R: 560 });
+      wire([20, 14], [20, 18]);
+      wire([22, 6], [26, 6]);
+      part('resistor', 26, 2, 1, { R: 100000 });
+      wire([26, 5], [26, 6]);
+      part('switch', 26, 6, 1, { on: false });
+      wire([26, 9], [26, 18]);
+      return circuit;
+    },
+  },
+  {
+    id: 'multimeter',
+    title: 'Multimeter: prúd, napätie a odpor',
+    description: 'MM1 meria prúd – je zapojený do série. MM2 meria napätie na R2 – je paralelne. MM3 meria odpor rezistora R3, ktorý nie je pripojený k zdroju (odpor sa meria bez napätia).',
+    build: () => {
+      const { circuit, part, wire } = builder();
+      part('dc', 4, 6, 1, { U: 9 });
+      wire([4, 6], [7, 6]);
+      part('multimeter', 7, 6, 0, { mode: 'A=' });
+      wire([10, 6], [12, 6]);
+      part('resistor', 12, 6, 0, { R: 470 });
+      wire([15, 6], [20, 6], [24, 6]);
+      part('resistor', 20, 6, 1, { R: 1000 });
+      part('multimeter', 24, 6, 1, { mode: 'V=' });
+      wire([24, 9], [20, 9], [4, 9]);
+      part('resistor', 32, 6, 1, { R: 4700 });
+      part('multimeter', 36, 6, 1, { mode: 'ohm' });
+      wire([32, 6], [36, 6]);
+      wire([32, 9], [36, 9]);
+      return circuit;
+    },
+  },
 ];
 
 export function exampleById(id: string): Example | undefined {
   return EXAMPLES.find((e) => e.id === id);
+}
+
+/** Ukážka zapojenia pre každú položku palety (podľa id položky). */
+export const DEMO_FOR: Record<string, string> = {
+  ammeter: 'led', voltmeter: 'divider', multimeter: 'multimeter', wattmeter: 'watt', scope: 'ac-rc',
+  dc: 'switch', ac: 'ac-rc', switch: 'switch',
+  resistor: 'divider', lamp: 'lamps', capacitor: 'ac-rc', ecap: 'rc', inductor: 'rl', diode: 'rectifier', led: 'led',
+  npn: 'bjt', pnp: 'pnp', nmos: 'mosfet', pmos: 'pmos',
+};
+
+/** Id položky palety pre súčiastku na doske (tranzistor a MOSFET podľa typu). */
+export function paletteIdOf(kind: PartKind, props: Record<string, PropValue> = {}): string {
+  if (kind === 'bjt') return props.type === 'pnp' ? 'pnp' : 'npn';
+  if (kind === 'mosfet') return props.type === 'p' ? 'pmos' : 'nmos';
+  return kind;
 }
