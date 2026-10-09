@@ -8,6 +8,7 @@ import {
 } from '../lib/auth';
 import { h, type Attrs, type Child } from '../lib/dom';
 import { checkCloud, cloudEnabled } from '../lib/cloud';
+import { PUBLIC_URL } from '../lib/config';
 import { hasGuestProgress } from '../lib/progress';
 import { onSyncChange, syncStatus } from '../lib/sync';
 import { navigate } from '../router';
@@ -161,6 +162,11 @@ function cloudStatusLine(): HTMLElement {
     }
     line.textContent = text;
     line.className = `cloud-status is-${tone}`;
+    // Na stránke, ktorá spojenie so serverom blokuje (napr. náhľad na claude.ai), ponúkni plnú verziu.
+    const elsewhere = typeof location !== 'undefined' && !location.href.startsWith(PUBLIC_URL);
+    if (!st.reachable && elsewhere) {
+      line.append(' Online účty fungujú na adrese ', h('a', { href: PUBLIC_URL, target: '_blank', rel: 'noopener' }, PUBLIC_URL.replace(/^https:\/\//, '')), '.');
+    }
   });
   return line;
 }

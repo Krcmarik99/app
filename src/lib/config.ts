@@ -11,3 +11,6 @@ export const CLOUD_KEY = 'sb_publishable_6gQJlilWpyqthtbjTyCdVg_-k4HpGls';
  * adresa v tejto doméne. Žiadne e-maily sa neposielajú (v Supabase je vypnuté „Confirm email“).
  */
 export const CLOUD_EMAIL_DOMAIN = 'ucty.elektrolab.sk';
+
+/** Verejná adresa aplikácie (GitHub Pages) – tam spojenie so serverom účtov funguje. */
+export const PUBLIC_URL = 'https://krcmarik99.github.io/app/';

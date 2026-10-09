@@ -54,6 +54,13 @@ do aplikácie nepatrí). Nastavenie projektu:
 2. **Authentication → Sign In / Providers → Email** – vypni *Confirm email*. Aplikácia prihlasuje
    menom; e-mail sa z neho len zloží (`meno@ucty.elektrolab.sk`) a žiadne e-maily sa neposielajú.
 
+## Zverejnenie (GitHub Pages)
+
+Workflow `.github/workflows/pages.yml` pri každom odoslaní do hlavnej vetvy aplikáciu otestuje,
+zostaví a zverejní na <https://krcmarik99.github.io/app/>. V nastaveniach repozitára treba raz
+zapnúť **Settings → Pages → Source: GitHub Actions** (na bezplatnom pláne musí byť repozitár verejný).
+Náhľad na claude.ai spojenie so serverom účtov blokuje – online účty fungujú na tejto adrese.
+
 ## Spustenie
 
 Potrebuješ [Node.js](https://nodejs.org/) 20 alebo novší.
