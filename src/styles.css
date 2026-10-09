@@ -3000,6 +3000,23 @@ input[type='checkbox'] {
   overflow-wrap: anywhere;
 }
 
+.cloud-status {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.cloud-status.is-ok {
+  color: var(--good);
+}
+
+.cloud-status.is-warn {
+  color: var(--warn);
+}
+
 .profile-storage {
   margin-top: 4px;
   font-size: 14px;

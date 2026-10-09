@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { currentAccount, deleteAccount, login, logout, register, type RegisterInput } from '../src/lib/auth';
-import { configureCloud } from '../src/lib/cloud';
+import { checkCloud, configureCloud } from '../src/lib/cloud';
 import { getProgress, progressOf, setCardKnown, setLessonDone } from '../src/lib/progress';
 import { flush, initSync, pushCircuit, syncStatus } from '../src/lib/sync';
 
@@ -17,6 +17,8 @@ function fakeSupabase() {
   const refresh = new Map<string, string>();
   const profiles = new Map<string, Record<string, unknown>>();
   let online = true;
+  let autoconfirm = true;
+  let tableExists = true;
   let n = 0;
   const json = (status: number, body?: unknown) => new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
   const sessionOf = (u: FakeUser) => {
@@ -37,6 +39,8 @@ function fakeSupabase() {
     const method = init?.method ?? 'GET';
     const body = init?.body ? JSON.parse(String(init.body)) : null;
     const path = url.pathname;
+    if (path === '/auth/v1/settings') return json(200, { disable_signup: false, mailer_autoconfirm: autoconfirm, external: { email: true } });
+    if (path === '/rest/v1/profiles' && !tableExists) return json(404, { code: 'PGRST205', message: "Could not find the table 'public.profiles'" });
     if (path === '/auth/v1/signup') {
       if ([...users.values()].some((u) => u.email === body.email)) return json(422, { code: 422, error_code: 'user_already_exists', msg: 'User already registered' });
       if (String(body.password).length < 6) return json(422, { code: 422, error_code: 'weak_password', msg: 'Password should be at least 6 characters.' });
@@ -61,6 +65,8 @@ function fakeSupabase() {
       access.delete((headers.get('Authorization') ?? '').replace('Bearer ', ''));
       return json(204);
     }
+    // Bez prihlásenia (rola anon) pravidlá nepustia k žiadnemu riadku.
+    if (!uid && path === '/rest/v1/profiles' && method === 'GET') return json(200, []);
     if (!uid) return json(401, { code: 'PGRST301', message: 'JWT expired' });
     if (path === '/rest/v1/profiles') {
       if (method === 'GET') {
@@ -83,6 +89,8 @@ function fakeSupabase() {
     fetch: fetchImpl as typeof fetch,
     users, profiles,
     setOnline: (v: boolean) => { online = v; },
+    setAutoconfirm: (v: boolean) => { autoconfirm = v; },
+    setTable: (v: boolean) => { tableExists = v; },
     expireTokens: () => access.clear(),
   };
 }
@@ -194,5 +202,16 @@ describe('online účty', () => {
     expect(currentAccount()).toBeNull();
     expect(server.users.has(id)).toBe(false);
     expect(server.profiles.has(id)).toBe(false);
+  });
+
+  it('kontrola servera ukáže dostupnosť, potvrdzovanie e-mailom a tabuľku', async () => {
+    expect(await checkCloud()).toEqual({ reachable: true, autoconfirm: true, table: true });
+    server.setAutoconfirm(false);
+    server.setTable(false);
+    configureCloud({ url: URL_, key: KEY, fetch: server.fetch });
+    expect(await checkCloud()).toEqual({ reachable: true, autoconfirm: false, table: false });
+    server.setOnline(false);
+    configureCloud({ url: URL_, key: KEY, fetch: server.fetch });
+    expect((await checkCloud()).reachable).toBe(false);
   });
 });

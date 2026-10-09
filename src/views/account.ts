@@ -7,7 +7,7 @@ import {
   type Account, type AuthField, type AuthResult,
 } from '../lib/auth';
 import { h, type Attrs, type Child } from '../lib/dom';
-import { cloudEnabled } from '../lib/cloud';
+import { checkCloud, cloudEnabled } from '../lib/cloud';
 import { hasGuestProgress } from '../lib/progress';
 import { onSyncChange, syncStatus } from '../lib/sync';
 import { navigate } from '../router';
@@ -140,6 +140,31 @@ function registerForm(): HTMLElement {
   return form;
 }
 
+/** Stav servera účtov: či sa účet uloží online a či je Supabase správne nastavený. */
+function cloudStatusLine(): HTMLElement {
+  const line = h('p', { class: 'cloud-status', 'aria-live': 'polite' }, 'Overujem spojenie so serverom účtov…');
+  void checkCloud().then((st) => {
+    let text: string;
+    let tone: 'ok' | 'warn';
+    if (!st.reachable) {
+      text = 'Server účtov teraz nie je dostupný – nový účet sa uloží len v tomto prehliadači a na server sa prenesie neskôr.';
+      tone = 'warn';
+    } else if (st.autoconfirm === false) {
+      text = 'Server účtov vyžaduje potvrdenie e-mailom – v Supabase treba vypnúť „Confirm email“, inak registrácia neprejde.';
+      tone = 'warn';
+    } else if (st.table === false) {
+      text = 'V databáze chýba tabuľka profiles – v Supabase treba spustiť SQL zo súboru supabase/schema.sql.';
+      tone = 'warn';
+    } else {
+      text = 'Server účtov je pripojený – účet bude fungovať na každom zariadení.';
+      tone = 'ok';
+    }
+    line.textContent = text;
+    line.className = `cloud-status is-${tone}`;
+  });
+  return line;
+}
+
 function authPage(mode: 'login' | 'register'): HTMLElement {
   const tab = (href: string, label: string, active: boolean) =>
     h('a', { href, 'aria-current': active ? 'page' : false }, label);
@@ -162,6 +187,7 @@ function authPage(mode: 'login' | 'register'): HTMLElement {
           ? [
             h('p', null, 'Účet sa ukladá online. Prihlásiš sa ním na hocijakom zariadení a pokrok v lekciách, cvičeniach, kartičkách aj zapojenia z laboratória sa synchronizujú.'),
             h('p', null, 'Ak server účtov práve nie je dostupný, účet sa vytvorí v tomto prehliadači a na server sa prenesie pri najbližšom prihlásení. Heslo si zapamätaj – nedá sa obnoviť.'),
+            cloudStatusLine(),
           ]
           : [
             h('p', null, 'Účty aj pokrok sa ukladajú len v tomto prehliadači. Hodí sa to, keď sa na jednom počítači učí viac ľudí – každý má po prihlásení svoj vlastný pokrok.'),

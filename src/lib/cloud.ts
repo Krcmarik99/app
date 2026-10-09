@@ -32,7 +32,7 @@ export interface CloudProfile {
 export type CloudErrorKind = 'network' | 'credentials' | 'exists' | 'confirm' | 'weak' | 'expired' | 'server';
 
 export class CloudError extends Error {
-  constructor(readonly kind: CloudErrorKind, message: string) {
+  constructor(readonly kind: CloudErrorKind, message: string, readonly status = 0) {
     super(message);
   }
 }
@@ -47,9 +47,13 @@ let config: Config | null = typeof fetch === 'function'
   ? { url: CLOUD_URL, key: CLOUD_KEY, fetch: (...args) => fetch(...args) }
   : null;
 
+/** Posledná kontrola servera (pozri `checkCloud`). */
+let health: { at: number; value: Promise<CloudHealth> } | null = null;
+
 /** Nastaví server (v testoch náhradný), alebo ho vypne (`null`) – vtedy sa používajú len účty v prehliadači. */
 export function configureCloud(next: { url: string; key: string; fetch?: typeof fetch } | null): void {
   config = next ? { url: next.url, key: next.key, fetch: next.fetch ?? ((...args) => fetch(...args)) } : null;
+  health = null;
 }
 
 export const cloudEnabled = (): boolean => !!config;
@@ -101,7 +105,10 @@ async function call(path: string, init: RequestInit & { token?: string } = {}): 
   } catch {
     body = null;
   }
-  if (!res.ok) throw errorFrom(res.status, body as Record<string, unknown> | null);
+  if (!res.ok) {
+    const e = errorFrom(res.status, body as Record<string, unknown> | null);
+    throw new CloudError(e.kind, e.message, res.status);
+  }
   return body;
 }
 
@@ -247,4 +254,39 @@ export async function saveProfile(
 /** Natrvalo zmaže prihlásený účet (funkcia `delete_my_account` v databáze). */
 export async function deleteCloudAccount(token: string): Promise<void> {
   await call('/rest/v1/rpc/delete_my_account', { method: 'POST', token, body: '{}' });
+}
+
+// ------------------------------------------------------------------ kontrola nastavenia servera
+
+export interface CloudHealth {
+  /** Server odpovedá (spojenie nie je zablokované). */
+  reachable: boolean;
+  /** Registrácia prihlási hneď – v Supabase je vypnuté „Confirm email“. */
+  autoconfirm: boolean | null;
+  /** V databáze je tabuľka `profiles`. */
+  table: boolean | null;
+}
+
+/** Overí, či je server účtov dostupný a správne nastavený (výsledok si pamätá minútu). */
+export function checkCloud(): Promise<CloudHealth> {
+  if (health && Date.now() - health.at < 60_000) return health.value;
+  const value = (async (): Promise<CloudHealth> => {
+    let settings: Record<string, unknown> | null;
+    try {
+      settings = (await call('/auth/v1/settings')) as Record<string, unknown> | null;
+    } catch (e) {
+      const reachable = !(e instanceof CloudError && e.kind === 'network');
+      return { reachable, autoconfirm: null, table: null };
+    }
+    let table: boolean | null = null;
+    try {
+      await call('/rest/v1/profiles?select=id&limit=1');
+      table = true;
+    } catch (e) {
+      if (e instanceof CloudError && e.status === 404) table = false;
+    }
+    return { reachable: true, autoconfirm: settings?.mailer_autoconfirm === true, table };
+  })();
+  health = { at: Date.now(), value };
+  return value;
 }
