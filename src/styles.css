@@ -814,6 +814,10 @@ dt .frac {
   stroke-dasharray: 0 16;
 }
 
+.flow.is-short {
+  stroke: var(--warn);
+}
+
 .resistor-art {
   display: block;
   max-width: 100%;

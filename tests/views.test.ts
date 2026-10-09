@@ -44,6 +44,39 @@ describe('stránky sa vykreslia bez chyby', () => {
     expect(el.querySelector('#hero-u')).not.toBeNull();
   });
 
+  it('obvod na domovskej stránke pokryje 0 až 500 V a 0 Ω až 5 MΩ', () => {
+    const el = mount(homeView());
+    const u = el.querySelector<HTMLInputElement>('#hero-u')!;
+    const r = el.querySelector<HTMLInputElement>('#hero-r')!;
+    const set = (input: HTMLInputElement, value: string) => {
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+    };
+    const texts = (sel: string) => [...el.querySelectorAll(sel)].map((o) => o.textContent?.replace(/\u00a0/g, ' '));
+    const outputs = () => texts('.slider-value');
+    const readouts = () => texts('.readout-value');
+    expect(outputs()).toEqual(['9 V', '330 Ω']);
+
+    set(u, u.max);
+    set(r, r.max);
+    expect(outputs()).toEqual(['500 V', '5 MΩ']);
+    expect(readouts()).toEqual(['100 µA', '50 mW']);
+
+    set(r, '1');
+    expect(outputs()[1]).toBe('1 mΩ');
+    expect(readouts()).toEqual(['500 kA', '250 MW']);
+    expect(el.querySelector('.hero-status')?.textContent).toContain('zhorel');
+
+    set(r, '0');
+    expect(outputs()[1]).toBe('0 Ω');
+    expect(readouts()).toEqual(['∞ A', '∞ W']);
+    expect(el.querySelector('.hero-status')?.textContent).toContain('Skrat');
+
+    set(u, '0');
+    expect(readouts()).toEqual(['0 A', '0 W']);
+    expect(el.querySelector('.hero-status')?.textContent).toBe('Bez napätia neteče prúd.');
+  });
+
   it('zoznam lekcií a všetky lekcie', () => {
     expect(mount(lessonsView()).querySelectorAll('.lesson-row')).toHaveLength(LESSONS.length);
     for (const l of LESSONS) {
