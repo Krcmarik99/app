@@ -246,7 +246,7 @@ const mod: MeasModule = {
         tex: ['$I = @f{$U}{$R_{i} + $R_{x}}', '@f{$α}{$α_{max}} = @f{$R_{i}}{$R_{i} + $R_{x}}'],
         legend: [['$R_{i}', 'vnútorný odpor ohmmetra s nastavenou nulou', 'Ω'], ['$α_{max}', 'výchylka pri skratovaných svorkách (0 Ω)', 'dielik']],
       },
-      { t: 'figure', fig: () => ohmScale(50, 50), caption: 'Stupnica ohmmetra s `$R_{i}` = 50 Ω. Pri `$R_{x} = $R_{i}` je ručička presne v strede. Smerom k ∞ sa dieliky zhusťujú, preto sa najpresnejšie odčítava okolo stredu stupnice.' },
+      { t: 'figure', fig: () => ohmScale(50, 75), caption: 'Stupnica ohmmetra s `$R_{i}` = 50 Ω, ručička ukazuje 75 Ω (40 % stupnice – pozri príklad nižšie). Pri `$R_{x} = $R_{i}` by bola ručička presne v strede. Smerom k ∞ sa dieliky zhusťujú, preto sa najpresnejšie odčítava okolo stredu stupnice.' },
       {
         t: 'example',
         title: 'Odčítanie zo stupnice ohmmetra',
