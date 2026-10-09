@@ -473,7 +473,7 @@ function instrumentCalc(): HTMLElement {
 }
 
 export const MEAS_CALCULATORS: readonly CalculatorInfo[] = [
-  { id: 'chyba', title: 'Chyba meracieho prístroja', short: 'Absolútna a relatívna chyba analógového aj číslicového prístroja.', chapter: 'meas', render: errorCalc },
-  { id: 'va', title: 'Ohmova metóda (VA/AV)', short: 'Korekcia nameraného odporu, metodická chyba a kritická hodnota odporu.', chapter: 'meas', render: vaCalc },
-  { id: 'pristroj', title: 'Konštanta a spotreba prístroja', short: 'Konštanta stupnice, nameraná hodnota, citlivosť a vlastná spotreba.', chapter: 'meas', render: instrumentCalc },
+  { id: 'chyba', title: 'Chyba meracieho prístroja', short: 'Absolútna a relatívna chyba analógového aj číslicového prístroja.', render: errorCalc },
+  { id: 'va', title: 'Ohmova metóda (VA/AV)', short: 'Korekcia nameraného odporu, metodická chyba a kritická hodnota odporu.', render: vaCalc },
+  { id: 'pristroj', title: 'Konštanta a spotreba prístroja', short: 'Konštanta stupnice, nameraná hodnota, citlivosť a vlastná spotreba.', render: instrumentCalc },
 ];

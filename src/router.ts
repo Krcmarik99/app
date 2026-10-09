@@ -10,10 +10,9 @@ export type Route =
   | { name: 'calcs' }
   | { name: 'calc'; id: string }
   | { name: 'cards'; deck?: string }
-  | { name: 'account'; mode?: 'login' | 'register' }
-  | { name: 'premium' };
+  | { name: 'account'; mode?: 'login' | 'register' };
 
-export type Section = 'home' | 'lessons' | 'practice' | 'calcs' | 'cards' | 'account' | 'premium';
+export type Section = 'home' | 'lessons' | 'practice' | 'calcs' | 'cards' | 'account';
 
 export function parseHash(hash: string): Route {
   const h = decodeURIComponent(hash.replace(/^#/, ''));
@@ -28,7 +27,6 @@ export function parseHash(hash: string): Route {
   if (h === 'ucet') return { name: 'account' };
   if (h === 'prihlasenie') return { name: 'account', mode: 'login' };
   if (h === 'registracia') return { name: 'account', mode: 'register' };
-  if (h === 'predplatne') return { name: 'premium' };
   return { name: 'home' };
 }
 
@@ -42,7 +40,6 @@ export function routeHash(r: Route): string {
     case 'calc': return `#kalk-${r.id}`;
     case 'cards': return r.deck ? `#karticky-${r.deck}` : '#karticky';
     case 'account': return r.mode === 'login' ? '#prihlasenie' : r.mode === 'register' ? '#registracia' : '#ucet';
-    case 'premium': return '#predplatne';
   }
 }
 
@@ -56,7 +53,6 @@ export function sectionOf(r: Route): Section {
     case 'calc': return 'calcs';
     case 'cards': return 'cards';
     case 'account': return 'account';
-    case 'premium': return 'premium';
   }
 }
 

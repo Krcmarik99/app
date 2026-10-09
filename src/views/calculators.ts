@@ -7,7 +7,6 @@ import {
   resistanceAtTemperature, seriesRlc, seriesSum, solveOhm, wireResistance, type OhmKey,
 } from '../lib/electro';
 import { rich } from '../lib/formula';
-import { hasPremium, isChapterLocked } from '../lib/premium';
 import { fmt, formatSI, parseQuantity, siParts, scaleExp, superscript } from '../lib/units';
 import { lineChart, sample } from '../ui/chart';
 import {
@@ -17,7 +16,7 @@ import {
   calcLayout, compact, errorMsg, field, ok, result, segmented, si, v, type CalculatorInfo, type Field,
 } from './calc-kit';
 import { MEAS_CALCULATORS } from './calculators-meas';
-import { backLink, lockBadge, pageHead, premiumGate } from './common';
+import { backLink, pageHead } from './common';
 
 export type { CalculatorInfo } from './calc-kit';
 
@@ -634,19 +633,18 @@ function wireCalc(): HTMLElement {
 // ---------------------------------------------------------------- zoznam
 
 export const CALCULATORS: readonly CalculatorInfo[] = [
-  { id: 'ohm', title: 'Ohmov zákon a výkon', short: 'Z dvoch veličín dopočíta U, I, R aj P.', chapter: 'dc', render: ohmCalc },
-  { id: 'spajanie', title: 'Sériové a paralelné spojenie', short: 'Výsledný odpor rezistorov alebo kapacita kondenzátorov.', chapter: 'dc', render: combineCalc },
-  { id: 'delic', title: 'Delič napätia', short: 'Výstupné napätie a návrh rezistora z rady E24.', chapter: 'dc', render: dividerCalc },
-  { id: 'farby', title: 'Farebný kód rezistorov', short: 'Prúžky na hodnotu a hodnota na prúžky.', chapter: 'parts', render: colorCodeCalc },
-  { id: 'rc', title: 'Časová konštanta RC a RL', short: 'Nabíjanie kondenzátora a nábeh prúdu cievkou s grafom.', chapter: 'fields', render: transientCalc },
-  { id: 'rlc', title: 'Striedavý obvod RLC', short: 'Reaktancie, impedancia, výkony a rezonancia.', chapter: 'ac', render: rlcCalc },
-  { id: 'led', title: 'Predradný rezistor pre LED', short: 'Odpor, hodnota z rady E12 a zaťaženie rezistora.', chapter: 'parts', render: ledCalc },
-  { id: 'vodic', title: 'Odpor a úbytok na vedení', short: 'Odpor kábla podľa materiálu, prierezu a teploty.', chapter: 'dc', render: wireCalc },
+  { id: 'ohm', title: 'Ohmov zákon a výkon', short: 'Z dvoch veličín dopočíta U, I, R aj P.', render: ohmCalc },
+  { id: 'spajanie', title: 'Sériové a paralelné spojenie', short: 'Výsledný odpor rezistorov alebo kapacita kondenzátorov.', render: combineCalc },
+  { id: 'delic', title: 'Delič napätia', short: 'Výstupné napätie a návrh rezistora z rady E24.', render: dividerCalc },
+  { id: 'farby', title: 'Farebný kód rezistorov', short: 'Prúžky na hodnotu a hodnota na prúžky.', render: colorCodeCalc },
+  { id: 'rc', title: 'Časová konštanta RC a RL', short: 'Nabíjanie kondenzátora a nábeh prúdu cievkou s grafom.', render: transientCalc },
+  { id: 'rlc', title: 'Striedavý obvod RLC', short: 'Reaktancie, impedancia, výkony a rezonancia.', render: rlcCalc },
+  { id: 'led', title: 'Predradný rezistor pre LED', short: 'Odpor, hodnota z rady E12 a zaťaženie rezistora.', render: ledCalc },
+  { id: 'vodic', title: 'Odpor a úbytok na vedení', short: 'Odpor kábla podľa materiálu, prierezu a teploty.', render: wireCalc },
   ...MEAS_CALCULATORS,
 ];
 
 export function calculatorsView(): HTMLElement {
-  const premium = hasPremium();
   return h('div', { class: 'view view-calcs' },
     pageHead('Nástroje', 'Kalkulačky', 'Hodnoty môžeš písať s predponami: 4k7, 2,2µ, 15m. Výsledky sa prepočítavajú hneď pri písaní.'),
     h('ul', { class: 'calc-grid' },
@@ -655,7 +653,6 @@ export function calculatorsView(): HTMLElement {
           h('span', { class: 'calc-card-no' }, String(i + 1).padStart(2, '0')),
           h('span', { class: 'calc-card-title' }, c.title),
           h('span', { class: 'calc-card-text' }, c.short),
-          isChapterLocked(c.chapter, premium) ? lockBadge() : null,
         ),
       )),
     ),
@@ -670,6 +667,6 @@ export function calculatorView(id: string): HTMLElement {
   return h('div', { class: 'view view-calc' },
     backLink('#kalkulacky', 'Kalkulačky'),
     pageHead('Kalkulačka', calc.title, rich(calc.short)),
-    isChapterLocked(calc.chapter) ? premiumGate('Táto kalkulačka') : calc.render(),
+    calc.render(),
   );
 }

@@ -14,27 +14,14 @@ export const USERNAME_MAX = 24;
 export const PASSWORD_MIN = 6;
 export const NAME_MAX = 40;
 
-/** Predplatné Premium uložené pri účte. */
-export interface Subscription {
-  plan: 'premium';
-  /** Kedy bolo predplatné aktivované (ISO dátum). */
-  since: string;
-  /** Mesačná cena pred zľavou v eurách. */
-  price: number;
-  /** Zľava v percentách (100 = zadarmo). */
-  discount: number;
-}
-
 export interface Account {
   id: string;
   username: string;
   name: string;
   created: string;
-  subscription: Subscription | null;
 }
 
-interface StoredAccount extends Omit<Account, 'subscription'> {
-  subscription?: Subscription | null;
+interface StoredAccount extends Account {
   salt: string;
   hash: string;
   iterations: number;
@@ -85,16 +72,8 @@ function writeAccounts(list: StoredAccount[]): boolean {
   }
 }
 
-function isSubscription(x: unknown): x is Subscription {
-  const s = x as Partial<Subscription> | null;
-  return !!s && s.plan === 'premium' && typeof s.since === 'string' && typeof s.price === 'number' && typeof s.discount === 'number';
-}
-
 function publicAccount(a: StoredAccount): Account {
-  return {
-    id: a.id, username: a.username, name: a.name, created: a.created,
-    subscription: isSubscription(a.subscription) ? a.subscription : null,
-  };
+  return { id: a.id, username: a.username, name: a.name, created: a.created };
 }
 
 const sameUsername = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -206,18 +185,6 @@ export async function login(username: string, password: string, remember = true)
   }
   setSession(account.id, remember);
   return { ok: true, account: publicAccount(account) };
-}
-
-/** Nastaví alebo zruší predplatné prihláseného účtu. */
-export function setSubscription(subscription: Subscription | null): boolean {
-  const id = sessionId();
-  const accounts = readAccounts();
-  const account = accounts.find((a) => a.id === id);
-  if (!account) return false;
-  account.subscription = subscription;
-  if (!writeAccounts(accounts)) return false;
-  listeners.forEach((fn) => fn());
-  return true;
 }
 
 export function logout(): void {
