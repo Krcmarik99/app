@@ -1,0 +1,250 @@
+/**
+ * Klient servera účtov (Supabase) cez jeho REST rozhranie – bez ďalších knižníc.
+ * Prihlásenie (GoTrue) vracia prístupový token, ktorým sa potom číta a zapisuje vlastný
+ * riadok v tabuľke `profiles` (pokrok a uložené zapojenie). Token sa pred vypršaním obnoví.
+ */
+import { CLOUD_EMAIL_DOMAIN, CLOUD_KEY, CLOUD_URL } from './config';
+
+export interface CloudUser {
+  id: string;
+  username: string;
+  name: string;
+  created: string;
+}
+
+export interface CloudSession {
+  access: string;
+  refresh: string;
+  /** Kedy prístupový token vyprší (ms od 1970). */
+  expiresAt: number;
+  remember: boolean;
+  user: CloudUser;
+}
+
+export interface CloudProfile {
+  username: string;
+  name: string;
+  progress: unknown;
+  circuit: unknown;
+  updated_at?: string;
+}
+
+export type CloudErrorKind = 'network' | 'credentials' | 'exists' | 'confirm' | 'weak' | 'expired' | 'server';
+
+export class CloudError extends Error {
+  constructor(readonly kind: CloudErrorKind, message: string) {
+    super(message);
+  }
+}
+
+interface Config {
+  url: string;
+  key: string;
+  fetch: typeof fetch;
+}
+
+let config: Config | null = typeof fetch === 'function'
+  ? { url: CLOUD_URL, key: CLOUD_KEY, fetch: (...args) => fetch(...args) }
+  : null;
+
+/** Nastaví server (v testoch náhradný), alebo ho vypne (`null`) – vtedy sa používajú len účty v prehliadači. */
+export function configureCloud(next: { url: string; key: string; fetch?: typeof fetch } | null): void {
+  config = next ? { url: next.url, key: next.key, fetch: next.fetch ?? ((...args) => fetch(...args)) } : null;
+}
+
+export const cloudEnabled = (): boolean => !!config;
+
+export const emailOf = (username: string) => `${username.trim().toLowerCase()}@${CLOUD_EMAIL_DOMAIN}`;
+
+function errorFrom(status: number, body: Record<string, unknown> | null): CloudError {
+  const code = String(body?.error_code ?? body?.code ?? body?.error ?? '');
+  const msg = String(body?.msg ?? body?.message ?? body?.error_description ?? '');
+  if (code === 'invalid_credentials' || code === 'invalid_grant' || /invalid login credentials/i.test(msg)) {
+    return new CloudError('credentials', 'Nesprávne používateľské meno alebo heslo.');
+  }
+  if (code === 'refresh_token_not_found' || code === 'refresh_token_already_used' || /refresh token/i.test(msg)) {
+    return new CloudError('credentials', 'Prihlásenie vypršalo. Prihlás sa znova.');
+  }
+  if (code === 'user_already_exists' || code === 'email_exists' || code === '23505' || /already (registered|exists)/i.test(msg)) {
+    return new CloudError('exists', 'Toto používateľské meno už niekto používa. Vyber si iné.');
+  }
+  if (code === 'email_not_confirmed') {
+    return new CloudError('confirm', 'Účet čaká na potvrdenie e-mailom. V nastaveniach Supabase treba vypnúť „Confirm email“.');
+  }
+  if (code === 'weak_password') return new CloudError('weak', 'Heslo je príliš slabé. Použi dlhšie heslo.');
+  if (status === 401 || code === 'PGRST301' || code === 'bad_jwt') return new CloudError('expired', 'Prihlásenie vypršalo.');
+  if (status === 429 || /rate limit/i.test(msg)) return new CloudError('server', 'Priveľa pokusov za krátky čas. Skús to o chvíľu.');
+  return new CloudError('server', `Server účtov odpovedal chybou${msg ? `: ${msg}` : ` (${status})`}.`);
+}
+
+async function call(path: string, init: RequestInit & { token?: string } = {}): Promise<unknown> {
+  if (!config) throw new CloudError('network', 'Server účtov nie je nastavený.');
+  const { token, headers, ...rest } = init;
+  let res: Response;
+  try {
+    res = await config.fetch(config.url + path, {
+      ...rest,
+      headers: {
+        apikey: config.key,
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(headers as Record<string, string> | undefined),
+      },
+    });
+  } catch {
+    throw new CloudError('network', 'Server účtov nie je dostupný.');
+  }
+  const text = await res.text().catch(() => '');
+  let body: unknown = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = null;
+  }
+  if (!res.ok) throw errorFrom(res.status, body as Record<string, unknown> | null);
+  return body;
+}
+
+interface AuthBody {
+  access_token?: string;
+  refresh_token?: string;
+  expires_at?: number;
+  expires_in?: number;
+  user?: { id: string; email?: string; created_at?: string; user_metadata?: Record<string, unknown> };
+}
+
+function sessionFrom(raw: unknown, remember: boolean, previous?: CloudUser): CloudSession {
+  const body = raw as AuthBody | null;
+  if (!body?.access_token || !body.refresh_token || !body.user) {
+    throw new CloudError('confirm', 'Registrácia čaká na potvrdenie e-mailom. V nastaveniach Supabase treba vypnúť „Confirm email“.');
+  }
+  const meta = body.user.user_metadata ?? {};
+  const username = typeof meta.username === 'string' ? meta.username : previous?.username ?? (body.user.email ?? '').split('@')[0];
+  return {
+    access: body.access_token,
+    refresh: body.refresh_token,
+    expiresAt: body.expires_at ? body.expires_at * 1000 : Date.now() + (body.expires_in ?? 3600) * 1000,
+    remember,
+    user: {
+      id: body.user.id,
+      username,
+      name: typeof meta.name === 'string' && meta.name ? meta.name : previous?.name ?? username,
+      created: body.user.created_at ?? previous?.created ?? new Date().toISOString(),
+    },
+  };
+}
+
+export async function cloudSignUp(username: string, password: string, name: string, remember: boolean): Promise<CloudSession> {
+  const body = await call('/auth/v1/signup', {
+    method: 'POST',
+    body: JSON.stringify({ email: emailOf(username), password, data: { username, name } }),
+  });
+  return sessionFrom(body, remember);
+}
+
+export async function cloudSignIn(username: string, password: string, remember: boolean): Promise<CloudSession> {
+  const body = await call('/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    body: JSON.stringify({ email: emailOf(username), password }),
+  });
+  return sessionFrom(body, remember);
+}
+
+async function cloudRefresh(s: CloudSession): Promise<CloudSession> {
+  const body = await call('/auth/v1/token?grant_type=refresh_token', {
+    method: 'POST',
+    body: JSON.stringify({ refresh_token: s.refresh }),
+  });
+  return sessionFrom(body, s.remember, s.user);
+}
+
+export async function cloudSignOut(s: CloudSession): Promise<void> {
+  try {
+    await call('/auth/v1/logout', { method: 'POST', token: s.access });
+  } catch {
+    // Odhlásenie na serveri je len upratovanie – v prehliadači je používateľ odhlásený tak či tak.
+  }
+}
+
+// ------------------------------------------------------------------ uloženie prihlásenia
+
+const SESSION_KEY = 'elektrolab:cloud-session';
+
+function isSession(x: unknown): x is CloudSession {
+  const s = x as Partial<CloudSession> | null;
+  return !!s && typeof s.access === 'string' && typeof s.refresh === 'string' && typeof s.expiresAt === 'number'
+    && !!s.user && typeof s.user.id === 'string' && typeof s.user.username === 'string';
+}
+
+export function loadCloudSession(): CloudSession | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY) ?? localStorage.getItem(SESSION_KEY);
+    const s: unknown = raw ? JSON.parse(raw) : null;
+    return isSession(s) ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+export function storeCloudSession(s: CloudSession | null): void {
+  try {
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    if (s) (s.remember ? localStorage : sessionStorage).setItem(SESSION_KEY, JSON.stringify(s));
+  } catch {
+    // Bez úložiska prihlásenie vydrží len do obnovenia stránky.
+  }
+}
+
+/**
+ * Zavolá `fn` s platným prístupovým tokenom; pred vypršaním (alebo po odmietnutí) ho obnoví.
+ * Bez `explicit` použije uložené prihlásenie (a obnovený token uloží).
+ */
+async function withToken<T>(fn: (token: string, user: CloudUser) => Promise<T>, explicit?: CloudSession): Promise<T> {
+  let s = explicit ?? loadCloudSession();
+  if (!s) throw new CloudError('credentials', 'Nie si prihlásený.');
+  const keep = (next: CloudSession) => {
+    const stored = loadCloudSession();
+    if (stored && stored.user.id === next.user.id) storeCloudSession(next);
+    s = next;
+  };
+  if (s.expiresAt - Date.now() < 60_000) keep(await cloudRefresh(s));
+  try {
+    return await fn(s.access, s.user);
+  } catch (e) {
+    if (!(e instanceof CloudError) || e.kind !== 'expired') throw e;
+    keep(await cloudRefresh(s));
+    return fn(s.access, s.user);
+  }
+}
+
+// ------------------------------------------------------------------ profil (pokrok a zapojenie)
+
+export async function fetchProfile(session?: CloudSession): Promise<CloudProfile | null> {
+  return withToken(async (token, user) => {
+    const rows = await call(`/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=username,name,progress,circuit,updated_at`, { token });
+    return Array.isArray(rows) && rows.length ? (rows[0] as CloudProfile) : null;
+  }, session);
+}
+
+/** Zapíše (alebo vytvorí) vlastný profil. Zapisujú sa len zadané stĺpce. */
+export async function saveProfile(
+  fields: { progress?: unknown; circuit?: unknown },
+  opts: { keepalive?: boolean; session?: CloudSession } = {},
+): Promise<void> {
+  const keepalive = opts.keepalive ?? false;
+  await withToken(async (token, user) => {
+    await call('/rest/v1/profiles', {
+      method: 'POST',
+      token,
+      keepalive,
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ id: user.id, username: user.username, name: user.name, ...fields, updated_at: new Date().toISOString() }),
+    });
+  }, opts.session);
+}
+
+/** Natrvalo zmaže prihlásený účet (funkcia `delete_my_account` v databáze). */
+export async function deleteCloudAccount(token: string): Promise<void> {
+  await call('/rest/v1/rpc/delete_my_account', { method: 'POST', token, body: '{}' });
+}

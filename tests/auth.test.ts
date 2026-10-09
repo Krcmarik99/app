@@ -2,6 +2,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { currentAccount, deleteAccount, login, logout, register, validateUsername, type RegisterInput } from '../src/lib/auth';
 import { getProgress, hasGuestProgress, setLessonDone } from '../src/lib/progress';
+import { configureCloud } from '../src/lib/cloud';
+
+// Tieto testy overujú účty uložené v prehliadači – bez servera.
+configureCloud(null);
 
 const input = (over: Partial<RegisterInput> = {}): RegisterInput => ({
   name: 'Ján Novák', username: 'jano', password: 'ohm1234', password2: 'ohm1234', keepProgress: false, remember: true, ...over,

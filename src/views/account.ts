@@ -7,7 +7,9 @@ import {
   type Account, type AuthField, type AuthResult,
 } from '../lib/auth';
 import { h, type Attrs, type Child } from '../lib/dom';
+import { cloudEnabled } from '../lib/cloud';
 import { hasGuestProgress } from '../lib/progress';
+import { onSyncChange, syncStatus } from '../lib/sync';
 import { navigate } from '../router';
 import { icon } from '../ui/icons';
 import { avatar, pageHead } from './common';
@@ -156,8 +158,15 @@ function authPage(mode: 'login' | 'register'): HTMLElement {
       ),
       h('aside', { class: 'note' },
         h('p', { class: 'note-label' }, 'Kde sa účet ukladá'),
-        h('p', null, 'Účty aj pokrok sa ukladajú len v tomto prehliadači. Hodí sa to, keď sa na jednom počítači učí viac ľudí – každý má po prihlásení svoj vlastný pokrok.'),
-        h('p', null, 'Na inom zariadení alebo v inom prehliadači si účet vytvor znova. Heslo sa neukladá v čitateľnej podobe, len jeho zašifrovaný odtlačok.'),
+        ...(cloudEnabled()
+          ? [
+            h('p', null, 'Účet sa ukladá online. Prihlásiš sa ním na hocijakom zariadení a pokrok v lekciách, cvičeniach, kartičkách aj zapojenia z laboratória sa synchronizujú.'),
+            h('p', null, 'Ak server účtov práve nie je dostupný, účet sa vytvorí v tomto prehliadači a na server sa prenesie pri najbližšom prihlásení. Heslo si zapamätaj – nedá sa obnoviť.'),
+          ]
+          : [
+            h('p', null, 'Účty aj pokrok sa ukladajú len v tomto prehliadači. Hodí sa to, keď sa na jednom počítači učí viac ľudí – každý má po prihlásení svoj vlastný pokrok.'),
+            h('p', null, 'Na inom zariadení alebo v inom prehliadači si účet vytvor znova. Heslo sa neukladá v čitateľnej podobe, len jeho zašifrovaný odtlačok.'),
+          ]),
       ),
     ),
   );
@@ -177,6 +186,38 @@ function deleteControl(): HTMLElement {
   return h('details', { class: 'danger-zone' }, h('summary', null, 'Zmazať účet'), form);
 }
 
+/** Kde je účet uložený a ako prebieha synchronizácia. */
+function storageLine(account: Account): HTMLElement {
+  const line = h('p', { class: 'profile-storage' });
+  if (!account.cloud) {
+    line.textContent = 'Účet je uložený len v tomto prehliadači.';
+    line.classList.add('is-local');
+    return line;
+  }
+  const texts = {
+    local: 'Online účet.',
+    syncing: 'Online účet · synchronizujem…',
+    synced: 'Online účet – prihlásiš sa na každom zariadení. Pokrok je uložený.',
+    offline: 'Online účet · server nie je dostupný, zmeny sa odošlú neskôr.',
+    error: 'Online účet · synchronizácia zlyhala.',
+  } as const;
+  const update = () => {
+    const st = syncStatus();
+    line.textContent = st.state === 'error' && st.message ? `${texts.error} ${st.message}` : texts[st.state];
+    line.classList.toggle('is-problem', st.state === 'offline' || st.state === 'error');
+  };
+  const off = onSyncChange(() => {
+    if (!line.isConnected && line.dataset.mounted) {
+      off();
+      return;
+    }
+    line.dataset.mounted = '1';
+    update();
+  });
+  update();
+  return line;
+}
+
 function profilePage(account: Account): HTMLElement {
   const created = new Date(account.created);
   return h('div', { class: 'view view-account' },
@@ -187,6 +228,7 @@ function profilePage(account: Account): HTMLElement {
         h('p', { class: 'profile-name' }, account.name),
         h('p', { class: 'profile-username' }, `@${account.username}`),
         Number.isNaN(created.getTime()) ? null : h('p', { class: 'muted' }, `Účet vytvorený ${dateFormat.format(created)}`),
+        storageLine(account),
       ),
       h('button', { type: 'button', class: 'btn btn-secondary', onClick: () => { logout(); navigate('#domov'); } },
         icon('logout', 18), 'Odhlásiť sa'),

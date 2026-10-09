@@ -4,6 +4,10 @@ import { DECKS } from '../src/content/flashcards';
 import { LESSONS } from '../src/content/lessons';
 import { currentAccount, logout, register } from '../src/lib/auth';
 import { formula, rich } from '../src/lib/formula';
+import { configureCloud } from '../src/lib/cloud';
+
+// Tieto testy overujú účty uložené v prehliadači – bez servera.
+configureCloud(null);
 import { accountView } from '../src/views/account';
 import { labView } from '../src/views/lab';
 import { DEMO_FOR, EXAMPLES, exampleById } from '../src/lab/examples';

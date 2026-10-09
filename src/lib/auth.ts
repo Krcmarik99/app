@@ -1,9 +1,14 @@
 /**
- * Účty študentov. Ukladajú sa v tomto prehliadači (localStorage), takže sa na jednom počítači
- * môže učiť viac ľudí a každý má vlastný pokrok. Heslo sa neukladá – len jeho odtlačok
- * PBKDF2-SHA-256 s náhodnou soľou.
+ * Účty študentov. Hlavne online (Supabase) – prihlásiš sa na každom zariadení a pokrok sa
+ * synchronizuje. Keď server nie je dostupný, účet sa vytvorí v tomto prehliadači (localStorage);
+ * heslo sa tu neukladá – len jeho odtlačok PBKDF2-SHA-256 s náhodnou soľou. Takýto účet sa
+ * pri najbližšom prihlásení s dostupným serverom prenesie na server.
  */
-import { adoptGuestProgress, deleteProgressOf, setProgressOwner } from './progress';
+import {
+  CloudError, cloudEnabled, cloudSignIn, cloudSignOut, cloudSignUp, deleteCloudAccount,
+  loadCloudSession, storeCloudSession, type CloudSession,
+} from './cloud';
+import { adoptGuestProgress, deleteProgressOf, moveProgress, setProgressOwner } from './progress';
 
 const ACCOUNTS_KEY = 'elektrolab:accounts';
 const SESSION_KEY = 'elektrolab:session';
@@ -19,9 +24,11 @@ export interface Account {
   username: string;
   name: string;
   created: string;
+  /** Účet je na serveri – prihlási sa ním na každom zariadení. */
+  cloud: boolean;
 }
 
-interface StoredAccount extends Account {
+interface StoredAccount extends Omit<Account, 'cloud'> {
   salt: string;
   hash: string;
   iterations: number;
@@ -46,6 +53,31 @@ const listeners = new Set<() => void>();
 export function onAuthChange(fn: () => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
+}
+
+const notify = () => listeners.forEach((fn) => fn());
+
+type CloudHook = (s: CloudSession) => Promise<void>;
+let afterCloudLogin: CloudHook | null = null;
+let beforeCloudLogout: CloudHook | null = null;
+
+/** Synchronizácia sa sem pripojí: po prihlásení stiahne údaje, pred odhlásením odošle neuložené. */
+export function setCloudHooks(hooks: { afterLogin: CloudHook; beforeLogout: CloudHook } | null): void {
+  afterCloudLogin = hooks?.afterLogin ?? null;
+  beforeCloudLogout = hooks?.beforeLogout ?? null;
+}
+
+/** Uložené zapojenie z laboratória patrí k účtu – pri prenose či zmazaní účtu ide s ním. */
+const labKey = (id: string) => `elektrolab:lab:${id}`;
+
+function moveLab(fromId: string, toId: string): void {
+  try {
+    const raw = localStorage.getItem(labKey(fromId));
+    if (raw && !localStorage.getItem(labKey(toId))) localStorage.setItem(labKey(toId), raw);
+    localStorage.removeItem(labKey(fromId));
+  } catch {
+    // Bez úložiska nie je čo presúvať.
+  }
 }
 
 function isStored(x: unknown): x is StoredAccount {
@@ -73,7 +105,11 @@ function writeAccounts(list: StoredAccount[]): boolean {
 }
 
 function publicAccount(a: StoredAccount): Account {
-  return { id: a.id, username: a.username, name: a.name, created: a.created };
+  return { id: a.id, username: a.username, name: a.name, created: a.created, cloud: false };
+}
+
+function cloudAccount(s: CloudSession): Account {
+  return { id: s.user.id, username: s.user.username, name: s.user.name, created: s.user.created, cloud: true };
 }
 
 const sameUsername = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -86,19 +122,51 @@ function sessionId(): string | null {
   }
 }
 
-function setSession(id: string | null, remember = true): void {
+function clearLocalSession(): void {
   try {
     sessionStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // Úložisko nie je dostupné.
+  }
+}
+
+function setSession(id: string | null, remember = true): void {
+  clearLocalSession();
+  storeCloudSession(null);
+  try {
     if (id) (remember ? localStorage : sessionStorage).setItem(SESSION_KEY, id);
   } catch {
     // Bez úložiska prihlásenie vydrží len do obnovenia stránky.
   }
   setProgressOwner(id);
-  listeners.forEach((fn) => fn());
+  notify();
+}
+
+/** Prihlásenie online účtom: uloží token, stiahne pokrok zo servera a až potom ohlási zmenu. */
+async function startCloudSession(s: CloudSession): Promise<Account> {
+  clearLocalSession();
+  storeCloudSession(s);
+  setProgressOwner(s.user.id);
+  try {
+    await afterCloudLogin?.(s);
+  } catch {
+    // Synchronizácia sa zopakuje neskôr – prihlásenie platí aj bez nej.
+  }
+  notify();
+  return cloudAccount(s);
+}
+
+/** Chyba servera ako výsledok formulára (pri políčku, ktorého sa týka). */
+function cloudFailure(e: CloudError): AuthResult {
+  if (e.kind === 'exists') return { ok: false, error: e.message, field: 'username' };
+  if (e.kind === 'weak' || e.kind === 'credentials') return { ok: false, error: e.message, field: 'password' };
+  return { ok: false, error: e.message };
 }
 
 export function currentAccount(): Account | null {
+  const cloud = loadCloudSession();
+  if (cloud) return cloudAccount(cloud);
   const id = sessionId();
   const found = id ? readAccounts().find((a) => a.id === id) : undefined;
   return found ? publicAccount(found) : null;
@@ -148,8 +216,20 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     return { ok: false, error: `Heslo musí mať aspoň ${PASSWORD_MIN} znakov.`, field: 'password' };
   }
   if (input.password !== input.password2) return { ok: false, error: 'Heslá sa nezhodujú.', field: 'password2' };
-  if (!cryptoReady()) return { ok: false, error: NO_CRYPTO };
 
+  if (cloudEnabled()) {
+    try {
+      const s = await cloudSignUp(username, input.password, name, input.remember);
+      if (input.keepProgress) adoptGuestProgress(s.user.id);
+      return { ok: true, account: await startCloudSession(s) };
+    } catch (e) {
+      if (!(e instanceof CloudError)) throw e;
+      if (e.kind !== 'network') return cloudFailure(e);
+      // Server nie je dostupný – účet vytvoríme aspoň v tomto prehliadači.
+    }
+  }
+
+  if (!cryptoReady()) return { ok: false, error: NO_CRYPTO };
   const accounts = readAccounts();
   if (accounts.some((a) => sameUsername(a.username, username))) {
     return { ok: false, error: 'Toto používateľské meno už niekto používa. Vyber si iné.', field: 'username' };
@@ -175,8 +255,45 @@ async function verify(account: StoredAccount, password: string): Promise<boolean
   return (await derive(password, fromHex(account.salt), account.iterations)) === account.hash;
 }
 
+/**
+ * Účet z prehliadača, ktorý na serveri ešte nie je: po overení hesla ho vytvorí na serveri
+ * s rovnakým menom a heslom a prenesie doň pokrok aj uložené zapojenie.
+ */
+async function migrateLocal(username: string, password: string, remember: boolean): Promise<AuthResult | null> {
+  const local = readAccounts().find((a) => sameUsername(a.username, username.trim()));
+  if (!local || !cryptoReady() || !(await verify(local, password))) return null;
+  let s: CloudSession;
+  try {
+    s = await cloudSignUp(local.username, password, local.name, remember);
+  } catch (e) {
+    if (e instanceof CloudError && e.kind === 'exists') {
+      return { ok: false, error: 'Toto meno už v online účtoch používa niekto iný. Prihlás sa jeho heslom alebo si vytvor nový účet.', field: 'username' };
+    }
+    if (e instanceof CloudError && e.kind === 'network') return null;
+    throw e;
+  }
+  moveProgress(local.id, s.user.id);
+  moveLab(local.id, s.user.id);
+  writeAccounts(readAccounts().filter((a) => a.id !== local.id));
+  return { ok: true, account: await startCloudSession(s) };
+}
+
 export async function login(username: string, password: string, remember = true): Promise<AuthResult> {
   if (!username.trim() || !password) return { ok: false, error: 'Vyplň používateľské meno aj heslo.' };
+  if (cloudEnabled()) {
+    try {
+      const s = await cloudSignIn(username, password, remember);
+      return { ok: true, account: await startCloudSession(s) };
+    } catch (e) {
+      if (!(e instanceof CloudError)) throw e;
+      if (e.kind === 'credentials') {
+        const migrated = await migrateLocal(username, password, remember);
+        return migrated ?? { ok: false, error: e.message, field: 'password' };
+      }
+      if (e.kind !== 'network') return cloudFailure(e);
+      // Server nie je dostupný – skúsime účet uložený v tomto prehliadači.
+    }
+  }
   if (!cryptoReady()) return { ok: false, error: NO_CRYPTO };
   const account = readAccounts().find((a) => sameUsername(a.username, username.trim()));
   // Rovnaká správa pre neznáme meno aj zlé heslo – neprezradí, či účet existuje.
@@ -188,11 +305,41 @@ export async function login(username: string, password: string, remember = true)
 }
 
 export function logout(): void {
+  const cloud = loadCloudSession();
   setSession(null);
+  if (cloud) {
+    void (async () => {
+      try {
+        await beforeCloudLogout?.(cloud);
+      } finally {
+        await cloudSignOut(cloud);
+      }
+    })();
+  }
 }
 
 /** Zmaže prihlásený účet aj s jeho pokrokom. Na potvrdenie treba zadať heslo. */
 export async function deleteAccount(password: string): Promise<AuthResult> {
+  const cloud = loadCloudSession();
+  if (cloud) {
+    try {
+      // Heslo overí nové prihlásenie; jeho token zároveň oprávňuje zmazanie.
+      const fresh = await cloudSignIn(cloud.user.username, password, cloud.remember);
+      await deleteCloudAccount(fresh.access);
+    } catch (e) {
+      if (!(e instanceof CloudError)) throw e;
+      if (e.kind === 'credentials') return { ok: false, error: 'Nesprávne heslo.', field: 'password' };
+      return { ok: false, error: e.kind === 'network' ? 'Server účtov nie je dostupný – účet sa teraz nedá zmazať.' : e.message };
+    }
+    deleteProgressOf(cloud.user.id);
+    try {
+      localStorage.removeItem(labKey(cloud.user.id));
+    } catch {
+      // Úložisko nie je dostupné.
+    }
+    setSession(null);
+    return { ok: true, account: cloudAccount(cloud) };
+  }
   const id = sessionId();
   const accounts = readAccounts();
   const account = accounts.find((a) => a.id === id);

@@ -36,7 +36,8 @@ function strings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 }
 
-function normalize(raw: unknown): Progress {
+/** Pokrok načítaný zvonka (zo servera) – nesprávne položky sa zahodia. */
+export function normalize(raw: unknown): Progress {
   const p = empty();
   if (!raw || typeof raw !== 'object') return p;
   const r = raw as Record<string, unknown>;
@@ -106,6 +107,57 @@ export function adoptGuestProgress(userId: string): void {
     return;
   }
   if (key === GUEST_KEY || key === userKey(userId)) cache = null;
+}
+
+/** Pokrok konkrétneho účtu (aj keď práve nie je prihlásený). */
+export function progressOf(userId: string): Progress {
+  return key === userKey(userId) ? getProgress() : load(userKey(userId));
+}
+
+/** Nahradí pokrok účtu, napríklad po zlúčení s pokrokom zo servera. */
+export function replaceProgressOf(userId: string, p: Progress): void {
+  try {
+    localStorage.setItem(userKey(userId), JSON.stringify(p));
+  } catch {
+    // Bez úložiska ostane pokrok len v pamäti.
+  }
+  if (key === userKey(userId)) cache = p;
+}
+
+/** Presunie pokrok z jedného účtu na druhý (pri prenose účtu na server). */
+export function moveProgress(fromId: string, toId: string): void {
+  replaceProgressOf(toId, mergeProgress(progressOf(toId), progressOf(fromId)));
+  deleteProgressOf(fromId);
+}
+
+/**
+ * Zlúči pokrok z dvoch zariadení: zjednotí preštudované lekcie, kartičky a dni učenia,
+ * pri úspešnosti v téme ponechá záznam s viac odpoveďami a spojí históriu cvičení.
+ */
+export function mergeProgress(a: Progress, b: Progress): Progress {
+  const union = (x: string[], y: string[]) => [...new Set([...x, ...y])];
+  const stats: Record<string, TopicStat> = { ...b.stats };
+  for (const [k, st] of Object.entries(a.stats)) {
+    if (!stats[k] || st.answered >= stats[k].answered) stats[k] = st;
+  }
+  const seen = new Set<string>();
+  const sessions = [...b.sessions, ...a.sessions]
+    .filter((s) => {
+      const id = JSON.stringify(s);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .sort((x, y) => String(x.date ?? '').localeCompare(String(y.date ?? '')))
+    .slice(-50);
+  return {
+    lessonsDone: union(a.lessonsDone, b.lessonsDone),
+    lastLesson: a.lastLesson ?? b.lastLesson,
+    stats,
+    sessions,
+    cardsKnown: union(a.cardsKnown, b.cardsKnown),
+    activeDays: union(a.activeDays, b.activeDays).sort().slice(-120),
+  };
 }
 
 export function deleteProgressOf(userId: string): void {

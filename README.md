@@ -22,10 +22,11 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
   základné jednotky SI a predpony.
 - **Pokrok** – preštudované lekcie, úspešnosť podľa tém, séria dní učenia. Ukladá sa iba
   v prehliadači (localStorage).
-- **Registrácia a prihlásenie** – každý, kto sa učí v tom istom prehliadači, môže mať vlastný účet
-  a vlastný pokrok. Pri registrácii sa dá doterajší pokrok preniesť do nového účtu. Účty sa ukladajú
-  len v danom prehliadači (žiadny server); heslo sa neukladá, len jeho odtlačok PBKDF2-SHA-256
-  s náhodnou soľou. Na inom zariadení treba účet vytvoriť znova.
+- **Registrácia a prihlásenie** – online účty (Supabase): prihlásiš sa na hocijakom zariadení a pokrok
+  v lekciách, cvičeniach a kartičkách aj zapojenia z laboratória sa synchronizujú (pri prihlásení sa
+  zlúčia s tým, čo je v prehliadači). Prihlasuje sa používateľským menom a heslom. Keď server nie je
+  dostupný, účet sa vytvorí v prehliadači (heslo len ako odtlačok PBKDF2-SHA-256) a na server sa
+  prenesie pri najbližšom prihlásení.
 - **Zapájanie obvodov** (laboratórium) – súčiastky (rezistor, žiarovka, kondenzátor, elektrolytický kondenzátor,
   cievka, dióda, LED, tranzistor NPN/PNP, MOSFET N/P), zdroje (DC, AC), spínač a meracie prístroje
   (ampérmeter, voltmeter, multimeter, wattmeter, dvojkanálový osciloskop) sa vkladajú do mriežky
@@ -42,6 +43,16 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
 Hodnoty v kalkulačkách môžeš písať s predponami tak, ako sú na schémach: `4k7`, `2,2µ`, `15m`, `1R5`.
 Schematické značky sú podľa STN EN 60617 (rezistor ako obdĺžnik), veličiny sa sádzajú kurzívou
 a jednotky vzpriamene.
+
+## Online účty (Supabase)
+
+Adresa projektu a *publishable* kľúč sú v `src/lib/config.ts` (sú určené na zverejnenie; tajný kľúč
+do aplikácie nepatrí). Nastavenie projektu:
+
+1. **SQL Editor** – spusti `supabase/schema.sql` (tabuľka `profiles` s pravidlami, aby každý videl len
+   svoj profil, a funkcia na zmazanie vlastného účtu).
+2. **Authentication → Sign In / Providers → Email** – vypni *Confirm email*. Aplikácia prihlasuje
+   menom; e-mail sa z neho len zloží (`meno@ucty.elektrolab.sk`) a žiadne e-maily sa neposielajú.
 
 ## Spustenie
 

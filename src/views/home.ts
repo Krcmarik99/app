@@ -46,7 +46,7 @@ export function statsSection(): HTMLElement {
     h('div', { class: 'section-head' },
       h('h2', { id: 'progress-title' }, 'Tvoj pokrok'),
       account
-        ? h('p', { class: 'muted' }, `Účet ${account.name} · ukladá sa v tomto prehliadači.`)
+        ? h('p', { class: 'muted' }, `Účet ${account.name} · ${account.cloud ? 'ukladá sa online' : 'ukladá sa v tomto prehliadači'}.`)
         : h('p', { class: 'muted' }, 'Ukladá sa iba v tomto prehliadači. ',
           h('a', { href: '#prihlasenie' }, 'Prihlás sa'), ' alebo si ', h('a', { href: '#registracia' }, 'vytvor účet'),
           ', aby mal každý vlastný pokrok.'),

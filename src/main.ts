@@ -1,6 +1,7 @@
 import './styles.css';
 import { lessonById } from './content/lessons';
 import { currentAccount, initAuth, onAuthChange } from './lib/auth';
+import { initSync, onPulled } from './lib/sync';
 import { h } from './lib/dom';
 import { sectionOf, startRouter, type Route, type Section } from './router';
 import { icon, logo, type IconName } from './ui/icons';
@@ -77,6 +78,7 @@ function boot(): void {
   const app = document.getElementById('app');
   if (!app) return;
   initAuth();
+  initSync();
   const top = navLinks('top-nav-list');
   const bottom = navLinks('tab-bar-list');
   const main = h('main', { id: 'main', class: 'main', tabindex: '-1' });
@@ -109,7 +111,9 @@ function boot(): void {
   );
 
   let first = true;
-  startRouter((route) => {
+  let lastRoute: Route | null = null;
+  const render = (route: Route) => {
+    lastRoute = route;
     section = sectionOf(route);
     renderAccount();
     for (const nav of [top, bottom]) {
@@ -125,6 +129,15 @@ function boot(): void {
       main.focus({ preventScroll: true });
     }
     first = false;
+  };
+  startRouter(render);
+  // Pokrok stiahnutý zo servera po otvorení stránky: prekresliť (laboratórium nechať tak, aby sa nestratila rozrobená práca).
+  onPulled(() => {
+    if (lastRoute && lastRoute.name !== 'lab') {
+      const y = window.scrollY;
+      render(lastRoute);
+      window.scrollTo({ top: y });
+    }
   });
 }
 

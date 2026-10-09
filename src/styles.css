@@ -3000,6 +3000,20 @@ input[type='checkbox'] {
   overflow-wrap: anywhere;
 }
 
+.profile-storage {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--good);
+}
+
+.profile-storage.is-local {
+  color: var(--ink-2);
+}
+
+.profile-storage.is-problem {
+  color: var(--warn);
+}
+
 .profile-username {
   font-family: var(--font-mono);
   color: var(--ink-2);

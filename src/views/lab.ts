@@ -3,6 +3,7 @@
  * a obvod sa hneď simuluje. Merače ukazujú hodnoty priamo v schéme, osciloskop pod ňou.
  */
 import { currentAccount } from '../lib/auth';
+import { pushCircuit } from '../lib/sync';
 import { frag, h, s } from '../lib/dom';
 import { formatSI, parseQuantity } from '../lib/units';
 import { Simulator, glowLevel, meterReading, type PartState } from '../lab/engine';
@@ -71,6 +72,8 @@ function saveCircuit(c: Circuit): void {
   } catch {
     // Bez úložiska sa obvod neuloží, editor funguje ďalej.
   }
+  // Pri online účte sa zapojenie uloží aj na server – otvoríš ho na inom zariadení.
+  pushCircuit(c);
 }
 
 const same = (a: Pt, b: Pt) => a[0] === b[0] && a[1] === b[1];
