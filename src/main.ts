@@ -1,12 +1,15 @@
 import './styles.css';
 import { lessonById } from './content/lessons';
+import { currentAccount, initAuth, onAuthChange } from './lib/auth';
 import { h } from './lib/dom';
 import { sectionOf, startRouter, type Route, type Section } from './router';
 import { icon, logo, type IconName } from './ui/icons';
+import { accountView } from './views/account';
 import { calculatorView, calculatorsView, CALCULATORS } from './views/calculators';
 import { flashcardsView } from './views/flashcards';
 import { homeView } from './views/home';
 import { lessonView, lessonsView } from './views/lessons';
+import { avatar } from './views/common';
 import { practiceView } from './views/practice';
 
 const NAV: { section: Section; href: string; label: string; icon: IconName }[] = [
@@ -26,6 +29,7 @@ function view(route: Route): HTMLElement {
     case 'calcs': return calculatorsView();
     case 'calc': return calculatorView(route.id);
     case 'cards': return flashcardsView(route.deck);
+    case 'account': return accountView(route.mode);
   }
 }
 
@@ -39,7 +43,20 @@ function pageTitle(route: Route): string {
     case 'calcs': return `Kalkulačky · ${base}`;
     case 'calc': return `${CALCULATORS.find((c) => c.id === route.id)?.title ?? 'Kalkulačka'} · ${base}`;
     case 'cards': return `Kartičky · ${base}`;
+    case 'account':
+      if (currentAccount()) return `Účet · ${base}`;
+      return `${route.mode === 'register' ? 'Registrácia' : 'Prihlásenie'} · ${base}`;
   }
+}
+
+/** Tlačidlo účtu v hlavičke: „Prihlásiť sa“ alebo avatar s menom prihláseného. */
+function accountLink(): HTMLAnchorElement {
+  const account = currentAccount();
+  return account
+    ? h('a', { href: '#ucet', class: 'account-link', title: `Účet: ${account.name}` },
+      avatar(account.name), h('span', { class: 'account-name' }, account.name))
+    : h('a', { href: '#prihlasenie', class: 'account-link is-guest' },
+      icon('user', 18), h('span', { class: 'account-name' }, 'Prihlásiť sa'));
 }
 
 function navLinks(cls: string): { el: HTMLElement; links: Map<Section, HTMLAnchorElement> } {
@@ -55,16 +72,29 @@ function navLinks(cls: string): { el: HTMLElement; links: Map<Section, HTMLAncho
 function boot(): void {
   const app = document.getElementById('app');
   if (!app) return;
+  initAuth();
   const top = navLinks('top-nav-list');
   const bottom = navLinks('tab-bar-list');
   const main = h('main', { id: 'main', class: 'main', tabindex: '-1' });
+  const accountSlot = h('div', { class: 'header-account' });
+  let section: Section = 'home';
+  const renderAccount = () => {
+    const link = accountLink();
+    if (section === 'account') link.setAttribute('aria-current', 'page');
+    accountSlot.replaceChildren(link);
+  };
+  renderAccount();
+  onAuthChange(renderAccount);
 
   app.replaceChildren(
     h('a', { href: '#main', class: 'skip-link', onClick: (e: Event) => { e.preventDefault(); main.focus(); } }, 'Preskočiť na obsah'),
     h('header', { class: 'site-header' },
       h('div', { class: 'wrap header-inner' },
         h('a', { href: '#domov', class: 'brand', 'aria-label': 'ElektroLab – domov' }, logo(17), h('span', { class: 'brand-name' }, 'Elektro', h('b', null, 'Lab'))),
-        h('nav', { class: 'top-nav', 'aria-label': 'Hlavná navigácia' }, top.el),
+        h('div', { class: 'header-end' },
+          h('nav', { class: 'top-nav', 'aria-label': 'Hlavná navigácia' }, top.el),
+          accountSlot,
+        ),
       ),
     ),
     main,
@@ -76,7 +106,8 @@ function boot(): void {
 
   let first = true;
   startRouter((route) => {
-    const section = sectionOf(route);
+    section = sectionOf(route);
+    renderAccount();
     for (const nav of [top, bottom]) {
       nav.links.forEach((a, key) => {
         if (key === section) a.setAttribute('aria-current', 'page');

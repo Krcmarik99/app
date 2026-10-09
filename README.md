@@ -1,7 +1,7 @@
 # ElektroLab
 
 Webová aplikácia na učenie základov elektrotechniky pre stredné školy. Celá je v slovenčine,
-funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server ani prihlásenie.
+funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
 
 ## Čo obsahuje
 
@@ -22,6 +22,12 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server 
   základné jednotky SI a predpony.
 - **Pokrok** – preštudované lekcie, úspešnosť podľa tém, séria dní učenia. Ukladá sa iba
   v prehliadači (localStorage).
+- **Registrácia a prihlásenie** – každý, kto sa učí v tom istom prehliadači, môže mať vlastný účet
+  a vlastný pokrok. Pri registrácii sa dá doterajší pokrok preniesť do nového účtu. Účty sa ukladajú
+  len v danom prehliadači (žiadny server); heslo sa neukladá, len jeho odtlačok PBKDF2-SHA-256
+  s náhodnou soľou. Na inom zariadení treba účet vytvoriť znova.
+- **Interaktívny obvod** na úvodnej stránke – napätie 0 až 500 V a odpor 0 Ω až 5 MΩ posuvníkom
+  alebo zadaním hodnoty, schéma s rezistorom alebo s LED a predradným rezistorom.
 
 Hodnoty v kalkulačkách môžeš písať s predponami tak, ako sú na schémach: `4k7`, `2,2µ`, `15m`, `1R5`.
 Schematické značky sú podľa STN EN 60617 (rezistor ako obdĺžnik), veličiny sa sádzajú kurzívou
@@ -60,9 +66,9 @@ src/
   content/      lekcie, otázky s výberom, kartičky (len dáta)
   content/meas/ kapitola Elektrotechnické merania – každá lekcia s otázkami a generátormi v jednom súbore
   practice/     generátory číselných príkladov a zostavenie cvičenia
-  lib/          výpočty (electro), jednotky a predpony (units), farebný kód, vzorce, pokrok
+  lib/          výpočty (electro), jednotky a predpony (units), farebný kód, vzorce, pokrok, účty (auth)
   ui/           schémy, grafy, karta otázky, interaktívny obvod na úvodnej stránke
-  views/        stránky: domov, lekcie, cvičenie, kalkulačky, kartičky
+  views/        stránky: domov, lekcie, cvičenie, kalkulačky, kartičky, účet
   router.ts     navigácia cez #kotvy (funguje aj na statickom hostingu)
 tests/          testy (Vitest)
 ```

@@ -1,6 +1,11 @@
-/** Pokrok študenta. Ukladá sa len v tomto prehliadači (localStorage). */
+/**
+ * Pokrok študenta. Ukladá sa len v tomto prehliadači (localStorage):
+ * hosť má jeden spoločný záznam, každý prihlásený účet vlastný.
+ */
 
-const KEY = 'elektrolab:v1';
+const GUEST_KEY = 'elektrolab:v1';
+const userKey = (userId: string) => `${GUEST_KEY}:user:${userId}`;
+let key = GUEST_KEY;
 
 export interface TopicStat {
   answered: number;
@@ -58,20 +63,63 @@ function normalize(raw: unknown): Progress {
 let cache: Progress | null = null;
 const listeners = new Set<() => void>();
 
-export function getProgress(): Progress {
-  if (cache) return cache;
+function load(storageKey: string): Progress {
   try {
-    const raw = localStorage.getItem(KEY);
-    cache = raw ? normalize(JSON.parse(raw)) : empty();
+    const raw = localStorage.getItem(storageKey);
+    return raw ? normalize(JSON.parse(raw)) : empty();
   } catch {
-    cache = empty();
+    return empty();
   }
+}
+
+export function getProgress(): Progress {
+  cache ??= load(key);
   return cache;
+}
+
+/** Prepne pokrok na prihláseného používateľa (alebo späť na hosťa pri `null`). */
+export function setProgressOwner(userId: string | null): void {
+  const next = userId ? userKey(userId) : GUEST_KEY;
+  if (next === key) return;
+  key = next;
+  cache = null;
+  listeners.forEach((fn) => fn());
+}
+
+function isEmpty(p: Progress): boolean {
+  return !p.lessonsDone.length && !p.lastLesson && !Object.keys(p.stats).length && !p.sessions.length && !p.cardsKnown.length;
+}
+
+/** Má hosť v tomto prehliadači nejaký pokrok, ktorý sa dá preniesť do nového účtu? */
+export function hasGuestProgress(): boolean {
+  return !isEmpty(load(GUEST_KEY));
+}
+
+/** Presunie pokrok hosťa do účtu (pri registrácii), aby sa nestratil. */
+export function adoptGuestProgress(userId: string): void {
+  try {
+    const raw = localStorage.getItem(GUEST_KEY);
+    if (!raw) return;
+    localStorage.setItem(userKey(userId), raw);
+    localStorage.removeItem(GUEST_KEY);
+  } catch {
+    return;
+  }
+  if (key === GUEST_KEY || key === userKey(userId)) cache = null;
+}
+
+export function deleteProgressOf(userId: string): void {
+  try {
+    localStorage.removeItem(userKey(userId));
+  } catch {
+    // Úložisko nie je dostupné – nie je čo mazať.
+  }
+  if (key === userKey(userId)) cache = null;
 }
 
 function save(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
+    localStorage.setItem(key, JSON.stringify(cache));
   } catch {
     // Úložisko nemusí byť dostupné (súkromné okno) – aplikácia funguje ďalej bez neho.
   }

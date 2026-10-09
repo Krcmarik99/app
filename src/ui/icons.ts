@@ -13,6 +13,8 @@ const PATHS = {
   plus: 'M12 5v14M5 12h14',
   close: 'M6 6l12 12M18 6 6 18',
   bolt: 'M13 3 5 13.5h6L10 21l8-10.5h-6z',
+  user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20.5a7.5 7.5 0 0 1 15 0',
+  logout: 'M14 4.5h5v15h-5M10 8l-4 4 4 4M6 12h10',
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DECKS } from '../src/content/flashcards';
 import { LESSONS } from '../src/content/lessons';
+import { currentAccount, logout, register } from '../src/lib/auth';
 import { formula, rich } from '../src/lib/formula';
+import { accountView } from '../src/views/account';
 import { calculatorView, calculatorsView, CALCULATORS } from '../src/views/calculators';
 import { flashcardsView } from '../src/views/flashcards';
 import { homeView } from '../src/views/home';
@@ -193,5 +195,50 @@ describe('stránky sa vykreslia bez chyby', () => {
       el.querySelector<HTMLButtonElement>('.card-answers .btn-primary')!.click();
     }
     expect(JSON.parse(localStorage.getItem('elektrolab:v1')!).cardsKnown).toHaveLength(DECKS.length);
+  });
+});
+
+describe('účet', () => {
+  beforeEach(() => {
+    logout();
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it('prihlásenie a registrácia cez formulár', async () => {
+    const loginPage = mount(accountView('login'));
+    expect(loginPage.querySelector('h1')?.textContent).toBe('Prihlásenie');
+    expect(loginPage.querySelector<HTMLInputElement>('#login-password')?.type).toBe('password');
+
+    const page = mount(accountView('register'));
+    const fill = (id: string, value: string) => {
+      const input = page.querySelector<HTMLInputElement>(`#${id}`)!;
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+    };
+    const form = page.querySelector('form')!;
+    fill('reg-name', 'Eva');
+    fill('reg-username', 'eva');
+    fill('reg-password', 'tajne1');
+    fill('reg-password2', 'ine');
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    await vi.waitFor(() => expect(page.querySelector('#reg-password2-error')?.textContent).toBe('Heslá sa nezhodujú.'));
+    expect(currentAccount()).toBeNull();
+
+    fill('reg-password2', 'tajne1');
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    await vi.waitFor(() => expect(currentAccount()?.username).toBe('eva'));
+  });
+
+  it('stránka účtu ukáže prihláseného a odhlásenie', async () => {
+    await register({ name: 'Eva Malá', username: 'eva', password: 'tajne1', password2: 'tajne1', keepProgress: false, remember: true });
+    const page = mount(accountView());
+    expect(page.querySelector('.profile-name')?.textContent).toBe('Eva Malá');
+    expect(page.querySelector('.avatar')?.textContent).toBe('EM');
+    expect(mount(homeView()).querySelector('.eyebrow')?.textContent).toBe('Ahoj, Eva');
+
+    const logoutBtn = [...page.querySelectorAll('button')].find((b) => b.textContent?.includes('Odhlásiť'))!;
+    logoutBtn.click();
+    expect(currentAccount()).toBeNull();
   });
 });

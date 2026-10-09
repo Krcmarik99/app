@@ -1,5 +1,6 @@
 import { ALL_CARDS } from '../content/flashcards';
 import { CHAPTERS, LESSONS, lessonById, lessonIndex } from '../content/lessons';
+import { currentAccount } from '../lib/auth';
 import { h } from '../lib/dom';
 import { getProgress, resetProgress, streak, totals } from '../lib/progress';
 import { navigate } from '../router';
@@ -8,8 +9,9 @@ import { icon } from '../ui/icons';
 import { CALCULATORS } from './calculators';
 import { linkButton, meter, plural } from './common';
 
-function statsSection(): HTMLElement {
+export function statsSection(): HTMLElement {
   const p = getProgress();
+  const account = currentAccount();
   const done = p.lessonsDone.filter((id) => lessonById(id)).length;
   const t = totals(p);
   const accuracy = t.answered ? Math.round((t.correct / t.answered) * 100) : null;
@@ -43,7 +45,11 @@ function statsSection(): HTMLElement {
   return h('section', { class: 'section', 'aria-labelledby': 'progress-title' },
     h('div', { class: 'section-head' },
       h('h2', { id: 'progress-title' }, 'Tvoj pokrok'),
-      h('p', { class: 'muted' }, 'Ukladá sa iba v tomto prehliadači.'),
+      account
+        ? h('p', { class: 'muted' }, `Účet ${account.name} · ukladá sa v tomto prehliadači.`)
+        : h('p', { class: 'muted' }, 'Ukladá sa iba v tomto prehliadači. ',
+          h('a', { href: '#prihlasenie' }, 'Prihlás sa'), ' alebo si ', h('a', { href: '#registracia' }, 'vytvor účet'),
+          ', aby mal každý vlastný pokrok.'),
     ),
     h('div', { class: 'stats' },
       stat('Lekcie', `${done} / ${LESSONS.length}`, done === LESSONS.length ? 'Celý kurz máš prejdený.' : 'preštudovaných lekcií', meter(done, LESSONS.length, 'Preštudované lekcie')),
@@ -83,10 +89,11 @@ export function homeView(): HTMLElement {
   const last = p.lastLesson ? lessonById(p.lastLesson) : undefined;
   const target = last && !p.lessonsDone.includes(last.id) ? last : next ?? LESSONS[0];
   const started = p.lessonsDone.length > 0 || !!p.lastLesson;
+  const account = currentAccount();
 
   const hero = h('section', { class: 'hero' },
     h('div', { class: 'hero-copy' },
-      h('p', { class: 'eyebrow' }, 'Základy elektrotechniky · stredná škola'),
+      h('p', { class: 'eyebrow' }, account ? `Ahoj, ${account.name.split(' ')[0]}` : 'Základy elektrotechniky · stredná škola'),
       h('h1', { class: 'hero-title' }, 'Elektrotechnika krok za krokom'),
       h('p', { class: 'lead' }, `${LESSONS.length} lekcií od Ohmovho zákona po elektrotechnické merania. Ku každej téme riešené príklady, cvičenia s novými hodnotami pri každom pokuse, kalkulačky a kartičky na opakovanie.`),
       h('div', { class: 'hero-actions' },

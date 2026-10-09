@@ -24,6 +24,17 @@ export function meter(value: number, max: number, label: string): HTMLElement {
   );
 }
 
+/** Iniciály mena do avatara: „Ján Novák“ → „JN“. */
+export function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const letters = parts.length > 1 ? [parts[0], parts[parts.length - 1]] : parts;
+  return letters.map((w) => Array.from(w)[0] ?? '').join('').toUpperCase() || '?';
+}
+
+export function avatar(name: string, cls = ''): HTMLElement {
+  return h('span', { class: `avatar ${cls}`.trim(), 'aria-hidden': 'true' }, initials(name));
+}
+
 /** Slovenské skloňovanie podľa počtu: 1 deň, 2 dni, 5 dní. */
 export function plural(n: number, one: string, few: string, many: string): string {
   if (n === 1) return one;
