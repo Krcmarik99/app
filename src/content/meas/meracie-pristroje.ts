@@ -1,5 +1,5 @@
 import { pick, shuffle, type Rng } from '../../lib/random';
-import { b, n, numeric, q, res, type Generator } from '../../practice/helpers';
+import { b, n, numeric, q, type Generator } from '../../practice/helpers';
 import type { ChoiceQuestion } from '../../practice/types';
 import { ammeterConsumptionFigure, analogScale, voltmeterConsumptionFigure } from '../../ui/meas-figures';
 import type { MeasModule } from './types';
@@ -92,6 +92,22 @@ const OHM_PER_VOLT = [1000, 2000, 5000, 10000, 20000];
 
 const opv = (RiV: number) => `${q(RiV, 'Ω')}/V`;
 
+/** „vo V/dielik“, ale „v mA/dielik“. */
+const inUnit = (unit: string) => `${unit.startsWith('V') ? 'vo' : 'v'} ${unit}`;
+
+/**
+ * Výsledok bez predpony aj s predponou tak, aby obe čísla boli presné (najviac 6 platných číslic),
+ * inak zaokrúhlené na 4 platné číslice – „0,1125 W = 112,5 mW“, nie „0,113 W = 113 mW“
+ * a nikdy nesúhlasiace „0,00203 W = 2,02 mW“.
+ */
+function resExact(v: number, unit: string): string {
+  const clean = Number(v.toPrecision(12));
+  const sig = [3, 4, 5, 6].find((d) => Number(clean.toPrecision(d)) === clean) ?? 4;
+  const base = b(clean, unit, sig);
+  const pref = q(clean, unit, sig);
+  return base === pref ? `**${pref}**` : `${base} = **${pref}**`;
+}
+
 // ---------------------------------------------------------------- generátory
 
 function choice(rng: Rng, prompt: string, correct: string, wrong: string[], explanation: string): ChoiceQuestion {
@@ -113,16 +129,16 @@ const generators: Generator[] = [
     const mr = q(ins.MR, ins.base);
     const kFrac = `\`$K = @f{MR}{$α_{max}} = @f{${mr}}{${ins.div} dielikov}\``;
     if (rng() < 0.5) {
-      return numeric(ID, `${ins.name} má merací rozsah ${mr} a stupnicu s ${ins.div} dielikmi. Aká je jeho konštanta v ${ins.unit}/dielik?`, K, `${ins.unit}/dielik`, [
+      return numeric(ID, `${ins.name} má merací rozsah ${mr} a stupnicu s ${ins.div} dielikmi. Aká je jeho konštanta ${inUnit(`${ins.unit}/dielik`)}?`, K, `${ins.unit}/dielik`, [
         'Konštanta je počet jednotiek meranej veličiny, ktoré pripadnú na jeden dielik stupnice.',
         `${kFrac} = **${n(K)} ${ins.unit}/dielik**`,
-      ], { fixedUnit: true });
+      ], { fixedUnit: true, tolerance: 0.005 });
     }
     const C = 1 / K;
     return numeric(ID, `${ins.name} má merací rozsah ${mr} a stupnicu s ${ins.div} dielikmi. Aká je jeho citlivosť v dielikoch na ${ins.unit}?`, C, `dielik/${ins.unit}`, [
       `${kFrac} = ${n(K)} ${ins.unit}/dielik`,
       `\`$C = @f{1}{$K} = @f{1}{${n(K)}}\` = **${n(C)} dielik/${ins.unit}**`,
-    ], { fixedUnit: true });
+    ], { fixedUnit: true, tolerance: 0.005 });
   },
 
   // nameraná hodnota z výchylky (obrázok stupnice)
@@ -137,9 +153,10 @@ const generators: Generator[] = [
     const mr = q(ins.MR, ins.base);
     return numeric(ID, `${ins.name} so stupnicou ${ins.div} dielikov je prepnutý na rozsah ${mr}. Ručička ukazuje výchylku ${alpha} dielikov (pozri obrázok). Aká je nameraná hodnota?`, NH, ins.base, [
       `\`$K = @f{MR}{$α_{max}} = @f{${mr}}{${ins.div} dielikov}\` = ${n(K)} ${ins.unit}/dielik`,
-      `\`NH = $α · $K\` = ${alpha} · ${n(K)} ${ins.unit} = ${res(NH, ins.base)}`,
+      `\`NH = $α · $K\` = ${alpha} · ${n(K)} ${ins.unit} = ${resExact(NH, ins.base)}`,
     ], {
       figure: () => analogScale({ divisions: ins.div, alpha, symbol: ins.unit, range: `MR = ${mr}` }),
+      tolerance: 0.005,
     });
   },
 
@@ -151,8 +168,8 @@ const generators: Generator[] = [
     if (rng() < 0.6) {
       const RV = RiV * MR;
       return numeric(ID, `Analógový voltmeter má vnútorný odpor ${opv(RiV)}. Aký je jeho vnútorný odpor na rozsahu ${q(MR, 'V')}?`, RV, 'Ω', [
-        'Vnútorný odpor voltmetra sa udáva na 1 V rozsahu, preto ho vynásobíme rozsahom.',
-        `\`$R_{V} = $R_{iV} · MR\` = ${b(RiV, 'Ω/V')} · ${b(MR, 'V')} = ${res(RV, 'Ω')}`,
+        'Vnútorný odpor voltmetra sa udáva na 1 V rozsahu, preto ho vynásob rozsahom.',
+        `\`$R_{V} = $R_{iV} · MR\` = ${b(RiV, 'Ω/V')} · ${b(MR, 'V')} = ${resExact(RV, 'Ω')}`,
       ]);
     }
     const MR2 = pick(rng, ranges.filter((r) => r !== MR));
@@ -160,7 +177,7 @@ const generators: Generator[] = [
     const RV2 = RiV * MR2;
     return numeric(ID, `Na rozsahu ${q(MR, 'V')} má voltmeter vnútorný odpor ${q(RV1, 'Ω')}. Aký vnútorný odpor bude mať po prepnutí na rozsah ${q(MR2, 'V')}?`, RV2, 'Ω', [
       `Odpor na 1 V rozsahu: \`$R_{iV} = @f{$R_{V}}{MR} = @f{${b(RV1, 'Ω')}}{${b(MR, 'V')}}\` = ${opv(RiV)}`,
-      `\`$R_{V2} = $R_{iV} · MR_{2}\` = ${b(RiV, 'Ω/V')} · ${b(MR2, 'V')} = ${res(RV2, 'Ω')}`,
+      `\`$R_{V2} = $R_{iV} · MR_{2}\` = ${b(RiV, 'Ω/V')} · ${b(MR2, 'V')} = ${resExact(RV2, 'Ω')}`,
     ]);
   },
 
@@ -174,7 +191,7 @@ const generators: Generator[] = [
     const full = U === MR ? ' (plná výchylka, teda vlastná spotreba voltmetra)' : '';
     return numeric(ID, `Voltmeter s vnútorným odporom ${opv(RiV)} je prepnutý na rozsah ${q(MR, 'V')} a meria napätie ${q(U, 'V')}${full}. Aký príkon odoberá z meraného obvodu?`, PV, 'W', [
       `\`$R_{V} = $R_{iV} · MR\` = ${b(RiV, 'Ω/V')} · ${b(MR, 'V')} = ${q(RV, 'Ω')}`,
-      `\`$P_{V} = @f{$U^{2}}{$R_{V}} = @f{(${b(U, 'V')})^{2}}{${b(RV, 'Ω')}}\` = ${res(PV, 'W')}`,
+      `\`$P_{V} = @f{$U^{2}}{$R_{V}} = @f{(${b(U, 'V')})^{2}}{${b(RV, 'Ω')}}\` = ${resExact(PV, 'W')}`,
     ]);
   },
 
@@ -187,7 +204,7 @@ const generators: Generator[] = [
       const dU = RA * MR;
       return numeric(ID, `Ampérmeter s vnútorným odporom ${q(RA, 'Ω')} má rozsah ${q(MR, 'A')}. Aký je úbytok napätia na ampérmetri pri plnej výchylke?`, dU, 'V', [
         'Pri plnej výchylke prechádza ampérmetrom prúd rovný jeho rozsahu.',
-        `\`Δ$U_{A} = $R_{A} · MR\` = ${b(RA, 'Ω')} · ${b(MR, 'A')} = ${res(dU, 'V')}`,
+        `\`Δ$U_{A} = $R_{A} · MR\` = ${b(RA, 'Ω')} · ${b(MR, 'A')} = ${resExact(dU, 'V')}`,
       ]);
     }
     if (variant < 0.7) {
@@ -197,7 +214,7 @@ const generators: Generator[] = [
       const PA = I * I * RA;
       return numeric(ID, `Ampérmeter s vnútorným odporom ${q(RA, 'Ω')} na rozsahu ${q(MR, 'A')} meria prúd ${q(I, 'A')}. Aký príkon odoberá z obvodu?`, PA, 'W', [
         `Prúd v základných jednotkách: \`$I\` = ${b(I, 'A')}.`,
-        `\`$P_{A} = $I^{2} · $R_{A} = (${b(I, 'A')})^{2} · ${b(RA, 'Ω')}\` = ${res(PA, 'W')}`,
+        `\`$P_{A} = $I^{2} · $R_{A} = (${b(I, 'A')})^{2} · ${b(RA, 'Ω')}\` = ${resExact(PA, 'W')}`,
       ]);
     }
     const { MR, dU: list } = pick(rng, NOMINAL_DROPS);
@@ -205,7 +222,7 @@ const generators: Generator[] = [
     const RA = dU / MR;
     return numeric(ID, `Výrobca ampérmetra s rozsahom ${q(MR, 'A')} udáva, že pri menovitom prúde je na ňom úbytok napätia ${q(dU, 'V')}. Aký je vnútorný odpor ampérmetra?`, RA, 'Ω', [
       'Pri menovitom prúde (plnej výchylke) platí `Δ$U_{A} = $R_{A} · MR`, odtiaľ `$R_{A} = @f{Δ$U_{A}}{MR}`.',
-      `\`$R_{A} = @f{${b(dU, 'V')}}{${b(MR, 'A')}}\` = ${res(RA, 'Ω')}`,
+      `\`$R_{A} = @f{${b(dU, 'V')}}{${b(MR, 'A')}}\` = ${resExact(RA, 'Ω')}`,
     ]);
   },
 
@@ -346,10 +363,10 @@ const mod: MeasModule = {
         steps: [
           '`Δ$U_{A} = $R_{A} · MR` = 0,05 Ω · 2 A = 0,1 V',
           'Pri plnej výchylke: `$P_{A}` = 2² · 0,05 W = 0,2 W',
-          'Pri prúde 1,5 A: `$P_{A}` = 1,5² · 0,05 W = 2,25 · 0,05 W ≈ 0,113 W',
+          'Pri prúde 1,5 A: `$P_{A}` = 1,5² · 0,05 W = 2,25 · 0,05 W = 0,1125 W = 112,5 mW',
           'Spotreba ampérmetra je tým menšia, čím menší je jeho vnútorný odpor.',
         ],
-        result: '`Δ$U_{A}` = 0,1 V, vlastná spotreba 0,2 W, pri 1,5 A odoberá ≈ 113 mW',
+        result: '`Δ$U_{A}` = 0,1 V, vlastná spotreba 0,2 W, pri 1,5 A odoberá 112,5 mW',
       },
       { t: 'note', kind: 'remember', text: '**Zapojenie meracích prístrojov:** voltmeter pripájaj **paralelne** k meranému objektu a vyber ho s čo **najväčším** vnútorným odporom. Ampérmeter zapájaj **do série** a vyber ho s čo **najmenším** vnútorným odporom – ideálny ampérmeter by mal `$R_{A}` = 0 Ω.' },
     ],

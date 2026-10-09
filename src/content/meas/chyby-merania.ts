@@ -15,8 +15,6 @@ const NBSP = ' ';
 
 const clean = (x: number) => Number(x.toPrecision(10));
 const val = (v: number, unit: string, sig = 6) => `${n(v, sig)}${NBSP}${unit}`;
-/** Číslo so znamienkom: „+0,04“, „−0,04“. */
-const signed = (v: number) => `${v < 0 ? '−' : '+'}${n(Math.abs(v), 6)}`;
 
 function choice(prompt: string, options: string[], explanation: string, rng: Rng): ChoiceQuestion {
   const order = shuffle(rng, [0, 1, 2, 3]);
@@ -84,7 +82,7 @@ const CAUSE_CASES: { text: string; cause: number; why: string }[] = [
   { text: 'Z nameraných bodov nakreslíš graf a hodnotu z neho odčítaš na nesprávnej osi.', cause: 2, why: 'Nesprávna interpretácia výsledkov, napr. pri grafických závislostiach, je osobná chyba.' },
   { text: 'Pri Ohmovej metóde vypočítaš odpor ako `$R = @f{$U}{$I}` a zanedbáš, že časť prúdu tečie voltmetrom.', cause: 0, why: 'Metóda kvôli zjednodušeniu neuvažuje so všetkými vplyvmi – tu s vlastnou spotrebou voltmetra.' },
   { text: 'Pri meraní malého odporu zvolíš jednoduchú metódu, ktorá zanedbáva odpor prívodných vodičov.', cause: 0, why: 'Chyba vzniká zjednodušením meracej metódy – zanedbaný vplyv sa pri malých odporoch prejaví.' },
-  { text: 'Správne zapojený a správne odčítaný voltmeter triedy presnosti 1,5 ukazuje na rozsahu 30 V o 0,3 V viac, než je skutočná hodnota.', cause: 1, why: 'Takú chybu má samotný prístroj – vyjadruje ju jeho trieda presnosti (tu najviac ±0,45 V).' },
+  { text: 'Voltmeter triedy presnosti 1,5 je správne zapojený a údaj odčítaš správne, napriek tomu ukazuje na rozsahu 30 V o 0,3 V viac, než je skutočná hodnota.', cause: 1, why: 'Takú chybu má samotný prístroj – vyjadruje ju jeho trieda presnosti (tu najviac ±0,45 V).' },
   { text: 'Ampérmeter triedy presnosti 2,5 má na rozsahu 1 A údaj nepresný o 20 mA, hoci meranie prebehlo správne.', cause: 1, why: 'Ide o chybu meracieho prístroja v rámci jeho triedy presnosti (najviac ±25 mA).' },
   { text: 'Prístroj leží tesne vedľa transformátora a jeho údaj sa mení podľa toho, ako ho natočíš.', cause: 3, why: 'Vonkajšie elektromagnetické pole vyvoláva sily a momenty, ktoré menia údaj prístroja – ochranou je magnetické tienenie.' },
   { text: 'Prístroj určený na prácu vo zvislej polohe položíš na stôl vodorovne.', cause: 3, why: 'Nesprávna pracovná poloha patrí medzi mechanické rušivé vplyvy.' },
@@ -104,26 +102,34 @@ const KIND_CASES: { text: string; systematic: boolean; why: string }[] = [
   { text: 'Úbytok napätia na ampérmetri zmenšuje prúd v obvode vždy o rovnakú, vypočítateľnú hodnotu.', systematic: true, why: 'Vplyv vlastnej spotreby prístroja je stály a známy – je to systematická chyba.' },
 ];
 
-interface Reading { Nom: string; gen: string; unit: string; xs: number[]; dec: number; dMax: number }
+interface Reading { Nom: string; gen: string; unit: string; xs: number[]; dec: number }
 /** Prístroje a skutočné hodnoty; chyba sa generuje v jednotkách posledného desatinného miesta `dec`. */
 const READINGS: Reading[] = [
-  { Nom: 'Voltmeter', gen: 'voltmetra', unit: 'V', xs: [5, 9, 12, 15, 24], dec: 2, dMax: 40 },
-  { Nom: 'Voltmeter', gen: 'voltmetra', unit: 'V', xs: [110, 220, 230, 400], dec: 1, dMax: 60 },
-  { Nom: 'Ampérmeter', gen: 'ampérmetra', unit: 'A', xs: [0.5, 1.2, 2, 2.5, 4], dec: 3, dMax: 80 },
-  { Nom: 'Miliampérmeter', gen: 'miliampérmetra', unit: 'mA', xs: [20, 25, 40, 50, 75], dec: 1, dMax: 20 },
-  { Nom: 'Ohmmeter', gen: 'ohmmetra', unit: 'Ω', xs: [100, 220, 330, 470, 680], dec: 0, dMax: 15 },
+  { Nom: 'Voltmeter', gen: 'voltmetra', unit: 'V', xs: [5, 9, 12, 15, 24], dec: 2 },
+  { Nom: 'Voltmeter', gen: 'voltmetra', unit: 'V', xs: [110, 220, 230, 400], dec: 1 },
+  { Nom: 'Ampérmeter', gen: 'ampérmetra', unit: 'A', xs: [0.5, 1.2, 2, 2.5, 4], dec: 3 },
+  { Nom: 'Miliampérmeter', gen: 'miliampérmetra', unit: 'mA', xs: [20, 25, 40, 50, 75], dec: 1 },
+  { Nom: 'Ohmmeter', gen: 'ohmmetra', unit: 'Ω', xs: [100, 220, 330, 470, 680], dec: 0 },
 ];
 
-/** Skutočná a nameraná hodnota ako celé násobky posledného miesta (bez chýb zaokrúhľovania). */
+/**
+ * Skutočná a nameraná hodnota ako celé násobky posledného miesta (bez chýb zaokrúhľovania).
+ * Chyba je realistická: približne 0,5 % až 4 % skutočnej hodnoty, aspoň 2 jednotky posledného miesta.
+ */
 function readingCase(rng: Rng) {
   const c = pick(rng, READINGS);
   const step = 10 ** -c.dec;
   const xsCount = Math.round(pick(rng, c.xs) / step);
-  const d = int(rng, Math.max(2, Math.round(c.dMax / 6)), c.dMax) * (rng() < 0.5 ? -1 : 1);
+  const lo = Math.max(2, Math.round(xsCount * 0.005));
+  const hi = Math.max(lo + 2, Math.round(xsCount * 0.04));
+  const d = int(rng, lo, hi) * (rng() < 0.5 ? -1 : 1);
   const XS = clean(xsCount * step);
   const XN = clean((xsCount + d) * step);
   const D = clean(d * step);
-  return { c, XS, XN, D, f: (v: number) => fmtFixed(v, c.dec) };
+  const f = (v: number) => fmtFixed(v, c.dec);
+  /** Číslo so znamienkom a s rovnakým počtom desatinných miest ako údaje: „+0,04“, „−4,0“. */
+  const sf = (v: number) => `${v < 0 ? '−' : '+'}${f(Math.abs(v))}`;
+  return { c, XS, XN, D, f, sf };
 }
 
 const generators: Generator[] = [
@@ -141,21 +147,21 @@ const generators: Generator[] = [
 
   // Veľkosť absolútnej chyby a korekcia.
   (rng) => {
-    const { c, XS, XN, D, f } = readingCase(rng);
-    return numeric(ID, `${c.Nom} ukazuje ${f(XN)} ${c.unit}. Oveľa presnejší kontrolný prístroj ukazuje ${f(XS)} ${c.unit} – jeho údaj považuj za skutočnú hodnotu. Aká veľká je absolútna chyba merania ${c.gen}? Zadaj jej veľkosť bez znamienka.`, Math.abs(D), c.unit, [
-      `\`Δ$X = $X_{N} − $X_{S}\` = ${f(XN)} − ${f(XS)} = ${signed(D)} ${c.unit}`,
-      `Prístroj ukazuje ${D > 0 ? 'viac' : 'menej'}, ako je skutočná hodnota, preto je chyba ${D > 0 ? 'kladná' : 'záporná'}. Jej veľkosť je **${val(Math.abs(D), c.unit)}**.`,
-      `Korekcia \`$K = −Δ$X\` = ${signed(-D)} ${c.unit}; kontrola: ${f(XN)} ${D > 0 ? '−' : '+'} ${n(Math.abs(D), 6)} = ${f(XS)} ${c.unit}.`,
+    const { c, XS, XN, D, f, sf } = readingCase(rng);
+    return numeric(ID, `${c.Nom} ukazuje ${f(XN)}${NBSP}${c.unit}. Oveľa presnejší kontrolný prístroj ukazuje ${f(XS)}${NBSP}${c.unit} – jeho údaj považuj za skutočnú hodnotu. Aká veľká je absolútna chyba merania ${c.gen}? Zadaj jej veľkosť bez znamienka.`, Math.abs(D), c.unit, [
+      `\`Δ$X = $X_{N} − $X_{S}\` = ${f(XN)} − ${f(XS)} = ${sf(D)}${NBSP}${c.unit}`,
+      `Prístroj ukazuje ${D > 0 ? 'viac' : 'menej'}, ako je skutočná hodnota, preto je chyba ${D > 0 ? 'kladná' : 'záporná'}. Jej veľkosť je **${f(Math.abs(D))}${NBSP}${c.unit}**.`,
+      `Korekcia \`$K = −Δ$X\` = ${sf(-D)}${NBSP}${c.unit}; kontrola: ${f(XN)} ${D > 0 ? '−' : '+'} ${f(Math.abs(D))} = ${f(XS)}${NBSP}${c.unit}.`,
     ], { fixedUnit: true, tolerance: 0.01 });
   },
 
   // Veľkosť relatívnej chyby.
   (rng) => {
-    const { c, XS, XN, D, f } = readingCase(rng);
+    const { c, XS, XN, D, f, sf } = readingCase(rng);
     const delta = (Math.abs(D) / XS) * 100;
-    return numeric(ID, `${c.Nom} ukazuje ${f(XN)} ${c.unit}, skutočná hodnota meranej veličiny je ${f(XS)} ${c.unit}. Aká veľká je relatívna chyba merania? Zadaj ju v percentách bez znamienka.`, delta, '%', [
-      `\`Δ$X = $X_{N} − $X_{S}\` = ${f(XN)} − ${f(XS)} = ${signed(D)} ${c.unit}`,
-      `\`$δ = @f{Δ$X}{$X_{S}} · 100 % = @f{${signed(D)}}{${f(XS)}} · 100 %\` = ${D < 0 ? '−' : '+'}${n(delta, 3)} %`,
+    return numeric(ID, `${c.Nom} ukazuje ${f(XN)}${NBSP}${c.unit}, skutočná hodnota meranej veličiny je ${f(XS)}${NBSP}${c.unit}. Aká veľká je relatívna chyba merania? Zadaj ju v percentách bez znamienka.`, delta, '%', [
+      `\`Δ$X = $X_{N} − $X_{S}\` = ${f(XN)} − ${f(XS)} = ${sf(D)}${NBSP}${c.unit}`,
+      `\`$δ = @f{Δ$X}{$X_{S}} · 100 % = @f{${sf(D)}}{${f(XS)}} · 100 %\` = ${D < 0 ? '−' : '+'}${n(delta, 3)} %`,
       `Veľkosť relatívnej chyby je **${n(delta, 3)} %**.`,
     ], { fixedUnit: true, tolerance: 0.01 });
   },
@@ -163,7 +169,7 @@ const generators: Generator[] = [
   // Aritmetický priemer opakovaných meraní.
   (rng) => {
     const c = pick(rng, [
-      { what: 'napätia článku', unit: 'V', base: [1.5, 4.5, 9, 12], dec: 2 },
+      { what: 'napätia zdroja', unit: 'V', base: [1.5, 4.5, 9, 12], dec: 2 },
       { what: 'prúdu', unit: 'mA', base: [20, 25, 40, 50], dec: 1 },
       { what: 'odporu rezistora', unit: 'Ω', base: [220, 330, 470, 680], dec: 0 },
     ]);
@@ -328,12 +334,12 @@ const mod: MeasModule = {
         given: ['5 meraní napätia: 24,1 V; 24,3 V; 24,2 V; 24,4 V; 24,0 V', 'voltmeter triedy presnosti 0,5 na rozsahu 30 V'],
         steps: [
           '`x̄ = @f{24,1 + 24,3 + 24,2 + 24,4 + 24,0}{5} = @f{121,0}{5}` = 24,2 V',
-          'Odchýlky od priemeru: −0,1; 0,1; 0; 0,2; −0,2 V, súčet ich štvorcov: 0,01 + 0,01 + 0 + 0,04 + 0,04 = 0,10 V²',
+          'Odchýlky od priemeru: −0,1; +0,1; 0; +0,2; −0,2 V, súčet ich štvorcov: 0,01 + 0,01 + 0 + 0,04 + 0,04 = 0,10 V²',
           '`$u_{A} = @s{@f{0,10}{5 · 4}} = @s{0,005}` = 0,0707 V',
           '`Δ$X_{max} = @f{0,5 · 30}{100}` = 0,15 V, `$u_{B} = @f{0,15}{@s{3}}` = 0,0866 V',
           '`$u_{C} = @s{0,0707^{2} + 0,0866^{2}} = @s{0,005 + 0,0075}` = 0,112 V',
         ],
-        result: '`$U` = (24,20 ± 0,11) V',
+        result: 'výsledok merania 24,20 V s kombinovanou štandardnou neistotou `$u_{C}` ≈ 0,11 V',
       },
       { t: 'note', kind: 'remember', text: 'Opakovaním merania a spriemerovaním sa zmenšuje vplyv náhodných chýb – `$u_{A}` s rastúcim počtom meraní klesá. Systematickú chybu opakovaním neodstrániš, tú treba poznať a korigovať.' },
     ],

@@ -96,7 +96,7 @@ const generators: Generator[] = [
     const m = meterOf(sc.unit);
     return numeric(ID, `${m.Nom} triedy presnosti ${n(TP)} na rozsahu ${val(sc.MR, sc.unit)} ukazuje ${val(XN, sc.unit)}. V akom intervale leží skutočná hodnota meranej veličiny? Zadaj jeho ${lower ? 'dolnú' : 'hornú'} hranicu.`, lower ? lo : hi, sc.unit, [
       `\`Δ$X_{max} = @f{TP · MR}{100} = @f{${n(TP)} · ${n(sc.MR)}}{100}\` = ${val(d, sc.unit)}`,
-      `\`$X_{S} = $X_{N} ± Δ$X_{max}\` = ${n(XN, 6)} ± ${val(d, sc.unit)}`,
+      `\`$X_{S} = $X_{N} ± Δ$X_{max}\` = (${n(XN, 6)} ± ${n(d, 6)})${NBSP}${sc.unit}`,
       `Skutočná hodnota leží v intervale ${val(lo, sc.unit)} až ${val(hi, sc.unit)}, ${lower ? 'dolná' : 'horná'} hranica je **${val(lower ? lo : hi, sc.unit)}**.`,
     ], { fixedUnit: true, tolerance: 0.005, figure: scaleFigure(sc, div, alpha, TP) });
   },
@@ -140,7 +140,7 @@ const generators: Generator[] = [
       options,
       `${small.length === 1 ? `Rozsah ${small[0]} je menší` : `Rozsahy ${joinList(small)} sú menšie`} ako meraná hodnota – prístroj by sa preťažil. ${parts.length === 1
         ? `Zostáva jediný vhodný rozsah **${labels[k]}**, na ktorom je relatívna chyba \`$δ = TP · @f{MR}{$X_{N}}\` = ${n((TP * ranges[k]) / X, 3)} %.`
-        : `Na ostatných rozsahoch je relatívna chyba \`$δ = TP · @f{MR}{$X_{N}}\`: ${parts.join('; ')}. Najmenšia je na rozsahu **${labels[k]}** – je to najmenší rozsah, ktorý hodnotu ešte obsiahne, a výchylka je najbližšie ku koncu stupnice.`}`,
+        : `Na zvyšných rozsahoch je relatívna chyba \`$δ = TP · @f{MR}{$X_{N}}\`: ${parts.join('; ')}. Najmenšia je na rozsahu **${labels[k]}** – je to najmenší rozsah, ktorý hodnotu ešte obsiahne, a výchylka je najbližšie ku koncu stupnice.`}`,
       rng,
     );
   },
@@ -168,7 +168,7 @@ const generators: Generator[] = [
       `Napätie približne ${q(X, 'V', 2)} môžeš zmerať dvoma analógovými voltmetrami: **A** – trieda presnosti ${n(TPA)}, rozsah ${n(MRA)} V; **B** – trieda presnosti ${n(TPB)}, rozsah ${n(MRB)} V. Ktorým z nich zmeriaš napätie s menšou chybou?`,
       options,
       `Voltmeter A: \`Δ$X_{max} = @f{${n(TPA)} · ${n(MRA)}}{100}\` = ${val(dA, 'V')}, \`$δ\` = ${n((dA / X) * 100, 3)} %. Voltmeter B: \`Δ$X_{max} = @f{${n(TPB)} · ${n(MRB)}}{100}\` = ${val(dB, 'V')}, \`$δ\` = ${n((dB / X) * 100, 3)} %. ${aWins
-        ? 'Presnejšie meria **voltmeter A** – jeho trieda je natoľko lepšia, že prevýši nevýhodu väčšieho rozsahu.'
+        ? 'Presnejšie meria **voltmeter A** – jeho trieda presnosti je natoľko lepšia, že preváži nevýhodu väčšieho rozsahu.'
         : 'Presnejšie meria **voltmeter B** – horšiu triedu presnosti vyváži menší rozsah, pri ktorom je výchylka bližšie ku koncu stupnice.'}`,
       rng,
     );
@@ -232,7 +232,7 @@ const mod: MeasModule = {
           ['5', 'pomocné a iné menej presné', '±5 V'],
         ],
       },
-      { t: 'note', kind: 'remember', text: 'Na číselníku je trieda presnosti vytlačená ako samotné číslo, napr. **1,5**. Znamená to ±1,5 % z **meracieho rozsahu**, nie z nameranej hodnoty. V tejto lekcii (podľa skrípt ELM3) je `$X_{N}` nameraná hodnota a MR merací rozsah.' },
+      { t: 'note', kind: 'remember', text: 'Na číselníku je trieda presnosti vytlačená ako samotné číslo, napr. **1,5**. Znamená to ±1,5 % z **meracieho rozsahu**, nie z nameranej hodnoty. V tejto lekcii (podľa skrípt ELM3, kap. 2) je `$X_{N}` nameraná hodnota a MR merací rozsah. Pozor: v lekcii o chybách ČMP (skriptá EMR, kap. 6) znamená `$X_{N}` merací rozsah.' },
       { t: 'h', text: 'Najväčšia absolútna chyba a skutočná hodnota' },
       { t: 'p', text: 'Z triedy presnosti vypočítaš najväčšiu absolútnu chybu. Ak má prístroj merať vo svojej triede presnosti, musí byť splnená podmienka `Δ$X ≤ Δ$X_{max}` – skutočná chyba údaja nesmie prekročiť najväčšiu dovolenú chybu. Prístroj teda meria s chybou ±`Δ$X_{max}` a skutočná hodnota meranej veličiny leží v intervale:' },
       {
@@ -253,7 +253,7 @@ const mod: MeasModule = {
         steps: [
           '`$K = @f{MR}{$α_{max}} = @f{30}{150}` = 0,2 V/dielik, `$X_{N} = $α · $K` = 120 · 0,2 = 24 V',
           '`Δ$X_{max} = @f{1,5 · 30}{100}` = 0,45 V',
-          '`$X_{S}` = 24 ± 0,45 V, teda od 23,55 V do 24,45 V',
+          '`$X_{S}` = (24 ± 0,45) V, teda od 23,55 V do 24,45 V',
         ],
         result: 'skutočné napätie je 23,55 V až 24,45 V',
       },
@@ -338,7 +338,7 @@ const mod: MeasModule = {
       lessonId: ID,
       prompt: 'Voltmeter triedy presnosti 1 s rozsahom 60 V ukazuje 40 V. V akom intervale leží skutočná hodnota?',
       options: ['39,4 V až 40,6 V', '39,6 V až 40,4 V', '39 V až 41 V', '38,8 V až 41,2 V'],
-      explanation: '`Δ$X_{max} = @f{1 · 60}{100}` = 0,6 V, preto `$X_{S}` = 40 ± 0,6 V. Interval 39,6 V až 40,4 V vychádza pri chybnom výpočte 1 % z nameranej hodnoty.',
+      explanation: '`Δ$X_{max} = @f{1 · 60}{100}` = 0,6 V, preto `$X_{S}` = (40 ± 0,6) V. Interval 39,6 V až 40,4 V vychádza pri chybnom výpočte 1 % z nameranej hodnoty.',
     },
   ],
   generators,

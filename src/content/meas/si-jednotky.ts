@@ -1,7 +1,7 @@
 import { s } from '../../lib/dom';
 import { pick, shuffle, type Rng } from '../../lib/random';
-import { fmt, fmtFixed, superscript } from '../../lib/units';
-import { n, numeric, res, type Generator } from '../../practice/helpers';
+import { fmt, superscript } from '../../lib/units';
+import { b, n, numeric, q, type Generator } from '../../practice/helpers';
 import type { ChoiceQuestion } from '../../practice/types';
 import { dashedWire, dot, note, schematic, valueText, wire } from '../../ui/schematic';
 import type { MeasModule } from './types';
@@ -17,34 +17,49 @@ interface Unit {
   sym: string;
   /** Veličina, ktorej je jednotkou. */
   qty: string;
+  /** Názov veličiny v 2. páde („jednotka dĺžky“). */
+  qtyGen: string;
 }
 
 /** Tab. 1.1 – základné jednotky SI v poradí zo skrípt. */
 const BASE_UNITS: readonly (Unit & { qtySym: string })[] = [
-  { qty: 'dĺžka', qtySym: '$l', name: 'meter', sym: 'm' },
-  { qty: 'hmotnosť', qtySym: '$m', name: 'kilogram', sym: 'kg' },
-  { qty: 'čas', qtySym: '$t', name: 'sekunda', sym: 's' },
-  { qty: 'termodynamická teplota', qtySym: '$T', name: 'kelvin', sym: 'K' },
-  { qty: 'elektrický prúd', qtySym: '$I', name: 'ampér', sym: 'A' },
-  { qty: 'svietivosť', qtySym: '$I_{v}', name: 'kandela', sym: 'cd' },
-  { qty: 'látkové množstvo', qtySym: '$n', name: 'mol', sym: 'mol' },
+  { qty: 'dĺžka', qtyGen: 'dĺžky', qtySym: '$l', name: 'meter', sym: 'm' },
+  { qty: 'hmotnosť', qtyGen: 'hmotnosti', qtySym: '$m', name: 'kilogram', sym: 'kg' },
+  { qty: 'čas', qtyGen: 'času', qtySym: '$t', name: 'sekunda', sym: 's' },
+  { qty: 'termodynamická teplota', qtyGen: 'termodynamickej teploty', qtySym: '$T', name: 'kelvin', sym: 'K' },
+  { qty: 'elektrický prúd', qtyGen: 'elektrického prúdu', qtySym: '$I', name: 'ampér', sym: 'A' },
+  { qty: 'svietivosť', qtyGen: 'svietivosti', qtySym: '$I_{v}', name: 'kandela', sym: 'cd' },
+  { qty: 'látkové množstvo', qtyGen: 'látkového množstva', qtySym: '$n', name: 'mol', sym: 'mol' },
 ];
 
 /** Odvodené jednotky s osobitným názvom: definičný vzťah a vyjadrenie základnými jednotkami. */
 const DERIVED_UNITS: readonly (Unit & { qtySym: string; def: string; base: string })[] = [
-  { qty: 'elektrický náboj', qtySym: '$Q', name: 'coulomb', sym: 'C', def: 'A·s', base: 'A·s' },
-  { qty: 'sila', qtySym: '$F', name: 'newton', sym: 'N', def: 'kg·m/s²', base: 'kg·m·s⁻²' },
-  { qty: 'práca, energia', qtySym: '$W', name: 'joule', sym: 'J', def: 'N·m', base: 'kg·m²·s⁻²' },
-  { qty: 'výkon', qtySym: '$P', name: 'watt', sym: 'W', def: 'J/s', base: 'kg·m²·s⁻³' },
-  { qty: 'elektrické napätie', qtySym: '$U', name: 'volt', sym: 'V', def: 'W/A', base: 'kg·m²·s⁻³·A⁻¹' },
-  { qty: 'elektrický odpor', qtySym: '$R', name: 'ohm', sym: 'Ω', def: 'V/A', base: 'kg·m²·s⁻³·A⁻²' },
-  { qty: 'elektrická vodivosť', qtySym: '$G', name: 'siemens', sym: 'S', def: 'A/V', base: 'kg⁻¹·m⁻²·s³·A²' },
-  { qty: 'kapacita', qtySym: '$C', name: 'farad', sym: 'F', def: 'C/V', base: 'kg⁻¹·m⁻²·s⁴·A²' },
-  { qty: 'indukčnosť', qtySym: '$L', name: 'henry', sym: 'H', def: 'V·s/A', base: 'kg·m²·s⁻²·A⁻²' },
-  { qty: 'frekvencia', qtySym: '$f', name: 'hertz', sym: 'Hz', def: '1/s', base: 's⁻¹' },
+  { qty: 'elektrický náboj', qtyGen: 'elektrického náboja', qtySym: '$Q', name: 'coulomb', sym: 'C', def: 'A·s', base: 'A·s' },
+  { qty: 'sila', qtyGen: 'sily', qtySym: '$F', name: 'newton', sym: 'N', def: 'kg·m/s²', base: 'kg·m·s⁻²' },
+  { qty: 'práca, energia', qtyGen: 'práce a energie', qtySym: '$W', name: 'joule', sym: 'J', def: 'N·m', base: 'kg·m²·s⁻²' },
+  { qty: 'výkon', qtyGen: 'výkonu', qtySym: '$P', name: 'watt', sym: 'W', def: 'J/s', base: 'kg·m²·s⁻³' },
+  { qty: 'elektrické napätie', qtyGen: 'elektrického napätia', qtySym: '$U', name: 'volt', sym: 'V', def: 'W/A', base: 'kg·m²·s⁻³·A⁻¹' },
+  { qty: 'elektrický odpor', qtyGen: 'elektrického odporu', qtySym: '$R', name: 'ohm', sym: 'Ω', def: 'V/A', base: 'kg·m²·s⁻³·A⁻²' },
+  { qty: 'elektrická vodivosť', qtyGen: 'elektrickej vodivosti', qtySym: '$G', name: 'siemens', sym: 'S', def: 'A/V', base: 'kg⁻¹·m⁻²·s³·A²' },
+  { qty: 'kapacita', qtyGen: 'kapacity', qtySym: '$C', name: 'farad', sym: 'F', def: 'C/V', base: 'kg⁻¹·m⁻²·s⁴·A²' },
+  { qty: 'indukčnosť', qtyGen: 'indukčnosti', qtySym: '$L', name: 'henry', sym: 'H', def: 'V·s/A', base: 'kg·m²·s⁻²·A⁻²' },
+  { qty: 'frekvencia', qtyGen: 'frekvencie', qtySym: '$f', name: 'hertz', sym: 'Hz', def: '1/s', base: 's⁻¹' },
 ];
 
 const unitLabel = (u: Unit) => (u.name === u.sym ? u.name : `${u.name} (${u.sym})`);
+const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/**
+ * Výsledok bez predpony aj s predponou tak, aby obe čísla boli presné (najviac 6 platných číslic),
+ * inak zaokrúhlené na 4 platné číslice – „266 400 C = 266,4 kC“, nie nepravdivé „266 000 C = 266 kC“.
+ */
+function resExact(v: number, unit: string): string {
+  const clean = Number(v.toPrecision(12));
+  const sig = [3, 4, 5, 6].find((d) => Number(clean.toPrecision(d)) === clean) ?? 4;
+  const base = b(clean, unit, sig);
+  const pref = q(clean, unit, sig);
+  return base === pref ? `**${pref}**` : `${base} = **${pref}**`;
+}
 
 /** Tab. 1.2 – predpony násobkov a dielov. */
 const PREFIXES: readonly { name: string; sym: string; exp: number; example: string }[] = [
@@ -182,7 +197,7 @@ const PREFIX_CONVERSIONS: readonly { m: number[]; from: string; to: string; unit
   { m: [2, 20, 200], from: 'G', to: 'M', unit: 'Ω' },
   { m: [1.8, 2.4, 2.45, 5.2], from: 'G', to: 'M', unit: 'Hz' },
   { m: [150, 455, 820], from: 'k', to: 'M', unit: 'Hz' },
-  { m: [4.7, 15, 350, 800], from: 'µ', to: 'm', unit: 'A' },
+  { m: [4.7, 15, 350, 2500], from: 'µ', to: 'm', unit: 'A' },
   { m: [0.25, 0.6, 1.2, 4.5], from: 'm', to: 'µ', unit: 'A' },
   { m: [50, 120, 680, 3300], from: 'm', to: '', unit: 'V' },
   { m: [0.05, 0.2, 1.5], from: 'M', to: 'k', unit: 'W' },
@@ -199,15 +214,15 @@ const generators: Generator[] = [
       const T = t + 273.15;
       return numeric(ID, `${ctx} Vyjadri túto teplotu ako termodynamickú teplotu v kelvinoch.`, T, 'K', [
         'K teplote podľa Celzia pripočítaj `$T_{0}`: `$T = $t + $T_{0}`, kde `$T_{0}` = 273,15 K.',
-        `\`$T\` = (${n(t)} + 273,15) K = **${fmtFixed(T, 2)} K**`,
+        `\`$T\` = (${n(t)} + 273,15) K = **${fmt(T, 6)} K**`,
       ], { fixedUnit: true, tolerance: 0.005 });
     }
     const T = pick(rng, KELVIN);
     const t = T - 273.15;
     return numeric(ID, `Termodynamická teplota telesa je ${fmt(T, 5)} K. Aká je jeho teplota v stupňoch Celzia?`, t, '°C', [
       'Teplota podľa Celzia je rozdiel `$t = $T − $T_{0}`, kde `$T_{0}` = 273,15 K.',
-      `\`$t\` = ${fmt(T, 5)} − 273,15 = **${fmtFixed(t, 2)} °C**`,
-    ], { fixedUnit: true, tolerance: 0.005 });
+      `\`$t\` = (${fmt(T, 5)} − 273,15) °C = **${fmt(t, 6)} °C**`,
+    ], { fixedUnit: true, tolerance: 0.01 });
   },
 
   // A·h ↔ C
@@ -220,11 +235,11 @@ const generators: Generator[] = [
       return numeric(ID, `${cap.ctx} ${given}. Aký náboj zodpovedá tejto kapacite?`, Q, 'C', [
         '1 h = 3 600 s, preto 1 A·h = 1 A · 3 600 s = 3 600 C.',
         ...(cap.mAh ? [`${fmt(cap.value)} mA·h = ${n(Ah)} A·h`] : []),
-        `\`$Q\` = ${n(Ah)} · 3 600 C = ${res(Q, 'C')}`,
+        `\`$Q\` = ${n(Ah)} · 3 600 C = ${resExact(Q, 'C')}`,
       ]);
     }
     return numeric(ID, `Akumulátor prijal pri nabíjaní náboj ${fmt(Q)} C. Koľko ampérhodín (A·h) to je?`, Ah, 'A·h', [
-      '1 A·h = 1 A · 3 600 s = 3 600 C, preto náboj v coulomboch vydelíme číslom 3 600.',
+      '1 A·h = 1 A · 3 600 s = 3 600 C, preto náboj v coulomboch vydeľ číslom 3 600.',
       `${fmt(Q)} C : 3 600 C/(A·h) = **${n(Ah)} A·h**`,
     ], { fixedUnit: true, tolerance: 0.005 });
   },
@@ -259,23 +274,23 @@ const generators: Generator[] = [
       const wrong = derivedPool.slice(0, 3);
       return choice(rng, 'Ktorá z týchto jednotiek je **základnou** jednotkou sústavy SI?', unitLabel(right),
         wrong.map(unitLabel),
-        `${unitLabel(right)} je základná jednotka veličiny ${right.qty}. Základných jednotiek SI je sedem: ${baseList}. Ostatné možnosti sú odvodené: ${wrong.map((u) => `${u.sym} = ${u.def}`).join(', ')}.`);
+        `${capitalize(unitLabel(right))} je základná jednotka ${right.qtyGen}. Základných jednotiek SI je sedem: ${baseList}. Ostatné možnosti sú odvodené: ${wrong.map((u) => `${u.sym} = ${u.def}`).join(', ')}.`);
     }
     const right = derivedPool[0];
     const wrong = basePool.slice(0, 3);
     const expr = right.def === right.base ? right.base : `${right.def} = ${right.base}`;
     return choice(rng, 'Ktorá z týchto jednotiek je **odvodenou** jednotkou sústavy SI?', unitLabel(right),
       wrong.map(unitLabel),
-      `${unitLabel(right)} je odvodená jednotka veličiny ${right.qty}: ${right.sym} = ${expr}. Ostatné tri patria medzi sedem základných jednotiek SI (${baseList}).`);
+      `${capitalize(unitLabel(right))} je odvodená jednotka ${right.qtyGen}: ${right.sym} = ${expr}. Ostatné tri patria medzi sedem základných jednotiek SI (${baseList}).`);
   },
 
   // vyjadrenie odvodenej jednotky základnými jednotkami
   (rng) => {
     const [right, ...rest] = shuffle(rng, DERIVED_UNITS);
     const wrong = rest.slice(0, 3);
-    return choice(rng, `Ako sa vyjadrí jednotka ${unitLabel(right)} – jednotka veličiny ${right.qty} – pomocou základných jednotiek SI?`,
+    return choice(rng, `Ako sa vyjadrí ${unitLabel(right)}, jednotka ${right.qtyGen}, pomocou základných jednotiek SI?`,
       right.base, wrong.map((u) => u.base),
-      `${right.sym} = ${right.def}${right.def === right.base ? '' : ` = ${right.base}`}. Ostatné vyjadrenia patria jednotkám ${wrong.map((u) => `${u.name} (${u.sym})`).join(', ')}.`);
+      `${right.sym} = ${right.def}${right.def === right.base ? '' : ` = ${right.base}`}. Ostatné vyjadrenia patria iným jednotkám: ${wrong.map((u) => `${u.base} = ${u.sym} (${u.name})`).join('; ')}.`);
   },
 ];
 
@@ -293,7 +308,7 @@ const mod: MeasModule = {
       {
         t: 'list',
         items: [
-          '**základné jednotky SI** – sedem jednotiek, z ktorých sa odvodzujú všetky ostatné; z elektrických veličín medzi ne patrí iba **ampér**,',
+          '**základné jednotky SI** – sedem jednotiek, z ktorých sa odvodzujú všetky ostatné; z jednotiek elektrických veličín medzi ne patrí iba **ampér**,',
           '**odvodené jednotky SI** – získavajú sa zo základných jednotiek pomocou rovnice, ktorou je definovaná príslušná veličina (volt, ohm, farad…),',
           '**násobky a diely jednotiek SI** – vznikajú násobením jednotky mocninou desiatich a označujú sa predponou (kΩ, mA, µF…).',
         ],
@@ -335,7 +350,7 @@ const mod: MeasModule = {
       {
         t: 'list',
         items: [
-          '**Symbol predpony píš tesne pred symbol jednotky**, bez medzery a bez bodky: kΩ, mA, µF. Medzi číslom a jednotkou medzera je: 4,7 kΩ, 230 V, 20 °C.',
+          '**Symbol predpony píš tesne pred symbol jednotky**, bez medzery a bez bodky: kΩ, mA, µF. Medzi číslo a jednotku sa píše medzera: 4,7 kΩ, 230 V, 20 °C.',
           '**Nespájaj dve predpony**: 10⁻⁹ F zapíš ako 1 nF, nie 1 mµF. Kilogram už predponu má, preto sa násobky a diely hmotnosti tvoria od gramu: 1 mg, nie 1 µkg.',
           '**Veľkosť písmen rozhoduje**: m je mili (10⁻³), M je mega (10⁶). Kilo sa píše malým k.',
           '**Mocnina pri jednotke s predponou platí pre celý násobok**: 1 mm² = (10⁻³ m)² = 10⁻⁶ m².',
@@ -414,7 +429,7 @@ const mod: MeasModule = {
       lessonId: ID,
       prompt: 'Vinutie sa zohrialo z 20 °C na 75 °C. Aké je oteplenie v kelvinoch?',
       options: ['55 K', '328,15 K', '348,15 K', '293,15 K'],
-      explanation: 'Rozdiel teplôt má v °C aj v K rovnakú číselnú hodnotu: 75 − 20 = 55 °C, teda 55 K. Konštanta 273,15 sa pri rozdiele odčíta.',
+      explanation: 'Rozdiel teplôt má v °C aj v K rovnakú číselnú hodnotu: 75 − 20 = 55 °C, teda 55 K. Konštanta 273,15 sa v rozdiele vyruší: (75 + 273,15) K − (20 + 273,15) K = 55 K.',
     },
     {
       lessonId: ID,
