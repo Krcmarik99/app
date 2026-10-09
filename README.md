@@ -5,17 +5,21 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server 
 
 ## Čo obsahuje
 
-- **13 lekcií** v štyroch kapitolách – od elektrických veličín cez Ohmov a Kirchhoffove zákony,
-  kondenzátor, cievku a striedavý prúd až po farebný kód rezistorov a LED. Každá lekcia má teóriu,
-  vzorce s vysvetlením veličín, schémy, riešené príklady a krátky test na konci.
-- **Cvičenie** – vyberieš témy a počet otázok. Číselné príklady (približne 50 typov) sa generujú
-  s novými hodnotami pri každom pokuse a pri chybe ukážu celý postup riešenia. K tomu 60 otázok
+- **20 lekcií** v piatich kapitolách – od elektrických veličín cez Ohmov a Kirchhoffove zákony,
+  kondenzátor, cievku a striedavý prúd, farebný kód rezistorov a LED až po **elektrotechnické merania**
+  (zákonné jednotky SI, meracie prístroje, trieda presnosti, chyby a neistota merania, chyby číslicových
+  prístrojov, meranie odporu ohmmetrom a Ohmovou metódou). Každá lekcia má teóriu, vzorce s vysvetlením
+  veličín, schémy, riešené príklady a krátky test na konci.
+- **Cvičenie** – vyberieš témy a počet otázok. Číselné príklady (vyše 90 typov) sa generujú
+  s novými hodnotami pri každom pokuse a pri chybe ukážu celý postup riešenia. K tomu viac ako 110 otázok
   s výberom odpovede.
-- **8 kalkulačiek** – Ohmov zákon a výkon, sériové a paralelné spájanie rezistorov aj kondenzátorov,
+- **11 kalkulačiek** – Ohmov zákon a výkon, sériové a paralelné spájanie rezistorov aj kondenzátorov,
   delič napätia (aj s návrhom rezistora z rady E24), farebný kód rezistorov oboma smermi,
   časová konštanta RC/RL s grafom, striedavý obvod RLC s trojuholníkom impedancií,
-  predradný rezistor pre LED a odpor/úbytok napätia na vedení.
-- **Kartičky** na opakovanie – veličiny a jednotky, vzorce, schematické značky a predpony SI.
+  predradný rezistor pre LED, odpor/úbytok napätia na vedení, chyba analógového a číslicového
+  meracieho prístroja, Ohmova metóda (AV/VA) a konštanta a spotreba prístroja.
+- **Kartičky** na opakovanie – veličiny a jednotky, vzorce, schematické značky, pojmy z meraní,
+  základné jednotky SI a predpony.
 - **Pokrok** – preštudované lekcie, úspešnosť podľa tém, séria dní učenia. Ukladá sa iba
   v prehliadači (localStorage).
 
@@ -54,6 +58,7 @@ npm run typecheck
 ```
 src/
   content/      lekcie, otázky s výberom, kartičky (len dáta)
+  content/meas/ kapitola Elektrotechnické merania – každá lekcia s otázkami a generátormi v jednom súbore
   practice/     generátory číselných príkladov a zostavenie cvičenia
   lib/          výpočty (electro), jednotky a predpony (units), farebný kód, vzorce, pokrok
   ui/           schémy, grafy, karta otázky, interaktívny obvod na úvodnej stránke
