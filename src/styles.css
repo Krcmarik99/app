@@ -2223,6 +2223,16 @@ input[type='range'] {
   gap: 28px;
 }
 
+.calc-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.calc-stack > .calc-subsection:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
 .calc-inputs,
 .calc-outputs {
   display: grid;
@@ -2234,6 +2244,10 @@ input[type='range'] {
 .calc-outputs {
   position: sticky;
   top: calc(var(--header-h) + 16px + env(safe-area-inset-top, 0px));
+}
+
+.calc-outputs.calc-outputs-static {
+  position: static;
 }
 
 @media (max-width: 880px) {
