@@ -2,12 +2,13 @@ import { ALL_CARDS } from '../content/flashcards';
 import { CHAPTERS, LESSONS, lessonById, lessonIndex } from '../content/lessons';
 import { currentAccount } from '../lib/auth';
 import { h } from '../lib/dom';
+import { MONTHLY_PRICE, PREMIUM_CHAPTERS, hasPremium, isChapterLocked } from '../lib/premium';
 import { getProgress, resetProgress, streak, totals } from '../lib/progress';
 import { navigate } from '../router';
 import { heroCircuit } from '../ui/hero';
 import { icon } from '../ui/icons';
 import { CALCULATORS } from './calculators';
-import { linkButton, meter, plural } from './common';
+import { linkButton, lockBadge, meter, plural } from './common';
 
 export function statsSection(): HTMLElement {
   const p = getProgress();
@@ -90,6 +91,7 @@ export function homeView(): HTMLElement {
   const target = last && !p.lessonsDone.includes(last.id) ? last : next ?? LESSONS[0];
   const started = p.lessonsDone.length > 0 || !!p.lastLesson;
   const account = currentAccount();
+  const premium = hasPremium(account);
 
   const hero = h('section', { class: 'hero' },
     h('div', { class: 'hero-copy' },
@@ -114,7 +116,7 @@ export function homeView(): HTMLElement {
       CHAPTERS.map((ch) => {
         const lessons = LESSONS.filter((l) => l.chapter === ch.id);
         return h('div', { class: 'chapter' },
-          h('h3', null, ch.title),
+          h('h3', null, ch.title, isChapterLocked(ch.id, premium) ? lockBadge() : null),
           h('ol', { class: 'chapter-lessons', start: lessonIndex(lessons[0].id) + 1 },
             lessons.map((l) => h('li', { class: p.lessonsDone.includes(l.id) ? 'is-done' : '' },
               h('a', { href: `#lekcia-${l.id}` }, l.title),
@@ -132,9 +134,22 @@ export function homeView(): HTMLElement {
       h('a', { href: '#kalkulacky', class: 'text-link' }, 'Otvoriť všetky'),
     ),
     h('ul', { class: 'tool-links' },
-      CALCULATORS.map((c) => h('li', null, h('a', { href: `#kalk-${c.id}` }, h('strong', null, c.title), h('span', null, c.short)))),
+      CALCULATORS.map((c) => h('li', null, h('a', { href: `#kalk-${c.id}` },
+        h('strong', null, c.title, isChapterLocked(c.chapter, premium) ? lockBadge() : null),
+        h('span', null, c.short)))),
     ),
   );
 
-  return h('div', { class: 'view view-home' }, hero, statsSection(), course, tools, resetControl());
+  const premiumTitles = CHAPTERS.filter((c) => PREMIUM_CHAPTERS.has(c.id)).map((c) => c.title);
+  const premiumCount = LESSONS.filter((l) => PREMIUM_CHAPTERS.has(l.chapter)).length;
+  const offer = premium ? null : h('section', { class: 'premium-banner', 'aria-labelledby': 'premium-title' },
+    h('div', null,
+      h('p', { class: 'eyebrow' }, 'ElektroLab Premium'),
+      h('h2', { id: 'premium-title' }, `${premiumTitles.join(' a ')} za ${MONTHLY_PRICE} € mesačne`),
+      h('p', null, `${premiumCount} ${plural(premiumCount, 'lekcia', 'lekcie', 'lekcií')} navyše s cvičeniami a kalkulačkami. Máš zľavový kód? Zadáš ho pri objednávke.`),
+    ),
+    linkButton('#predplatne', 'Zobraziť predplatné', 'primary', 'arrow'),
+  );
+
+  return h('div', { class: 'view view-home' }, hero, statsSection(), course, offer, tools, resetControl());
 }

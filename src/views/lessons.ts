@@ -3,6 +3,7 @@ import { QUESTIONS } from '../content/questions';
 import { BAND_COLORS } from '../lib/colorcode';
 import { h } from '../lib/dom';
 import { formula, rich } from '../lib/formula';
+import { hasPremium, isChapterLocked } from '../lib/premium';
 import { getProgress, recordAnswer, setLastLesson, setLessonDone } from '../lib/progress';
 import { pick, randomSeed, createRng, shuffle } from '../lib/random';
 import { fmt, superscript } from '../lib/units';
@@ -12,18 +13,19 @@ import type { Question } from '../practice/types';
 import { FIGURES } from '../ui/figures';
 import { icon } from '../ui/icons';
 import { questionCard } from '../ui/question';
-import { backLink, linkButton, pageHead } from './common';
+import { backLink, linkButton, lockBadge, pageHead, premiumGate } from './common';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
 export function lessonsView(): HTMLElement {
   const p = getProgress();
+  const premium = hasPremium();
   return h('div', { class: 'view view-lessons' },
     pageHead('Kurz', 'Lekcie', 'Lekcie idú za sebou od základných veličín cez striedavé obvody až po elektrotechnické merania. Každá obsahuje teóriu, vzorce, riešené príklady a krátky test.'),
     CHAPTERS.map((ch) =>
       h('section', { class: 'chapter-block', 'aria-labelledby': `ch-${ch.id}` },
         h('div', { class: 'chapter-block-head' },
-          h('h2', { id: `ch-${ch.id}` }, ch.title),
+          h('h2', { id: `ch-${ch.id}` }, ch.title, isChapterLocked(ch.id, premium) ? lockBadge() : null),
           h('p', { class: 'muted' }, ch.blurb),
         ),
         h('ol', { class: 'lesson-list' },
@@ -37,7 +39,9 @@ export function lessonsView(): HTMLElement {
                   h('span', { class: 'lesson-summary' }, l.summary),
                 ),
                 h('span', { class: 'lesson-meta' },
-                  done ? h('span', { class: 'chip chip-good' }, icon('check', 14), 'preštudované') : h('span', { class: 'lesson-min' }, `${l.minutes} min`),
+                  isChapterLocked(l.chapter, premium)
+                    ? lockBadge()
+                    : done ? h('span', { class: 'chip chip-good' }, icon('check', 14), 'preštudované') : h('span', { class: 'lesson-min' }, `${l.minutes} min`),
                 ),
               ),
             );
@@ -166,11 +170,24 @@ export function lessonView(id: string): HTMLElement {
       linkButton('#lekcie', 'Prejsť na zoznam lekcií'),
     );
   }
-  setLastLesson(lesson.id);
   const idx = lessonIndex(lesson.id);
   const prev = LESSONS[idx - 1];
   const next = LESSONS[idx + 1];
   const chapter = CHAPTERS.find((c) => c.id === lesson.chapter)!;
+  const lessonNav = h('nav', { class: 'lesson-nav', 'aria-label': 'Ďalšie lekcie' },
+    prev ? h('a', { href: `#lekcia-${prev.id}`, class: 'lesson-nav-link prev' }, h('span', { class: 'eyebrow' }, 'Predchádzajúca'), h('span', null, prev.title)) : h('span', null),
+    next ? h('a', { href: `#lekcia-${next.id}`, class: 'lesson-nav-link next' }, h('span', { class: 'eyebrow' }, 'Ďalšia'), h('span', null, next.title)) : h('span', null),
+  );
+  const head = pageHead(`Lekcia ${pad(idx + 1)} · ${chapter.title} · ${lesson.minutes} min`, lesson.title, lesson.summary);
+  if (isChapterLocked(lesson.chapter)) {
+    return h('div', { class: 'view view-lesson' },
+      backLink('#lekcie', 'Lekcie'),
+      head,
+      premiumGate('Táto lekcia'),
+      lessonNav,
+    );
+  }
+  setLastLesson(lesson.id);
 
   const doneBtn = h('button', { type: 'button', class: 'btn' });
   const renderDone = () => {
@@ -188,7 +205,7 @@ export function lessonView(id: string): HTMLElement {
   return h('div', { class: 'view view-lesson' },
     backLink('#lekcie', 'Lekcie'),
     h('article', { class: 'lesson' },
-      pageHead(`Lekcia ${pad(idx + 1)} · ${chapter.title} · ${lesson.minutes} min`, lesson.title, lesson.summary),
+      head,
       h('div', { class: 'lesson-body' }, lesson.blocks.map(renderBlock)),
     ),
     lessonQuiz(lesson),
@@ -196,9 +213,6 @@ export function lessonView(id: string): HTMLElement {
       doneBtn,
       linkButton(`#cvicenie-${lesson.id}`, 'Precvičiť tému', 'secondary'),
     ),
-    h('nav', { class: 'lesson-nav', 'aria-label': 'Ďalšie lekcie' },
-      prev ? h('a', { href: `#lekcia-${prev.id}`, class: 'lesson-nav-link prev' }, h('span', { class: 'eyebrow' }, 'Predchádzajúca'), h('span', null, prev.title)) : h('span', null),
-      next ? h('a', { href: `#lekcia-${next.id}`, class: 'lesson-nav-link next' }, h('span', { class: 'eyebrow' }, 'Ďalšia'), h('span', null, next.title)) : h('span', null),
-    ),
+    lessonNav,
   );
 }

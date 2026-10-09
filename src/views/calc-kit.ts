@@ -2,6 +2,7 @@
  * Stavebnica kalkulačiek: vstupné políčka s predponami, riadky výsledkov,
  * prepínače a rozloženie. Používajú ju všetky kalkulačky.
  */
+import type { ChapterId } from '../content/lessons';
 import { h, type Child } from '../lib/dom';
 import { formula } from '../lib/formula';
 import { fmt, formatSI, parseQuantity, siParts } from '../lib/units';
@@ -10,6 +11,8 @@ export interface CalculatorInfo {
   id: string;
   title: string;
   short: string;
+  /** Kapitola, ku ktorej kalkulačka patrí – podľa nej sa určí, či je len pre predplatiteľov. */
+  chapter: ChapterId;
   render: () => HTMLElement;
 }
 

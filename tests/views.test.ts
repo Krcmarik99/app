@@ -2,9 +2,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DECKS } from '../src/content/flashcards';
 import { LESSONS } from '../src/content/lessons';
-import { currentAccount, logout, register } from '../src/lib/auth';
+import { currentAccount, logout, register, setSubscription } from '../src/lib/auth';
+import { PREMIUM_CHAPTERS } from '../src/lib/premium';
 import { formula, rich } from '../src/lib/formula';
 import { accountView } from '../src/views/account';
+import { premiumView } from '../src/views/premium';
 import { calculatorView, calculatorsView, CALCULATORS } from '../src/views/calculators';
 import { flashcardsView } from '../src/views/flashcards';
 import { homeView } from '../src/views/home';
@@ -14,6 +16,12 @@ import { practiceView } from '../src/views/practice';
 function mount(el: HTMLElement): HTMLElement {
   document.body.replaceChildren(el);
   return el;
+}
+
+/** Prihlási testovací účet s aktívnym predplatným, aby boli dostupné aj kapitoly Premium. */
+async function withPremium(): Promise<void> {
+  await register({ name: 'Test', username: `test${Math.random().toString(36).slice(2, 8)}`, password: 'heslo123', password2: 'heslo123', keepProgress: false, remember: true });
+  setSubscription({ plan: 'premium', since: new Date().toISOString(), price: 2, discount: 100 });
 }
 
 beforeEach(() => {
@@ -138,7 +146,8 @@ describe('stránky sa vykreslia bez chyby', () => {
     });
   });
 
-  it('zoznam lekcií a všetky lekcie', () => {
+  it('zoznam lekcií a všetky lekcie', async () => {
+    await withPremium();
     expect(mount(lessonsView()).querySelectorAll('.lesson-row')).toHaveLength(LESSONS.length);
     for (const l of LESSONS) {
       const el = mount(lessonView(l.id));
@@ -146,6 +155,7 @@ describe('stránky sa vykreslia bez chyby', () => {
       expect(el.querySelectorAll('.question').length).toBeGreaterThanOrEqual(2);
     }
     expect(mount(lessonView('neexistuje')).textContent).toContain('nenašla');
+    logout();
   });
 
   it('cvičenie – nastavenie, odpoveď a výsledok', () => {
@@ -165,13 +175,52 @@ describe('stránky sa vykreslia bez chyby', () => {
     expect(JSON.parse(localStorage.getItem('elektrolab:v1')!).stats['farebny-kod'].answered).toBe(5);
   });
 
-  it('všetky kalkulačky', () => {
+  it('všetky kalkulačky', async () => {
+    await withPremium();
     expect(mount(calculatorsView()).querySelectorAll('.calc-card')).toHaveLength(CALCULATORS.length);
     for (const c of CALCULATORS) {
       const el = mount(calculatorView(c.id));
       expect(el.querySelector('.calc-error'), c.id).toBeNull();
       expect(el.querySelector('.results, .big-value'), c.id).not.toBeNull();
     }
+    logout();
+  });
+
+  it('bez predplatného sú kapitoly Premium zamknuté', () => {
+    const locked = LESSONS.filter((l) => PREMIUM_CHAPTERS.has(l.chapter));
+    const free = LESSONS.filter((l) => !PREMIUM_CHAPTERS.has(l.chapter));
+    expect(locked.length).toBe(9);
+    expect(mount(lessonsView()).querySelectorAll('.lesson-row .chip-premium')).toHaveLength(locked.length);
+    for (const l of locked) {
+      const el = mount(lessonView(l.id));
+      expect(el.querySelector('.premium-gate'), l.id).not.toBeNull();
+      expect(el.querySelectorAll('.question')).toHaveLength(0);
+      expect(mount(practiceView(l.id)).querySelector('.premium-gate'), l.id).not.toBeNull();
+    }
+    expect(mount(lessonView(free[0].id)).querySelector('.premium-gate')).toBeNull();
+
+    const practice = mount(practiceView());
+    expect(practice.querySelectorAll('.chip-toggle:disabled')).toHaveLength(locked.length);
+    [...practice.querySelectorAll('button')].find((b) => b.textContent === 'Vybrať všetky')!.click();
+    expect(practice.querySelector('.muted')?.textContent).toBe(`Vybrané témy: ${free.length} z ${free.length}`);
+
+    for (const id of ['rlc', 'chyba', 'va', 'pristroj']) {
+      expect(mount(calculatorView(id)).querySelector('.premium-gate'), id).not.toBeNull();
+    }
+    expect(mount(calculatorView('ohm')).querySelector('.premium-gate')).toBeNull();
+  });
+
+  it('stránka predplatného', async () => {
+    const guest = mount(premiumView());
+    expect(guest.querySelector('.plan-price')?.textContent).toBe('2 € / mesiac');
+    expect(guest.querySelector('.price-row.is-total dd')?.textContent?.replace(/\u00a0/g, ' ')).toBe('2,00 €');
+    expect(guest.querySelector('a[href="#prihlasenie"]')).not.toBeNull();
+
+    await withPremium();
+    const active = mount(premiumView());
+    expect(active.querySelector('#active-title')?.textContent).toBe('Premium máš aktívne');
+    expect(active.querySelector('.price-row.is-total dd')?.textContent?.replace(/\u00a0/g, ' ')).toBe('0,00 € / mesiac');
+    logout();
   });
 
   it('kalkulačka Ohmovho zákona dopočíta prúd a výkon', () => {

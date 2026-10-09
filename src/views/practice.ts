@@ -1,12 +1,13 @@
 import { CHAPTERS, LESSONS, lessonById } from '../content/lessons';
 import { frag, h } from '../lib/dom';
+import { hasPremium, isChapterLocked } from '../lib/premium';
 import { recordAnswer, recordSession } from '../lib/progress';
 import { createRng, randomSeed } from '../lib/random';
 import { buildQuiz } from '../practice/session';
 import type { Question } from '../practice/types';
 import { icon } from '../ui/icons';
 import { questionCard } from '../ui/question';
-import { meter, pageHead } from './common';
+import { lockBadge, meter, pageHead, premiumGate } from './common';
 
 const COUNTS = [5, 10, 20] as const;
 
@@ -19,10 +20,22 @@ let lastSettings: Settings | null = null;
 
 export function practiceView(topic?: string): HTMLElement {
   const root = h('div', { class: 'view view-practice' });
-  const preset = topic && lessonById(topic) ? topic : undefined;
+  const premium = hasPremium();
+  const available = LESSONS.filter((l) => !isChapterLocked(l.chapter, premium));
+  const presetLesson = topic ? lessonById(topic) : undefined;
+  if (presetLesson && isChapterLocked(presetLesson.chapter, premium)) {
+    root.append(
+      pageHead('Precvičovanie', `Cvičenie: ${presetLesson.title}`),
+      premiumGate('Táto téma'),
+    );
+    return root;
+  }
+  const preset = presetLesson?.id;
   const settings: Settings = preset
     ? { topics: new Set([preset]), count: 5 }
-    : lastSettings ?? { topics: new Set(LESSONS.map((l) => l.id)), count: 10 };
+    : lastSettings ?? { topics: new Set(available.map((l) => l.id)), count: 10 };
+  // Po zrušení predplatného sa zamknuté témy z posledného výberu vynechajú.
+  for (const id of settings.topics) if (!available.some((l) => l.id === id)) settings.topics.delete(id);
 
   function showSetup(): void {
     const startBtn = h('button', { type: 'submit', class: 'btn btn-primary btn-lg' }, 'Začať cvičenie', icon('arrow', 18));
@@ -32,14 +45,18 @@ export function practiceView(topic?: string): HTMLElement {
       startBtn.disabled = settings.topics.size === 0;
       summary.textContent = settings.topics.size === 0
         ? 'Vyber aspoň jednu tému.'
-        : `Vybrané témy: ${settings.topics.size} z ${LESSONS.length}`;
+        : `Vybrané témy: ${settings.topics.size} z ${available.length}`;
     };
     const summary = h('p', { class: 'muted', 'aria-live': 'polite' });
 
     const topicGroups = CHAPTERS.map((ch) => h('div', { class: 'chip-group' },
-      h('p', { class: 'chip-group-title' }, ch.title),
+      h('p', { class: 'chip-group-title' }, ch.title,
+        isChapterLocked(ch.id, premium) ? h('a', { href: '#predplatne', class: 'chip-group-lock' }, lockBadge()) : null),
       h('div', { class: 'chips' }, LESSONS.filter((l) => l.chapter === ch.id).map((l) => {
-        const chip = h('button', { type: 'button', class: 'chip-toggle', id: `topic-${l.id}` }, l.title);
+        const locked = isChapterLocked(l.chapter, premium);
+        const chip = h('button', { type: 'button', class: 'chip-toggle', id: `topic-${l.id}`, disabled: locked },
+          locked ? icon('lock', 14) : null, l.title);
+        if (locked) return chip;
         chip.addEventListener('click', () => {
           if (settings.topics.has(l.id)) settings.topics.delete(l.id);
           else settings.topics.add(l.id);
@@ -69,7 +86,7 @@ export function practiceView(topic?: string): HTMLElement {
         h('fieldset', { class: 'setup-block' },
           h('legend', null, 'Témy'),
           h('div', { class: 'setup-tools' },
-            h('button', { type: 'button', class: 'btn btn-quiet btn-sm', onClick: () => { LESSONS.forEach((l) => settings.topics.add(l.id)); sync(); } }, 'Vybrať všetky'),
+            h('button', { type: 'button', class: 'btn btn-quiet btn-sm', onClick: () => { available.forEach((l) => settings.topics.add(l.id)); sync(); } }, 'Vybrať všetky'),
             h('button', { type: 'button', class: 'btn btn-quiet btn-sm', onClick: () => { settings.topics.clear(); sync(); } }, 'Zrušiť výber'),
           ),
           topicGroups,

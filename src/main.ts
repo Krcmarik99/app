@@ -5,6 +5,7 @@ import { h } from './lib/dom';
 import { sectionOf, startRouter, type Route, type Section } from './router';
 import { icon, logo, type IconName } from './ui/icons';
 import { accountView } from './views/account';
+import { premiumView } from './views/premium';
 import { calculatorView, calculatorsView, CALCULATORS } from './views/calculators';
 import { flashcardsView } from './views/flashcards';
 import { homeView } from './views/home';
@@ -30,6 +31,7 @@ function view(route: Route): HTMLElement {
     case 'calc': return calculatorView(route.id);
     case 'cards': return flashcardsView(route.deck);
     case 'account': return accountView(route.mode);
+    case 'premium': return premiumView();
   }
 }
 
@@ -46,6 +48,7 @@ function pageTitle(route: Route): string {
     case 'account':
       if (currentAccount()) return `Účet · ${base}`;
       return `${route.mode === 'register' ? 'Registrácia' : 'Prihlásenie'} · ${base}`;
+    case 'premium': return `Predplatné · ${base}`;
   }
 }
 
@@ -54,7 +57,8 @@ function accountLink(): HTMLAnchorElement {
   const account = currentAccount();
   return account
     ? h('a', { href: '#ucet', class: 'account-link', title: `Účet: ${account.name}` },
-      avatar(account.name), h('span', { class: 'account-name' }, account.name))
+      avatar(account.name), h('span', { class: 'account-name' }, account.name),
+      account.subscription ? h('span', { class: 'premium-tag' }, 'Premium') : null)
     : h('a', { href: '#prihlasenie', class: 'account-link is-guest' },
       icon('user', 18), h('span', { class: 'account-name' }, 'Prihlásiť sa'));
 }

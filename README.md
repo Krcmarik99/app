@@ -26,6 +26,12 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
   a vlastný pokrok. Pri registrácii sa dá doterajší pokrok preniesť do nového účtu. Účty sa ukladajú
   len v danom prehliadači (žiadny server); heslo sa neukladá, len jeho odtlačok PBKDF2-SHA-256
   s náhodnou soľou. Na inom zariadení treba účet vytvoriť znova.
+- **Predplatné ElektroLab Premium** za 2 € mesačne – odomkne kapitoly Striedavý prúd
+  a Elektrotechnické merania (lekcie, ich cvičenia a kalkulačky). Predplatné patrí k účtu. Platba kartou
+  zatiaľ nie je zapojená; predplatné sa aktivuje zľavovým kódom so 100 % zľavou. Kódy sú v
+  `src/lib/premium.ts` uložené len ako odtlačok SHA-256 (nový kód pridáš ako
+  `sha256(KÓD veľkými písmenami bez medzier)`). Keďže všetko beží v prehliadači, ide o ukážku –
+  skutočné spoplatnenie potrebuje platobnú bránu a server, ktorý platbu overí.
 - **Interaktívny obvod** na úvodnej stránke – napätie 0 až 500 V a odpor 0 Ω až 5 MΩ posuvníkom
   alebo zadaním hodnoty, schéma s rezistorom alebo s LED a predradným rezistorom.
 
@@ -66,9 +72,10 @@ src/
   content/      lekcie, otázky s výberom, kartičky (len dáta)
   content/meas/ kapitola Elektrotechnické merania – každá lekcia s otázkami a generátormi v jednom súbore
   practice/     generátory číselných príkladov a zostavenie cvičenia
-  lib/          výpočty (electro), jednotky a predpony (units), farebný kód, vzorce, pokrok, účty (auth)
+  lib/          výpočty (electro), jednotky a predpony (units), farebný kód, vzorce, pokrok, účty (auth),
+                predplatné (premium)
   ui/           schémy, grafy, karta otázky, interaktívny obvod na úvodnej stránke
-  views/        stránky: domov, lekcie, cvičenie, kalkulačky, kartičky, účet
+  views/        stránky: domov, lekcie, cvičenie, kalkulačky, kartičky, účet, predplatné
   router.ts     navigácia cez #kotvy (funguje aj na statickom hostingu)
 tests/          testy (Vitest)
 ```

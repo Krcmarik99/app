@@ -7,11 +7,20 @@ import {
   type Account, type AuthField, type AuthResult,
 } from '../lib/auth';
 import { h, type Attrs, type Child } from '../lib/dom';
+import { MONTHLY_PRICE, monthlyTotal } from '../lib/premium';
 import { hasGuestProgress } from '../lib/progress';
+import { fmtFixed } from '../lib/units';
 import { navigate } from '../router';
 import { icon } from '../ui/icons';
-import { avatar, pageHead } from './common';
+import { avatar, linkButton, pageHead } from './common';
 import { statsSection } from './home';
+
+/** Kam sa vrátiť po prihlásení alebo registrácii (napr. späť na predplatné). */
+let returnTo: string | null = null;
+
+export function setAuthReturn(hash: string | null): void {
+  returnTo = hash;
+}
 
 interface FormField {
   el: HTMLElement;
@@ -80,7 +89,9 @@ function handleSubmit(
     button.disabled = false;
     button.textContent = idleText;
     if (result.ok) {
-      navigate('#domov');
+      const target = returnTo ?? '#domov';
+      returnTo = null;
+      navigate(target);
       return;
     }
     const target = result.field ? fields[result.field] : undefined;
@@ -177,6 +188,21 @@ function deleteControl(): HTMLElement {
   return h('details', { class: 'danger-zone' }, h('summary', null, 'Zmazať účet'), form);
 }
 
+function subscriptionCard(account: Account): HTMLElement {
+  const sub = account.subscription;
+  return h('section', { class: 'sub-card', 'aria-label': 'Predplatné' },
+    h('div', null,
+      h('p', { class: 'eyebrow' }, 'Predplatné'),
+      sub
+        ? h('p', { class: 'sub-state' }, 'ElektroLab Premium · ',
+          h('strong', null, `${fmtFixed(monthlyTotal(sub.discount), 2)} € / mesiac`),
+          sub.discount ? ` (zľava ${sub.discount} %)` : '')
+        : h('p', { class: 'sub-state' }, `Zatiaľ nemáš predplatné. Premium odomkne Striedavý prúd a Elektrotechnické merania za ${MONTHLY_PRICE} € mesačne.`),
+    ),
+    linkButton('#predplatne', sub ? 'Spravovať predplatné' : 'Zobraziť predplatné', sub ? 'secondary' : 'primary'),
+  );
+}
+
 function profilePage(account: Account): HTMLElement {
   const created = new Date(account.created);
   return h('div', { class: 'view view-account' },
@@ -191,6 +217,7 @@ function profilePage(account: Account): HTMLElement {
       h('button', { type: 'button', class: 'btn btn-secondary', onClick: () => { logout(); navigate('#domov'); } },
         icon('logout', 18), 'Odhlásiť sa'),
     ),
+    subscriptionCard(account),
     statsSection(),
     deleteControl(),
   );
