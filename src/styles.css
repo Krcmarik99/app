@@ -669,7 +669,7 @@ dt .frac {
 .legend-unit {
   font-family: var(--font-mono);
   font-size: 13px;
-  white-space: nowrap;
+  min-width: 4.5em;
 }
 
 /* ------------------------------------------------------------------ schémy a grafy */

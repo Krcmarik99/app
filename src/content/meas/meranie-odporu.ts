@@ -1,7 +1,7 @@
 import type { MeasModule } from './types';
 import { s } from '../../lib/dom';
 import { pick, shuffle, type Rng } from '../../lib/random';
-import { fmt } from '../../lib/units';
+import { fmt, siParts } from '../../lib/units';
 import { b, n, numeric, q, type Generator } from '../../practice/helpers';
 import type { ChoiceQuestion } from '../../practice/types';
 import { ohmmeterFigure } from '../../ui/meas-figures';
@@ -41,7 +41,12 @@ function ohmScale(ri: number, needleRx: number): SVGSVGElement {
   const r1 = (x: number) => Math.round(x * 10) / 10;
   const major = [0, 0.2, 0.4, 1, 2, 4, 10, Infinity].map((k) => k * ri);
   const minor = [0.1, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1.5, 3, 6, 20].map((k) => k * ri);
-  const label = (rx: number) => (Number.isFinite(rx) ? fmt(rx, 3) : '∞');
+  /** Krátky popis stupnice s predponou (200, 1k, 10k, 50k), aby sa susedné popisy neprekrývali. */
+  const label = (rx: number) => {
+    if (!Number.isFinite(rx)) return '∞';
+    const { scaled, prefix } = siParts(rx, 3);
+    return `${fmt(scaled, 3)}${prefix}`;
+  };
 
   const [ax, ay] = pt(0, r);
   const [bx, by] = pt(1, r);
@@ -67,13 +72,13 @@ function ohmScale(ri: number, needleRx: number): SVGSVGElement {
   const [nx, ny] = pt(pos(needleRx), r - 4);
   parts.push(
     s('text', { x: 30, y: H - 40, class: 'dial-sym' }, 'Ω'),
-    s('text', { x: W - 16, y: H - 14, 'text-anchor': 'end', class: 'dial-small' }, `stred stupnice ${fmt(ri, 3)} Ω`),
+    s('text', { x: W - 16, y: H - 14, 'text-anchor': 'end', class: 'dial-small' }, `stred stupnice ${q(ri, 'Ω')}`),
     s('line', { x1: cx, y1: cy, x2: r1(nx), y2: r1(ny), class: 'dial-needle' }),
     s('circle', { cx, cy, r: 7, class: 'dial-pivot' }),
   );
   return s(
     'svg',
-    { viewBox: `0 0 ${W} ${H}`, width: W, class: 'dial', role: 'img', 'aria-label': `Obrátená nelineárna stupnica ohmmetra, ručička ukazuje ${label(needleRx)} Ω` },
+    { viewBox: `0 0 ${W} ${H}`, width: W, class: 'dial', role: 'img', 'aria-label': `Obrátená nelineárna stupnica ohmmetra, ručička ukazuje ${Number.isFinite(needleRx) ? q(needleRx, 'Ω') : '∞'}` },
     s('title', null, 'Stupnica ohmmetra'),
     ...parts,
   );
@@ -108,6 +113,60 @@ const GROUP_TEXT: Record<Group, string> = {
   stredné: 'stredné odpory (od 1 Ω do 1 MΩ)',
   veľké: 'veľké odpory (nad 1 MΩ)',
 };
+
+/** Otázky o mechanickej a elektrickej nule; prvá možnosť je vždy správna. */
+const ZERO_TASKS: { prompt: string; options: string[]; explanation: string }[] = [
+  {
+    prompt: 'Meracie svorky ohmmetra s magnetoelektrickým voltmetrom sú **rozpojené**. Kde stojí ručička?',
+    options: [
+      'na mechanickej nule – na začiatku stupnice pri značke ∞',
+      'na elektrickej nule – na konci stupnice pri značke 0 Ω',
+      'v strede stupnice, kde `$R_{x} = $R_{i}`',
+      'za koncom stupnice, lebo odpor je nekonečne veľký',
+    ],
+    explanation: 'Pri rozpojených svorkách (`$R_{x}` = ∞) obvodom neteče prúd, ručička sa nevychýli a zostane na mechanickej nule. Na stupnici ohmmetra je tam značka ∞.',
+  },
+  {
+    prompt: 'Meracie svorky ohmmetra s magnetoelektrickým voltmetrom **skratuješ** tlačidlom TL. Kde má byť ručička, ak je prístroj správne nastavený?',
+    options: [
+      'na elektrickej nule – na konci stupnice pri značke 0 Ω',
+      'na mechanickej nule – na začiatku stupnice pri značke ∞',
+      'v strede stupnice, kde `$R_{x} = $R_{i}`',
+      'na začiatku stupnice, lebo pri skrate prístrojom neteče prúd',
+    ],
+    explanation: 'Skratované svorky znamenajú `$R_{x}` = 0 – obvodom tečie najväčší prúd a ručička sa vychýli na koniec stupnice. Tejto polohe zodpovedá elektrická nula (0 Ω).',
+  },
+  {
+    prompt: 'Pri skratovaných svorkách sa ručička ohmmetra nevychýli presne na 0 Ω, lebo batéria je čiastočne vybitá. Čo urobíš pred meraním?',
+    options: [
+      'elektrickým bočníkom `$R_{b}` nastavíš ručičku na 0 Ω – elektrickú nulu',
+      'korektorom ručičky nastavíš mechanickú nulu na 0 Ω',
+      'nič, odchýlka elektrickej nuly výsledok merania neovplyvní',
+      'rozpojíš svorky a bočníkom `$R_{b}` nastavíš ručičku na ∞',
+    ],
+    explanation: 'Výchylka ohmmetra závisí aj od napätia zdroja. Preto sa pred každým meraním pri skratovaných svorkách nastaví elektrickým bočníkom `$R_{b}` ručička na 0 Ω (elektrická nula). Mechanická nula zodpovedá rozpojeným svorkám (∞).',
+  },
+  {
+    prompt: 'Ktorej hodnote meraného odporu zodpovedá **elektrická nula** ohmmetra s magnetoelektrickým voltmetrom?',
+    options: [
+      '`$R_{x}` = 0 – meracie svorky sú skratované',
+      '`$R_{x}` = ∞ – meracie svorky sú rozpojené',
+      '`$R_{x} = $R_{i}` – stred stupnice',
+      '`$R_{x} = $R_{b}` – odpor elektrického bočníka',
+    ],
+    explanation: 'Hodnote `$R_{x}` = 0 (meracie svorky skratované) zodpovedá elektrická nula, hodnote `$R_{x}` = ∞ (meracie svorky rozpojené) mechanická nula.',
+  },
+  {
+    prompt: 'Ktorej hodnote meraného odporu zodpovedá **mechanická nula** ohmmetra s magnetoelektrickým voltmetrom?',
+    options: [
+      '`$R_{x}` = ∞ – meracie svorky sú rozpojené',
+      '`$R_{x}` = 0 – meracie svorky sú skratované',
+      '`$R_{x} = $R_{i}` – stred stupnice',
+      '`$R_{x} = $R_{p}` – odpor predradného rezistora',
+    ],
+    explanation: 'Hodnote `$R_{x}` = ∞ (meracie svorky rozpojené) zodpovedá mechanická nula – obvodom neteče prúd a ručička sa nevychýli. Hodnote `$R_{x}` = 0 zodpovedá elektrická nula.',
+  },
+];
 
 const generators: Generator[] = [
   // Zaradenie odporu do skupiny podľa veľkosti.
@@ -155,8 +214,8 @@ const generators: Generator[] = [
     ]);
     const rx = pick(rng, set.rs);
     const ux = clean(rx * set.i0);
-    return numeric(ID, `Číslicový ohmmeter pretláča cez meraný odpor definovaný prúd ${q(set.i0, 'A')} a jeho voltmeter nameria na odpore úbytok napätia ${q(ux, 'V', 4)}. Aký odpor prístroj zobrazí?`, rx, 'Ω', [
-      'Prístroj pracuje na princípe Ohmovej metódy – prúd pozná, napätie zmeria a vypočíta podiel.',
+    return numeric(ID, `Zdroj definovaného prúdu v číslicovom ohmmetri dodáva do meraného odporu prúd ${q(set.i0, 'A')}. Prístroj nameria na odpore úbytok napätia ${q(ux, 'V', 4)}. Aký odpor zobrazí?`, rx, 'Ω', [
+      'Prístroj pracuje na princípe Ohmovej metódy – prúd pozná, napätie zmeria a vypočíta ich podiel.',
       `\`$R_{x} = @f{$U_{x}}{$I_{0}} = @f{${b(ux, 'V')}}{${b(set.i0, 'A')}}\` = **${q(rx, 'Ω')}**`,
     ]);
   },
@@ -173,10 +232,16 @@ const generators: Generator[] = [
         `\`@f{$α}{$α_{max}} = @f{$R_{i}}{$R_{i} + $R_{x}} = @f{${n(ri)}}{${n(ri)} + ${n(rx)}}\` = ${n(p / 100, 4)} → **${n(p, 3)} %**`,
       ], { fixedUnit: true, tolerance: 0.01, figure: () => ohmScale(ri, rx) });
     }
-    return numeric(ID, `Ručička sériového ohmmetra s vnútorným odporom \`$R_{i}\` = ${q(ri, 'Ω')} ukazuje ${n(p, 4)} % celej stupnice. Aký odpor je pripojený na meracie svorky?`, rx, 'Ω', [
-      `Z \`@f{$α}{$α_{max}} = @f{$R_{i}}{$R_{i} + $R_{x}}\` vyjadríme \`$R_{x} = $R_{i} · (@f{$α_{max}}{$α} − 1)\`.`,
+    return numeric(ID, `Ručička sériového ohmmetra s vnútorným odporom \`$R_{i}\` = ${q(ri, 'Ω')} sa vychýli na ${n(p, 4)} % celej stupnice. Aký odpor je pripojený na meracie svorky?`, rx, 'Ω', [
+      `Zo vzťahu \`@f{$α}{$α_{max}} = @f{$R_{i}}{$R_{i} + $R_{x}}\` vyjadri \`$R_{x} = $R_{i} · (@f{$α_{max}}{$α} − 1)\`.`,
       `\`$R_{x}\` = ${n(ri)} · (${n(100 / p, 5)} − 1) = **${q(rx, 'Ω')}**`,
     ], { figure: () => ohmScale(ri, rx) });
+  },
+
+  // Mechanická a elektrická nula ohmmetra s magnetoelektrickým voltmetrom.
+  (rng) => {
+    const t = pick(rng, ZERO_TASKS);
+    return choice(t.prompt, t.options, t.explanation, rng);
   },
 ];
 
@@ -190,22 +255,22 @@ const mod: MeasModule = {
     summary: 'Malé, stredné a veľké odpory, prepočet na 20 °C, ohmmeter s magnetoelektrickým voltmetrom a číslicový ohmmeter.',
     minutes: 10,
     blocks: [
-      { t: 'p', text: 'Elektrický odpor je jedna zo základných vlastností elektrických obvodov. Z hľadiska veľkosti ho rozdeľujeme do troch skupín – a pre každú sa hodí iná meracia metóda.' },
+      { t: 'p', text: 'Elektrický odpor je jedna zo základných vlastností elektrických obvodov. Na jeho meranie sa používa veľké množstvo meracích metód. Táto lekcia sa venuje **priamym metódam** – prístroj ukáže odpor priamo na stupnici alebo na displeji. **Nepriamu absolútnu metódu**, pri ktorej sa odpor vypočíta z nameraného napätia a prúdu, preberá lekcia o Ohmovej (VA) metóde. Z hľadiska veľkosti delíme odpory do troch skupín:' },
       {
         t: 'table',
         head: ['Skupina', 'Veľkosť', 'Príklady'],
         rows: [
-          ['malé odpory', 'do 1 Ω', 'vodiče, vinutia transformátorov a motorov, bočníky, prechodové odpory kontaktov'],
-          ['stredné odpory', 'od 1 Ω do 1 MΩ', 'bežné rezistory, cievky relé a stýkačov, vlákna žiaroviek'],
+          ['malé odpory', 'do 1 Ω', 'vodiče, vinutia výkonových transformátorov a motorov, bočníky, prechodové odpory kontaktov'],
+          ['stredné odpory', 'od 1 Ω do 1 MΩ', 'bežné rezistory, cievky relé a stýkačov, vinutia malých motorov, vlákna žiaroviek'],
           ['veľké odpory', 'nad 1 MΩ', 'izolačné odpory káblov a vinutí, zvodové odpory kondenzátorov'],
         ],
       },
       { t: 'note', kind: 'remember', text: 'Ak chceš meraním určiť **len elektrický odpor**, napájaj obvod **jednosmerným zdrojom**. So striedavým zdrojom by sa prejavili aj ďalšie vlastnosti obvodu – indukčnosť, kapacita, zvod a pod.' },
       { t: 'h', text: 'Odpor závisí od teploty' },
-      { t: 'p', text: 'Pre odpory všetkých veľkostí je charakteristická ich závislosť od teploty. Odpory preto meriame najčastejšie pri tzv. **laboratórnych podmienkach**, t. j. pri teplote 20 °C. Ak chceš poznať odpor pri inej teplote, prepočítaj ho:' },
+      { t: 'p', text: 'Pre odpory všetkých veľkostí je charakteristická ich závislosť od teploty. Odpory sa preto najčastejšie merajú pri tzv. **laboratórnych podmienkach**, t. j. pri teplote 20 °C. Odpor pri inej teplote vypočítaš podľa prvého vzťahu. Často to potrebuješ naopak: odpor zmeraný pri inej teplote (napríklad odpor vinutia motora hneď po chode) prepočítaš podľa druhého vzťahu na 20 °C, aby sa dal porovnať s hodnotou od výrobcu.' },
       {
         t: 'formula',
-        tex: '$R_{x} = $R_{20} · [1 + $α · ($ϑ_{x} − $ϑ_{20})]',
+        tex: ['$R_{x} = $R_{20} · [1 + $α · ($ϑ_{x} − $ϑ_{20})]', '$R_{20} = @f{$R_{x}}{1 + $α · ($ϑ_{x} − $ϑ_{20})}'],
         legend: [
           ['$R_{x}', 'odpor pri teplote ϑx', 'Ω'],
           ['$R_{20}', 'odpor pri 20 °C', 'Ω'],
@@ -214,8 +279,6 @@ const mod: MeasModule = {
           ['$ϑ_{20}', 'laboratórna teplota 20 °C', '°C'],
         ],
       },
-      { t: 'p', text: 'Často to potrebuješ naopak: odpor zmeraný pri inej teplote (napríklad vinutie motora hneď po chode) prepočítaš na 20 °C, aby sa dal porovnať s hodnotou od výrobcu:' },
-      { t: 'formula', tex: '$R_{20} = @f{$R_{x}}{1 + $α · ($ϑ_{x} − $ϑ_{20})}' },
       {
         t: 'example',
         title: 'Vinutie motora po chode',
@@ -224,50 +287,47 @@ const mod: MeasModule = {
           '`1 + $α · ($ϑ_{x} − $ϑ_{20})` = 1 + 0,0039 · (65 − 20) = 1 + 0,1755 = 1,1755',
           '`$R_{20} = @f{8,2}{1,1755}` = 6,98 Ω',
         ],
-        result: '`$R_{20}` ≈ 6,98 Ω – za tepla má vinutie o 17,6 % väčší odpor',
+        result: '`$R_{20}` ≈ 6,98 Ω – za tepla má vinutie o 17,55 % väčší odpor',
       },
-      { t: 'h', text: 'Meracie metódy' },
-      { t: 'p', text: 'Na meranie elektrického odporu sa používa veľké množstvo meracích metód. V tejto lekcii sú **priame metódy** – prístroj ukáže odpor priamo na stupnici alebo na displeji. **Nepriamu absolútnu metódu**, pri ktorej sa odpor vypočíta z nameraného napätia a prúdu, preberá lekcia o Ohmovej (VA) metóde.' },
       { t: 'h', text: 'Ohmmeter s magnetoelektrickým voltmetrom' },
       { t: 'figure', fig: ohmmeterFigure, caption: 'Zdroj, meracie svorky `$R_{x}`, tlačidlo TL na skratovanie svoriek, merací prístroj Ω, elektrický bočník `$R_{b}` a odpor `$R_{p}`. Meraný odpor je v sérii so zdrojom a prístrojom.' },
-      { t: 'p', text: 'Merací prístroj je v skutočnosti **magnetoelektrický voltmeter ciachovaný v ohmoch**. Meraný odpor `$R_{x}` je zapojený do série so zdrojom a prístrojom, takže **výchylka závisí od veľkosti** `$R_{x}`: čím väčší odpor, tým menší prúd a menšia výchylka.' },
+      { t: 'p', text: 'Merací prístroj je v skutočnosti **magnetoelektrický voltmeter ciachovaný v ohmoch**. Meraný odpor `$R_{x}` je zapojený do série so zdrojom a prístrojom (preto sa mu hovorí aj **sériový ohmmeter**), takže **výchylka závisí od veľkosti** `$R_{x}`: čím väčší odpor, tým menší prúd a menšia výchylka.' },
       {
         t: 'list',
         items: [
           '`$R_{x}` = ∞ (meracie svorky **rozpojené**) – obvodom neteče prúd a ručička stojí na **mechanickej nule**, na začiatku stupnice so značkou ∞.',
           '`$R_{x}` = 0 (meracie svorky **skratované**, napr. tlačidlom TL) – tečie najväčší prúd a ručička je na konci stupnice, na **elektrickej nule** (0 Ω).',
+          'Výchylka závisí aj od **napätia zdroja**, ktoré sa s vybíjaním batérie zmenšuje. Preto má prístroj **elektrický bočník** `$R_{b}`, ktorým sa **pred každým meraním nastavuje elektrická nula**: skratuješ svorky a bočníkom nastavíš ručičku presne na 0 Ω.',
         ],
       },
-      { t: 'p', text: 'Výchylka prístroja závisí aj od **napätia zdroja**, ktoré sa s vybíjaním batérie zmenšuje. Preto má prístroj **elektrický bočník** `$R_{b}`, ktorým sa **pred každým meraním nastavuje elektrická nula**: skratuješ svorky a bočníkom nastavíš ručičku presne na 0 Ω.' },
       { t: 'h', text: 'Prečo je stupnica obrátená a nelineárna' },
-      { t: 'p', text: 'Pri nastavenej elektrickej nule má ohmmeter vnútorný odpor `$R_{i}` (zdroj, prístroj a odpory spolu). Prúd a s ním aj výchylka klesajú so zväčšujúcim sa `$R_{x}`:' },
+      { t: 'p', text: 'Pri nastavenej elektrickej nule má obvod ohmmetra vnútorný odpor `$R_{i}` (zdroj, prístroj s bočníkom a odpor `$R_{p}` spolu). Prúd a s ním aj výchylka klesajú so zväčšujúcim sa `$R_{x}`:' },
       {
         t: 'formula',
         tex: ['$I = @f{$U}{$R_{i} + $R_{x}}', '@f{$α}{$α_{max}} = @f{$R_{i}}{$R_{i} + $R_{x}}'],
         legend: [['$R_{i}', 'vnútorný odpor ohmmetra s nastavenou nulou', 'Ω'], ['$α_{max}', 'výchylka pri skratovaných svorkách (0 Ω)', 'dielik']],
       },
-      { t: 'figure', fig: () => ohmScale(50, 75), caption: 'Stupnica ohmmetra s `$R_{i}` = 50 Ω, ručička ukazuje 75 Ω (40 % stupnice – pozri príklad nižšie). Pri `$R_{x} = $R_{i}` by bola ručička presne v strede. Smerom k ∞ sa dieliky zhusťujú, preto sa najpresnejšie odčítava okolo stredu stupnice.' },
+      { t: 'figure', fig: () => ohmScale(50, 75), caption: 'Stupnica ohmmetra s `$R_{i}` = 50 Ω, ručička ukazuje 75 Ω (40 % stupnice – pozri príklad nižšie). Pri `$R_{x} = $R_{i}` by bola ručička presne v strede. Smerom k ∞ sa značky zhusťujú a pri 0 sú odčítané hodnoty malé, preto je relatívna chyba odčítania najmenšia okolo stredu stupnice.' },
       {
         t: 'example',
         title: 'Odčítanie zo stupnice ohmmetra',
         given: ['`$R_{i}` = 50 Ω', 'ručička ukazuje 40 % celej stupnice'],
         steps: [
-          'Z `@f{$α}{$α_{max}} = @f{$R_{i}}{$R_{i} + $R_{x}}` vyjadríme `$R_{x} = $R_{i} · (@f{$α_{max}}{$α} − 1)`.',
+          'Zo vzťahu `@f{$α}{$α_{max}} = @f{$R_{i}}{$R_{i} + $R_{x}}` vyjadri `$R_{x} = $R_{i} · (@f{$α_{max}}{$α} − 1)`.',
           '`$R_{x}` = 50 · (`@f{1}{0,4}` − 1) = 50 · 1,5 = 75 Ω',
         ],
         result: '`$R_{x}` = 75 Ω',
       },
       { t: 'h', text: 'Číslicový ohmmeter (multimeter)' },
-      { t: 'p', text: 'Väčšina číslicových ohmmetrov pracuje na princípe merania odporu **Ohmovou metódou**, teda `$R = @f{$U}{$I}`, s tým, že:' },
+      { t: 'p', text: 'Väčšina číslicových ohmmetrov pracuje na princípe merania odporu **Ohmovou metódou**, teda `$R = @f{$U}{$I}`. Samotné meranie je potom založené na princípoch činnosti číslicových meracích prístrojov, takže pre jeho presnosť platí všetko z lekcie o chybách ČMP. Oproti klasickej Ohmovej metóde:' },
       {
         t: 'list',
         items: [
-          'pri meraní **veľkých odporov** je zdroj a voltmeter nahradený **zdrojom definovaného napätia**,',
-          'pri meraní **stredných a malých odporov** je zdroj a ampérmeter nahradený **zdrojom definovaného prúdu**.',
+          'pri meraní **veľkých odporov** je zdroj a voltmeter nahradený **zdrojom definovaného napätia** – prístroj meria prúd,',
+          'pri meraní **stredných a malých odporov** je zdroj a ampérmeter nahradený **zdrojom definovaného prúdu** – prístroj zmeria úbytok napätia na odpore, vydelí ho známym prúdom a výsledok zobrazí v ohmoch.',
         ],
       },
       { t: 'formula', tex: '$R_{x} = @f{$U_{x}}{$I_{0}}', legend: [['$I_{0}', 'známy prúd zo zdroja definovaného prúdu', 'A'], ['$U_{x}', 'úbytok napätia na meranom odpore', 'V']] },
-      { t: 'p', text: 'Samotné meranie je potom založené na princípoch činnosti číslicových meracích prístrojov – prístroj zmeria napätie, vydelí ho známym prúdom a výsledok zobrazí v ohmoch. Pre jeho presnosť platí všetko z lekcie o chybách ČMP.' },
       {
         t: 'example',
         title: 'Ako „počíta“ multimeter',
@@ -275,8 +335,7 @@ const mod: MeasModule = {
         steps: ['`$R_{x} = @f{$U_{x}}{$I_{0}} = @f{0,47}{0,001}` = 470 Ω'],
         result: 'displej ukáže 470 Ω',
       },
-      { t: 'note', kind: 'warn', text: 'Odpor meraj vždy **bez napätia** – vypni zdroj a vybi kondenzátory. Súčiastku podľa možnosti odpoj z obvodu, inak meriaš aj odpor paralelných vetiev.' },
-      { t: 'note', kind: 'tip', text: 'Pri malých odporoch sa prejaví aj odpor meracích šnúr a prechodový odpor svoriek (desatiny ohmu). Skratuj meracie hroty, zapamätaj si údaj a odčítaj ho od nameranej hodnoty.' },
+      { t: 'note', kind: 'warn', text: 'Odpor meraj vždy **bez napätia** – vypni zdroj a vybi kondenzátory. Súčiastku podľa možnosti odpoj z obvodu, inak meriaš aj odpor paralelných vetiev. Pri malých odporoch sa prejaví aj odpor meracích šnúr a prechodový odpor svoriek (desatiny ohmu): skratuj meracie hroty, zapamätaj si údaj a odčítaj ho od nameranej hodnoty.' },
     ],
   },
   questions: [
@@ -305,9 +364,9 @@ const mod: MeasModule = {
     },
     {
       lessonId: ID,
-      prompt: 'Na čo slúži elektrický bočník Rb ohmmetra?',
+      prompt: 'Na čo slúži elektrický bočník `$R_{b}` ohmmetra s magnetoelektrickým voltmetrom?',
       options: ['pred každým meraním sa ním nastaví elektrická nula', 'prepína merací rozsah', 'chráni prístroj pred preťažením', 'nastavuje mechanickú nulu ručičky'],
-      explanation: 'Výchylka závisí od napätia zdroja, ktoré sa mení. Pri skratovaných svorkách sa bočníkom Rb nastaví ručička na 0 Ω – elektrickú nulu.',
+      explanation: 'Výchylka závisí od napätia zdroja, ktoré sa mení. Pri skratovaných svorkách sa bočníkom `$R_{b}` nastaví ručička na 0 Ω – elektrickú nulu.',
     },
     {
       lessonId: ID,
@@ -318,7 +377,7 @@ const mod: MeasModule = {
         'porovnáva meraný odpor s odporovou dekádou',
         'meria striedavým prúdom a vyhodnocuje fázový posun',
       ],
-      explanation: 'Pri stredných a malých odporoch pretláča zdroj definovaného prúdu známy prúd a prístroj zmeria úbytok napätia. Zdroj definovaného napätia sa používa pri veľkých odporoch.',
+      explanation: 'Pri stredných a malých odporoch dodáva zdroj definovaného prúdu do odporu známy prúd a prístroj zmeria úbytok napätia na odpore. Zdroj definovaného napätia sa používa pri veľkých odporoch.',
     },
     {
       lessonId: ID,
