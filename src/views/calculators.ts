@@ -3,7 +3,7 @@ import {
 } from '../lib/colorcode';
 import { frag, h } from '../lib/dom';
 import {
-  E12, E24, chargingVoltage, dividerOutput, nearestStandard, reciprocalSum, resonanceFrequency,
+  E12, E24, LED_COLORS, chargingVoltage, dividerOutput, nearestStandard, reciprocalSum, resonanceFrequency,
   resistanceAtTemperature, seriesRlc, seriesSum, solveOhm, wireResistance, type OhmKey,
 } from '../lib/electro';
 import { rich } from '../lib/formula';
@@ -501,14 +501,6 @@ function rlcCalc(): HTMLElement {
 }
 
 // ---------------------------------------------------------------- LED
-
-const LED_COLORS: [string, string, number][] = [
-  ['red', 'červená', 2.0],
-  ['yellow', 'žltá', 2.1],
-  ['green', 'zelená', 2.2],
-  ['blue', 'modrá', 3.2],
-  ['white', 'biela', 3.2],
-];
 
 function ledCalc(): HTMLElement {
   const out = h('div', { class: 'calc-result' });

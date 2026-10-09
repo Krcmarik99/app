@@ -1067,16 +1067,61 @@ dt .frac {
 
 .slider {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 76px;
+  grid-template-columns: 150px minmax(0, 1fr) 120px;
   align-items: center;
   gap: 12px;
   font-size: 15px;
 }
 
-.slider-value {
-  font-family: var(--font-mono);
-  text-align: right;
+.slider-field {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 9px;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font: 500 15px var(--font-mono);
   font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.slider-field:focus-visible {
+  outline: 2px solid var(--trace);
+  outline-offset: 1px;
+}
+
+.slider-field.is-invalid {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.hero-entry-hint {
+  margin-top: -6px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.hero-entry-hint.is-error {
+  color: var(--bad);
+  font-weight: 500;
+}
+
+.hero-color select.field-input {
+  padding-block: 8px;
+}
+
+.led-glow {
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.sch .comp-led.is-burnt {
+  color: var(--bad);
+}
+
+.sch .comp-led.is-burnt .b {
+  fill: var(--ink-2);
 }
 
 input[type='range'] {
@@ -1126,6 +1171,11 @@ input[type='range'] {
   color: var(--warn);
 }
 
+.hero-status.is-idle {
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: minmax(0, 1fr);
@@ -1135,11 +1185,11 @@ input[type='range'] {
 
 @media (max-width: 480px) {
   .slider {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) 128px;
     row-gap: 4px;
   }
 
-  .slider input {
+  .slider input[type='range'] {
     grid-column: 1 / -1;
     grid-row: 2;
   }

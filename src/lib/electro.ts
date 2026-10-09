@@ -9,6 +9,15 @@ export const E24 = [
   3.3, 3.6, 3.9, 4.3, 4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1,
 ] as const;
 
+/** Bežné LED: identifikátor, farba a typické napätie v priepustnom smere U_F. */
+export const LED_COLORS: [string, string, number][] = [
+  ['red', 'červená', 2.0],
+  ['yellow', 'žltá', 2.1],
+  ['green', 'zelená', 2.2],
+  ['blue', 'modrá', 3.2],
+  ['white', 'biela', 3.2],
+];
+
 export function seriesSum(values: readonly number[]): number {
   return values.reduce((sum, v) => sum + v, 0);
 }

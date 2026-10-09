@@ -93,7 +93,7 @@ export function homeView(): HTMLElement {
         linkButton(`#lekcia-${target.id}`, started ? `Pokračovať: ${target.title}` : `Začať: ${target.title}`, 'primary', 'arrow'),
         linkButton('#cvicenie', 'Precvičovať príklady', 'secondary'),
       ),
-      h('p', { class: 'hero-hint' }, icon('bolt', 16), 'Pohni posuvníkmi a sleduj, ako Ohmov zákon mení prúd aj zahrievanie rezistora.'),
+      h('p', { class: 'hero-hint' }, icon('bolt', 16), 'Pohni posuvníkmi alebo napíš vlastné hodnoty a sleduj, ako Ohmov zákon mení prúd, zahrievanie rezistora aj svit LED.'),
     ),
     heroCircuit(),
   );

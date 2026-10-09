@@ -44,37 +44,96 @@ describe('stránky sa vykreslia bez chyby', () => {
     expect(el.querySelector('#hero-u')).not.toBeNull();
   });
 
-  it('obvod na domovskej stránke pokryje 0 až 500 V a 0 Ω až 5 MΩ', () => {
-    const el = mount(homeView());
-    const u = el.querySelector<HTMLInputElement>('#hero-u')!;
-    const r = el.querySelector<HTMLInputElement>('#hero-r')!;
-    const set = (input: HTMLInputElement, value: string) => {
-      input.value = value;
-      input.dispatchEvent(new Event('input'));
+  describe('obvod na domovskej stránke', () => {
+    const setup = () => {
+      const el = mount(homeView());
+      const $ = (sel: string) => el.querySelector<HTMLInputElement>(sel)!;
+      const set = (input: HTMLInputElement, value: string, event = 'input') => {
+        input.value = value;
+        input.dispatchEvent(new Event(event));
+      };
+      const texts = (sel: string) => [...el.querySelectorAll(sel)].map((o) => o.textContent?.replace(/\u00a0/g, ' '));
+      const fields = () => [...el.querySelectorAll<HTMLInputElement>('.slider-field')].map((o) => o.value.replace(/\u00a0/g, ' '));
+      const readouts = () => texts('.readout-value');
+      const status = () => (el.querySelector('.hero-status')?.textContent ?? '').replace(/\u00a0/g, ' ');
+      return { el, $, set, fields, readouts, status, u: $('#hero-u'), r: $('#hero-r'), uVal: $('#hero-u-val'), rVal: $('#hero-r-val') };
     };
-    const texts = (sel: string) => [...el.querySelectorAll(sel)].map((o) => o.textContent?.replace(/\u00a0/g, ' '));
-    const outputs = () => texts('.slider-value');
-    const readouts = () => texts('.readout-value');
-    expect(outputs()).toEqual(['9 V', '330 Ω']);
 
-    set(u, u.max);
-    set(r, r.max);
-    expect(outputs()).toEqual(['500 V', '5 MΩ']);
-    expect(readouts()).toEqual(['100 µA', '50 mW']);
+    it('posuvníky pokryjú 0 až 500 V a 0 Ω až 5 MΩ', () => {
+      const { set, fields, readouts, status, u, r } = setup();
+      expect(fields()).toEqual(['9 V', '330 Ω']);
 
-    set(r, '1');
-    expect(outputs()[1]).toBe('1 mΩ');
-    expect(readouts()).toEqual(['500 kA', '250 MW']);
-    expect(el.querySelector('.hero-status')?.textContent).toContain('zhorel');
+      set(u, u.max);
+      set(r, r.max);
+      expect(fields()).toEqual(['500 V', '5 MΩ']);
+      expect(readouts()).toEqual(['100 µA', '50 mW']);
 
-    set(r, '0');
-    expect(outputs()[1]).toBe('0 Ω');
-    expect(readouts()).toEqual(['∞ A', '∞ W']);
-    expect(el.querySelector('.hero-status')?.textContent).toContain('Skrat');
+      set(r, '1');
+      expect(fields()[1]).toBe('1 mΩ');
+      expect(readouts()).toEqual(['500 kA', '250 MW']);
+      expect(status()).toContain('zhorel');
 
-    set(u, '0');
-    expect(readouts()).toEqual(['0 A', '0 W']);
-    expect(el.querySelector('.hero-status')?.textContent).toBe('Bez napätia neteče prúd.');
+      set(r, '0');
+      expect(fields()[1]).toBe('0 Ω');
+      expect(readouts()).toEqual(['∞ A', '∞ W']);
+      expect(status()).toContain('Skrat');
+
+      set(u, '0');
+      expect(readouts()).toEqual(['0 A', '0 W']);
+      expect(status()).toBe('Bez napätia neteče prúd.');
+    });
+
+    it('hodnoty sa dajú napísať aj na stotiny', () => {
+      const { el, set, fields, readouts, r, uVal, rVal } = setup();
+      set(uVal, '12,25');
+      set(rVal, '4,7k');
+      expect(readouts()).toEqual(['2,606 mA', '31,93 mW']);
+      expect(Number(r.value)).toBeGreaterThan(0);
+      set(rVal, '4,7k', 'change');
+      expect(fields()).toEqual(['12,25', '4,7 kΩ']);
+      set(uVal, '12,25', 'change');
+      expect(fields()[0]).toBe('12,25 V');
+
+      uVal.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      expect(fields()[0]).toBe('12,26 V');
+      rVal.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      expect(fields()[1]).toBe('4,69 kΩ');
+
+      set(uVal, '600');
+      expect(uVal.classList.contains('is-invalid')).toBe(true);
+      expect(el.querySelector('.hero-entry-hint')?.textContent).toContain('0 až 500 V');
+      set(uVal, '600', 'change');
+      expect(fields()[0]).toBe('12,26 V');
+      expect(uVal.classList.contains('is-invalid')).toBe(false);
+    });
+
+    it('schéma s LED a predradným rezistorom', () => {
+      const { el, $, set, readouts, status, uVal, rVal } = setup();
+      const led = $('#hero-mode-led');
+      led.checked = true;
+      led.dispatchEvent(new Event('change'));
+      expect(el.querySelector('.hero-sch .comp-led')).not.toBeNull();
+      expect($('#hero-led-color').closest('.hero-color')?.hasAttribute('hidden')).toBe(false);
+
+      set(uVal, '5');
+      set(rVal, '220');
+      expect(readouts()).toEqual(['13,64 mA', '40,91 mW']);
+      expect(status()).toContain('LED svieti');
+
+      set(rVal, '100');
+      expect(status()).toContain('zhorí');
+      expect(status()).toContain('150 Ω');
+      expect(el.querySelector('.comp-led')?.classList.contains('is-burnt')).toBe(true);
+
+      set(uVal, '1,5');
+      expect(readouts()).toEqual(['0 A', '0 W']);
+      expect(status()).toContain('LED nesvieti');
+
+      set(uVal, '5');
+      set(rVal, '220');
+      set($('#hero-led-color'), 'blue', 'change');
+      expect(readouts()[0]).toBe('8,182 mA');
+    });
   });
 
   it('zoznam lekcií a všetky lekcie', () => {
