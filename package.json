@@ -1,0 +1,21 @@
+{
+  "name": "elektrolab",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Aplikácia na učenie elektrotechniky – lekcie, precvičovanie, kalkulačky a kartičky.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node scripts/build-single.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "jsdom": "^29.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}
