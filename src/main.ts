@@ -1,11 +1,13 @@
 import './styles.css';
 import { lessonById } from './content/lessons';
 import { currentAccount, initAuth, onAuthChange } from './lib/auth';
+import { initActivity } from './lib/activity';
 import { initSync, onPulled } from './lib/sync';
 import { h } from './lib/dom';
 import { sectionOf, startRouter, type Route, type Section } from './router';
 import { icon, logo, type IconName } from './ui/icons';
 import { accountView } from './views/account';
+import { adminView } from './views/admin';
 import { labView } from './views/lab';
 import { calculatorView, calculatorsView, CALCULATORS } from './views/calculators';
 import { flashcardsView } from './views/flashcards';
@@ -33,6 +35,7 @@ function view(route: Route): HTMLElement {
     case 'calc': return calculatorView(route.id);
     case 'cards': return flashcardsView(route.deck);
     case 'account': return accountView(route.mode);
+    case 'admin': return adminView();
     case 'lab': return labView();
   }
 }
@@ -51,6 +54,7 @@ function pageTitle(route: Route): string {
     case 'account':
       if (currentAccount()) return `Účet · ${base}`;
       return `${route.mode === 'register' ? 'Registrácia' : 'Prihlásenie'} · ${base}`;
+    case 'admin': return `Správa · ${base}`;
   }
 }
 
@@ -79,6 +83,7 @@ function boot(): void {
   if (!app) return;
   initAuth();
   initSync();
+  initActivity();
   const top = navLinks('top-nav-list');
   const bottom = navLinks('tab-bar-list');
   const main = h('main', { id: 'main', class: 'main', tabindex: '-1' });

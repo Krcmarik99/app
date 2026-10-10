@@ -87,9 +87,23 @@ Adresa projektu a *publishable* kľúč sú v `src/lib/config.ts` (sú určené 
 do aplikácie nepatrí). Nastavenie projektu:
 
 1. **SQL Editor** – spusti `supabase/schema.sql` (tabuľka `profiles` s pravidlami, aby každý videl len
-   svoj profil, a funkcia na zmazanie vlastného účtu).
+   svoj profil, funkcia na zmazanie vlastného účtu a tabuľky pre správu – pozri nižšie).
 2. **Authentication → Sign In / Providers → Email** – vypni *Confirm email*. Aplikácia prihlasuje
    menom; e-mail sa z neho len zloží (`meno@ucty.elektrolab.sk`) a žiadne e-maily sa neposielajú.
+
+### Správa (len pre správcu)
+
+Správca vidí na stránke **Môj účet → Otvoriť správu** (`#sprava`) zoznam všetkých online účtov
+(registrácia, posledné prihlásenie, posledná aktivita, počet prihlásení, preštudované lekcie,
+úspešnosť v cvičeniach, dni učenia), detail každého používateľa a poslednú aktivitu: registrácie,
+prihlásenia, otvorenia aplikácie, dokončené lekcie a cvičenia s výsledkom. Údaje vráti databáza
+len správcovi – bežný účet vidí iba svoj profil a aktivitu nevidí vôbec (pravidlá v
+`supabase/schema.sql`). Používatelia sú o tom informovaní pri registrácii a na stránke účtu.
+
+1. **SQL Editor** – spusti aktuálny `supabase/schema.sql` (dá sa spustiť aj opakovane, pridá tabuľky
+   `admins` a `activity` a funkcie `log_activity`, `is_admin`, `admin_users`).
+2. **SQL Editor** – v `supabase/spravca.sql` nahraď `TVOJE_MENO` svojím používateľským menom
+   z aplikácie a spusti ho. Správcom sa nedá stať z aplikácie.
 
 ## Zverejnenie (GitHub Pages)
 

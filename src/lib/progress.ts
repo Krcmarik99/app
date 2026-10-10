@@ -183,6 +183,20 @@ export function onProgressChange(fn: () => void): () => void {
   return () => listeners.delete(fn);
 }
 
+/** Významné udalosti učenia (pre záznam aktivity online účtu). */
+export type LearningEvent =
+  | { kind: 'lesson'; lesson: string }
+  | { kind: 'quiz'; total: number; correct: number; topics: string[] };
+
+const eventListeners = new Set<(e: LearningEvent) => void>();
+
+export function onLearningEvent(fn: (e: LearningEvent) => void): () => void {
+  eventListeners.add(fn);
+  return () => eventListeners.delete(fn);
+}
+
+const emit = (e: LearningEvent) => eventListeners.forEach((fn) => fn(e));
+
 export function dayKey(date = new Date()): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -200,10 +214,12 @@ function touchDay(p: Progress): void {
 
 export function setLessonDone(id: string, done: boolean): void {
   const p = getProgress();
+  const was = p.lessonsDone.includes(id);
   p.lessonsDone = p.lessonsDone.filter((x) => x !== id);
   if (done) p.lessonsDone.push(id);
   touchDay(p);
   save();
+  if (done && !was) emit({ kind: 'lesson', lesson: id });
 }
 
 export function setLastLesson(id: string): void {
@@ -228,6 +244,7 @@ export function recordSession(rec: Omit<SessionRecord, 'date'>): void {
   p.sessions.push({ ...rec, date: dayKey() });
   p.sessions = p.sessions.slice(-50);
   save();
+  emit({ kind: 'quiz', total: rec.total, correct: rec.correct, topics: rec.topics });
 }
 
 export function setCardKnown(id: string, known: boolean): void {

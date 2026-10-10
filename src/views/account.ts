@@ -7,7 +7,7 @@ import {
   type Account, type AuthField, type AuthResult,
 } from '../lib/auth';
 import { h, type Attrs, type Child } from '../lib/dom';
-import { checkCloud, cloudEnabled } from '../lib/cloud';
+import { checkCloud, cloudEnabled, cloudIsAdmin } from '../lib/cloud';
 import { PUBLIC_URL } from '../lib/config';
 import { hasGuestProgress } from '../lib/progress';
 import { onSyncChange, syncStatus } from '../lib/sync';
@@ -193,6 +193,7 @@ function authPage(mode: 'login' | 'register'): HTMLElement {
           ? [
             h('p', null, 'Účet sa ukladá online. Prihlásiš sa ním na hocijakom zariadení a pokrok v lekciách, cvičeniach, kartičkách aj zapojenia z laboratória sa synchronizujú.'),
             h('p', null, 'Ak server účtov práve nie je dostupný, účet sa vytvorí v tomto prehliadači a na server sa prenesie pri najbližšom prihlásení. Heslo si zapamätaj – nedá sa obnoviť.'),
+            h('p', null, PRIVACY),
             cloudStatusLine(),
           ]
           : [
@@ -250,6 +251,25 @@ function storageLine(account: Account): HTMLElement {
   return line;
 }
 
+/** Čo z online účtu vidí správca aplikácie. */
+const PRIVACY = 'Správca aplikácie vidí meno účtu, kedy sa prihlasuješ a otváraš aplikáciu a tvoj pokrok v lekciách a cvičeniach. Heslo nevidí nikto.';
+
+/** Odkaz na správu – ukáže sa, len keď server potvrdí, že účet je správca. */
+function adminCard(): HTMLElement {
+  const slot = h('div');
+  void cloudIsAdmin().then((ok) => {
+    if (!ok) return;
+    slot.replaceChildren(h('section', { class: 'admin-card', 'aria-label': 'Správa aplikácie' },
+      h('div', null,
+        h('p', { class: 'eyebrow' }, 'Správca'),
+        h('p', null, 'Prehľad používateľov: kto sa prihlásil, posledná aktivita a pokrok.'),
+      ),
+      h('a', { href: '#sprava', class: 'btn btn-primary' }, 'Otvoriť správu'),
+    ));
+  });
+  return slot;
+}
+
 function profilePage(account: Account): HTMLElement {
   const created = new Date(account.created);
   return h('div', { class: 'view view-account' },
@@ -261,10 +281,12 @@ function profilePage(account: Account): HTMLElement {
         h('p', { class: 'profile-username' }, `@${account.username}`),
         Number.isNaN(created.getTime()) ? null : h('p', { class: 'muted' }, `Účet vytvorený ${dateFormat.format(created)}`),
         storageLine(account),
+        account.cloud ? h('p', { class: 'privacy-note' }, PRIVACY) : null,
       ),
       h('button', { type: 'button', class: 'btn btn-secondary', onClick: () => { logout(); navigate('#domov'); } },
         icon('logout', 18), 'Odhlásiť sa'),
     ),
+    account.cloud ? adminCard() : null,
     statsSection(),
     deleteControl(),
   );

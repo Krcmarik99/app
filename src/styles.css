@@ -4754,3 +4754,217 @@ input[type='checkbox'] {
 .sch text.bad {
   fill: var(--bad);
 }
+
+/* ------------------------------------------------------------------ správa (len pre správcu) */
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-stats {
+  margin-bottom: 8px;
+}
+
+.admin-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.admin-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-search .field-box {
+  width: min(260px, 60vw);
+}
+
+.admin-filter {
+  width: 180px;
+}
+
+.admin-table td {
+  vertical-align: middle;
+}
+
+.admin-table tr.is-today td:first-child {
+  box-shadow: inset 3px 0 0 var(--good);
+}
+
+.admin-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 180px;
+}
+
+.admin-user > div {
+  display: grid;
+}
+
+.admin-username {
+  font: 500 12.5px var(--font-mono);
+  color: var(--ink-2);
+}
+
+.admin-user-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--trace);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-user-link:hover,
+.admin-user-link:focus-visible {
+  text-decoration: underline;
+}
+
+.admin-events {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-events li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 8px 2px;
+  border-top: 1px solid var(--rule);
+}
+
+.admin-feed {
+  padding: 4px 16px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.admin-feed li:first-child {
+  border-top: 0;
+}
+
+.admin-event-time {
+  min-width: 96px;
+  font: 500 13px var(--font-mono);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-event-text {
+  flex: 1 1 260px;
+}
+
+.admin-detail {
+  margin: 18px 0 8px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.admin-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.admin-detail-head > div {
+  flex: 1;
+}
+
+.admin-detail-head h3 {
+  margin: 0;
+}
+
+.admin-detail-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px 28px;
+  margin-top: 8px;
+}
+
+.admin-detail h4 {
+  margin: 14px 0 8px;
+}
+
+.admin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-chips li {
+  padding: 3px 10px;
+  background: var(--trace-soft);
+  border-radius: 999px;
+  font-size: 13.5px;
+}
+
+.admin-topics {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-topics li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.admin-topic-pct {
+  font: 500 13px var(--font-mono);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.admin-notice {
+  max-width: 720px;
+}
+
+.admin-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--trace);
+  border-radius: var(--radius);
+}
+
+.admin-card p {
+  margin: 0;
+}
+
+.privacy-note {
+  font-size: 13.5px;
+  color: var(--ink-2);
+}

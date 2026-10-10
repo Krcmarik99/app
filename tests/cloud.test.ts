@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { currentAccount, deleteAccount, login, logout, register, type RegisterInput } from '../src/lib/auth';
-import { checkCloud, configureCloud } from '../src/lib/cloud';
-import { getProgress, progressOf, setCardKnown, setLessonDone } from '../src/lib/progress';
+import { initActivity } from '../src/lib/activity';
+import { CloudError, checkCloud, cloudIsAdmin, configureCloud, fetchActivity, fetchAdminUsers } from '../src/lib/cloud';
+import { getProgress, progressOf, recordSession, setCardKnown, setLessonDone } from '../src/lib/progress';
 import { flush, initSync, pushCircuit, syncStatus } from '../src/lib/sync';
+import { adminView, describeActivity, when } from '../src/views/admin';
 
 const URL_ = 'https://test.supabase.co';
 const KEY = 'sb_publishable_test';
@@ -16,6 +18,8 @@ function fakeSupabase() {
   const access = new Map<string, string>();
   const refresh = new Map<string, string>();
   const profiles = new Map<string, Record<string, unknown>>();
+  const admins = new Set<string>();
+  const activity: { id: number; user_id: string; at: string; kind: string; detail: unknown }[] = [];
   let online = true;
   let autoconfirm = true;
   let tableExists = true;
@@ -83,11 +87,37 @@ function fakeSupabase() {
       profiles.delete(uid);
       return json(204);
     }
+    // Správa a aktivita – rovnaké pravidlá ako v supabase/schema.sql.
+    if (path === '/rest/v1/rpc/log_activity') {
+      if (!['register', 'login', 'visit', 'lesson', 'quiz'].includes(body.event_kind)) return json(400, { code: '23514', message: 'violates check constraint' });
+      activity.push({ id: activity.length + 1, user_id: uid, at: new Date().toISOString(), kind: body.event_kind, detail: body.event_detail ?? {} });
+      const prof = profiles.get(uid);
+      if (prof) {
+        prof.last_seen = new Date().toISOString();
+        if (body.event_kind === 'login' || body.event_kind === 'register') prof.login_count = Number(prof.login_count ?? 0) + 1;
+      }
+      return json(204);
+    }
+    if (path === '/rest/v1/rpc/is_admin') return json(200, admins.has(uid));
+    if (path === '/rest/v1/rpc/admin_users') {
+      if (!admins.has(uid)) return json(403, { code: '42501', message: 'Len pre správcu.' });
+      return json(200, [...users.values()].map((u) => ({
+        id: u.id, username: profiles.get(u.id)?.username ?? u.meta.username, name: profiles.get(u.id)?.name ?? u.meta.name,
+        created_at: u.created_at, last_sign_in_at: new Date().toISOString(), last_seen: profiles.get(u.id)?.last_seen ?? null,
+        login_count: profiles.get(u.id)?.login_count ?? 0, progress: profiles.get(u.id)?.progress ?? null,
+      })));
+    }
+    if (path === '/rest/v1/activity' && method === 'GET') {
+      if (!admins.has(uid)) return json(200, []);
+      const who = (url.searchParams.get('user_id') ?? '').replace('eq.', '');
+      const limit = Number(url.searchParams.get('limit') ?? 1000);
+      return json(200, activity.filter((a) => !who || a.user_id === who).slice().reverse().slice(0, limit));
+    }
     return json(404, { message: 'not found' });
   };
   return {
     fetch: fetchImpl as typeof fetch,
-    users, profiles,
+    users, profiles, admins, activity,
     setOnline: (v: boolean) => { online = v; },
     setAutoconfirm: (v: boolean) => { autoconfirm = v; },
     setTable: (v: boolean) => { tableExists = v; },
@@ -109,7 +139,15 @@ async function newDevice(): Promise<void> {
 
 let server: ReturnType<typeof fakeSupabase>;
 
-beforeAll(() => initSync());
+beforeAll(() => {
+  initSync();
+  initActivity();
+});
+
+/** Počká, kým sa odošlú požiadavky spustené na pozadí. */
+const settle = async () => {
+  for (let i = 0; i < 10; i++) await new Promise((r) => setTimeout(r, 0));
+};
 
 beforeEach(async () => {
   server = fakeSupabase();
@@ -213,5 +251,83 @@ describe('online účty', () => {
     server.setOnline(false);
     configureCloud({ url: URL_, key: KEY, fetch: server.fetch });
     expect((await checkCloud()).reachable).toBe(false);
+  });
+});
+
+describe('správa a aktivita', () => {
+  it('zapíše registráciu, prihlásenie, dokončenú lekciu a cvičenie pod vlastný účet', async () => {
+    await register(input());
+    const id = currentAccount()!.id;
+    setLessonDone('ohmov-zakon', true);
+    setLessonDone('ohmov-zakon', true);
+    recordSession({ total: 10, correct: 7, topics: ['ohmov-zakon', 'zaklady'] });
+    await settle();
+    await newDevice();
+    await login('eva', 'heslo123');
+    await settle();
+    const mine = server.activity.filter((a) => a.user_id === id);
+    expect(mine.map((a) => a.kind)).toEqual(['register', 'lesson', 'quiz', 'login']);
+    expect(mine[1].detail).toEqual({ lesson: 'ohmov-zakon' });
+    expect(mine[2].detail).toEqual({ total: 10, correct: 7, topics: ['ohmov-zakon', 'zaklady'] });
+    expect(server.profiles.get(id)!.login_count).toBe(2);
+  });
+
+  it('bežný účet nevidí cudzie údaje, správca vidí všetky účty a aktivitu', async () => {
+    await register(input());
+    expect(await cloudIsAdmin()).toBe(false);
+    expect(await fetchActivity()).toEqual([]);
+    await expect(fetchAdminUsers()).rejects.toBeInstanceOf(CloudError);
+
+    await newDevice();
+    await register(input({ username: 'spravca', name: 'Správca' }));
+    server.admins.add(currentAccount()!.id);
+    expect(await cloudIsAdmin()).toBe(true);
+    const users = await fetchAdminUsers();
+    expect(users.map((u) => u.username).sort()).toEqual(['eva', 'spravca']);
+    await settle();
+    const events = await fetchActivity();
+    expect(events.filter((e) => e.kind === 'register')).toHaveLength(2);
+    expect(new Set(events.map((e) => e.user_id)).size).toBe(2);
+  });
+
+  it('stránka správy ukáže používateľov, aktivitu a detail; iným účtom ju nezobrazí', async () => {
+    await register(input());
+    setLessonDone('zaklady', true);
+    await flush();
+    await newDevice();
+    await register(input({ username: 'spravca', name: 'Správca' }));
+    await settle();
+
+    let el = adminView();
+    document.body.replaceChildren(el);
+    await settle();
+    expect(el.textContent).toContain('Len pre správcu');
+    expect(el.querySelector('.admin-table')).toBeNull();
+
+    server.admins.add(currentAccount()!.id);
+    el = adminView();
+    document.body.replaceChildren(el);
+    await settle();
+    const rows = el.querySelectorAll('.admin-table tbody tr');
+    expect(rows).toHaveLength(2);
+    expect(el.querySelector('.admin-feed')!.textContent).toContain('Dokončená lekcia: Elektrické veličiny a jednotky');
+    const search = el.querySelector<HTMLInputElement>('#admin-search')!;
+    search.value = 'eva';
+    search.dispatchEvent(new Event('input'));
+    expect(el.querySelectorAll('.admin-table tbody tr')).toHaveLength(1);
+    el.querySelector<HTMLButtonElement>('.admin-table .admin-user-link')!.click();
+    const detail = el.querySelector<HTMLElement>('.admin-detail')!;
+    expect(detail.hidden).toBe(false);
+    expect(detail.textContent).toContain('@eva');
+    expect(detail.textContent).toContain('Elektrické veličiny a jednotky');
+  });
+
+  it('opis a čas udalosti', () => {
+    const now = new Date(2026, 9, 10, 15, 0);
+    expect(when(new Date(2026, 9, 10, 9, 5).toISOString(), now)).toBe('dnes 09:05');
+    expect(when(new Date(2026, 9, 9, 18, 30).toISOString(), now)).toBe('včera 18:30');
+    expect(when(null, now)).toBe('—');
+    expect(describeActivity({ kind: 'quiz', detail: { total: 5, correct: 4, topics: ['zaklady'] } })).toBe('Cvičenie: 4 z 5 správne · Elektrické veličiny a jednotky');
+    expect(describeActivity({ kind: 'login', detail: {} })).toBe('Prihlásenie');
   });
 });

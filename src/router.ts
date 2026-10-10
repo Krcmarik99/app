@@ -11,6 +11,7 @@ export type Route =
   | { name: 'calc'; id: string }
   | { name: 'cards'; deck?: string }
   | { name: 'account'; mode?: 'login' | 'register' }
+  | { name: 'admin' }
   | { name: 'lab' };
 
 export type Section = 'home' | 'lessons' | 'practice' | 'calcs' | 'cards' | 'account' | 'lab';
@@ -27,6 +28,7 @@ export function parseHash(hash: string): Route {
   if (h.startsWith('karticky-')) return { name: 'cards', deck: h.slice(9) };
   if (h === 'obvody') return { name: 'lab' };
   if (h === 'ucet') return { name: 'account' };
+  if (h === 'sprava') return { name: 'admin' };
   if (h === 'prihlasenie') return { name: 'account', mode: 'login' };
   if (h === 'registracia') return { name: 'account', mode: 'register' };
   return { name: 'home' };
@@ -42,6 +44,7 @@ export function routeHash(r: Route): string {
     case 'calc': return `#kalk-${r.id}`;
     case 'cards': return r.deck ? `#karticky-${r.deck}` : '#karticky';
     case 'account': return r.mode === 'login' ? '#prihlasenie' : r.mode === 'register' ? '#registracia' : '#ucet';
+    case 'admin': return '#sprava';
     case 'lab': return '#obvody';
   }
 }
@@ -55,7 +58,8 @@ export function sectionOf(r: Route): Section {
     case 'calcs':
     case 'calc': return 'calcs';
     case 'cards': return 'cards';
-    case 'account': return 'account';
+    case 'account':
+    case 'admin': return 'account';
     case 'lab': return 'lab';
   }
 }

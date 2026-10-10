@@ -165,6 +165,23 @@ async function cloudRefresh(s: CloudSession): Promise<CloudSession> {
   return sessionFrom(body, s.remember, s.user);
 }
 
+/**
+ * Obnovovací token sa dá použiť len raz. Keď ho naraz potrebuje viac požiadaviek (napr. odoslanie
+ * pokroku a záznam aktivity), obnoví sa len raz a všetky dostanú ten istý nový token.
+ */
+const refreshes = new Map<string, Promise<CloudSession>>();
+
+function refreshOnce(s: CloudSession): Promise<CloudSession> {
+  let pending = refreshes.get(s.refresh);
+  if (!pending) {
+    pending = cloudRefresh(s);
+    refreshes.set(s.refresh, pending);
+    pending.catch(() => refreshes.delete(s.refresh));
+    if (refreshes.size > 20) refreshes.delete(refreshes.keys().next().value!);
+  }
+  return pending;
+}
+
 export async function cloudSignOut(s: CloudSession): Promise<void> {
   try {
     await call('/auth/v1/logout', { method: 'POST', token: s.access });
@@ -215,12 +232,12 @@ async function withToken<T>(fn: (token: string, user: CloudUser) => Promise<T>, 
     if (stored && stored.user.id === next.user.id) storeCloudSession(next);
     s = next;
   };
-  if (s.expiresAt - Date.now() < 60_000) keep(await cloudRefresh(s));
+  if (s.expiresAt - Date.now() < 60_000) keep(await refreshOnce(s));
   try {
     return await fn(s.access, s.user);
   } catch (e) {
     if (!(e instanceof CloudError) || e.kind !== 'expired') throw e;
-    keep(await cloudRefresh(s));
+    keep(await refreshOnce(s));
     return fn(s.access, s.user);
   }
 }
@@ -254,6 +271,68 @@ export async function saveProfile(
 /** Natrvalo zmaže prihlásený účet (funkcia `delete_my_account` v databáze). */
 export async function deleteCloudAccount(token: string): Promise<void> {
   await call('/rest/v1/rpc/delete_my_account', { method: 'POST', token, body: '{}' });
+}
+
+// ------------------------------------------------------------------ aktivita a správa
+
+/** Udalosti, ktoré vidí správca: registrácia, prihlásenie, otvorenie aplikácie, dokončená lekcia, cvičenie. */
+export type ActivityKind = 'register' | 'login' | 'visit' | 'lesson' | 'quiz';
+
+/** Zapíše udalosť pod prihlásený účet (funkcia `log_activity` v databáze). */
+export async function cloudLogActivity(
+  kind: ActivityKind,
+  detail: Record<string, unknown> = {},
+  opts: { keepalive?: boolean; session?: CloudSession } = {},
+): Promise<void> {
+  await withToken(async (token) => {
+    await call('/rest/v1/rpc/log_activity', {
+      method: 'POST', token, keepalive: opts.keepalive ?? false,
+      body: JSON.stringify({ event_kind: kind, event_detail: detail }),
+    });
+  }, opts.session);
+}
+
+/** Je prihlásený účet správca? Pri chybe (aj keď databáza správu ešte nemá) vráti false. */
+export async function cloudIsAdmin(session?: CloudSession): Promise<boolean> {
+  try {
+    const value = await withToken((token) => call('/rest/v1/rpc/is_admin', { method: 'POST', token, body: '{}' }), session);
+    return value === true;
+  } catch {
+    return false;
+  }
+}
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  name: string;
+  created_at: string;
+  last_sign_in_at: string | null;
+  last_seen: string | null;
+  login_count: number;
+  progress: unknown;
+}
+
+export interface ActivityRow {
+  id: number;
+  user_id: string;
+  at: string;
+  kind: ActivityKind;
+  detail: Record<string, unknown>;
+}
+
+/** Všetky účty s pokrokom – len pre správcu (inak server odmietne). */
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  const rows = await withToken((token) => call('/rest/v1/rpc/admin_users', { method: 'POST', token, body: '{}' }));
+  return Array.isArray(rows) ? (rows as AdminUser[]) : [];
+}
+
+/** Posledné udalosti (najnovšie prvé), voliteľne len jedného účtu. Bežnému účtu databáza nevráti nič. */
+export async function fetchActivity(opts: { userId?: string; limit?: number } = {}): Promise<ActivityRow[]> {
+  const params = new URLSearchParams({ select: 'id,user_id,at,kind,detail', order: 'at.desc', limit: String(opts.limit ?? 200) });
+  if (opts.userId) params.set('user_id', `eq.${opts.userId}`);
+  const rows = await withToken((token) => call(`/rest/v1/activity?${params}`, { token }));
+  return Array.isArray(rows) ? (rows as ActivityRow[]) : [];
 }
 
 // ------------------------------------------------------------------ kontrola nastavenia servera

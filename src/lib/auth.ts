@@ -8,6 +8,7 @@ import {
   CloudError, cloudEnabled, cloudSignIn, cloudSignOut, cloudSignUp, deleteCloudAccount,
   loadCloudSession, storeCloudSession, type CloudSession,
 } from './cloud';
+import { logActivity } from './activity';
 import { adoptGuestProgress, deleteProgressOf, moveProgress, setProgressOwner } from './progress';
 
 const ACCOUNTS_KEY = 'elektrolab:accounts';
@@ -221,7 +222,9 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     try {
       const s = await cloudSignUp(username, input.password, name, input.remember);
       if (input.keepProgress) adoptGuestProgress(s.user.id);
-      return { ok: true, account: await startCloudSession(s) };
+      const account = await startCloudSession(s);
+      logActivity('register', {}, s);
+      return { ok: true, account };
     } catch (e) {
       if (!(e instanceof CloudError)) throw e;
       if (e.kind !== 'network') return cloudFailure(e);
@@ -275,7 +278,9 @@ async function migrateLocal(username: string, password: string, remember: boolea
   moveProgress(local.id, s.user.id);
   moveLab(local.id, s.user.id);
   writeAccounts(readAccounts().filter((a) => a.id !== local.id));
-  return { ok: true, account: await startCloudSession(s) };
+  const account = await startCloudSession(s);
+  logActivity('register', { fromBrowser: true }, s);
+  return { ok: true, account };
 }
 
 export async function login(username: string, password: string, remember = true): Promise<AuthResult> {
@@ -283,7 +288,9 @@ export async function login(username: string, password: string, remember = true)
   if (cloudEnabled()) {
     try {
       const s = await cloudSignIn(username, password, remember);
-      return { ok: true, account: await startCloudSession(s) };
+      const account = await startCloudSession(s);
+      logActivity('login', {}, s);
+      return { ok: true, account };
     } catch (e) {
       if (!(e instanceof CloudError)) throw e;
       if (e.kind === 'credentials') {
