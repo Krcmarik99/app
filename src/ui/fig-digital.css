@@ -22,6 +22,10 @@
   font-family: var(--font-mono);
   font-size: 10px;
   fill: var(--ink-2);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
 
 .sch text.dg-big {

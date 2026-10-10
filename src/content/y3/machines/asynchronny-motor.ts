@@ -2,9 +2,9 @@ import type { LessonModule } from '../../module';
 import { pick } from '../../../lib/random';
 import { fmt } from '../../../lib/units';
 import { n, numeric, q, res, type Generator } from '../../../practice/helpers';
-import { lineChart, sample } from '../../../ui/chart';
+import { lineChart, sample, type ChartOptions } from '../../../ui/chart';
 import { explorer } from '../../../ui/explorer';
-import { motorCrossSectionFigure, terminalBoxFigure, torqueCharacteristicChart } from '../../../ui/fig-machines';
+import { chartNote, motorCrossSectionFigure, terminalBoxFigure, torqueCharacteristicChart } from '../../../ui/fig-machines';
 import { choice } from '../util';
 
 const ID = 'asynchronny-motor';
@@ -47,23 +47,27 @@ function klossExplorer(): HTMLElement {
         ? [{ x: 0, y: Mz, label: 'Mz', above: true }, { x: nk, y: Mmax, label: 'Mmax', above: true }]
         : [{ x: nk, y: Mmax, label: 'Mz ≈ Mmax', above: true }];
       if (nw !== null && ml > 0) markers.push({ x: nw, y: ml, label: 'pracovný bod', above: false });
-      const chart = lineChart({
+      const chartOpts: ChartOptions = {
         ariaLabel: `Momentová charakteristika: maximálny moment ${fmt(Mmax, 3)} N·m pri ${fmt(nk, 3)} ot/min`,
         width: 460,
         height: 260,
         x: { min: 0, max: ns, ticks: [0, 300, 600, 900, 1200, 1500], format: (v) => fmt(v), label: 'n [ot/min]' },
         y: { min: 0, max: 140, ticks: [0, 20, 40, 60, 80, 100, 120, 140], format: (v) => fmt(v), label: 'M [N·m]' },
         series,
-        hlines: ml > 0 ? [{ y: ml, label: `ML = ${fmt(ml, 3)} N·m` }] : [],
+        hlines: ml > 0 ? [{ y: ml, label: '' }] : [],
         markers,
         legend: u < 99.5 ? [{ label: `pri ${fmt(u, 3)} % U` }, { label: 'pri 100 % U', className: 'dashed' }] : undefined,
-      });
+      };
+      const chart = lineChart(chartOpts);
+      if (ml > 0) chart.append(chartNote(chartOpts, 450, ml + 3, `ML = ${fmt(ml, 3)} N·m`, 'start', 'mch-copper'));
       const sw = nw === null ? null : (ns - nw) / ns;
       let note: string;
       if (nw === null) note = 'Záťažný moment je väčší ako zvratový moment – motor sa „zvrhne“, otáčky prudko klesnú a motor sa zastaví. Ochrana ho musí odpojiť.';
       else if (ml > Mz) note = 'Motor by v chode záťaž utiahol, ale z pokoja sa nerozbehne: záťažný moment je väčší ako záberový. Pomôže väčší kritický sklz (odpor v rotore) alebo frekvenčný menič.';
       else if (sw !== null && sw > sk * 0.999) note = 'Pracovný bod je pri kritickom sklze – na hranici stability.';
-      else note = `Pracovný bod leží na strmej, stabilnej časti charakteristiky. Moment klesá s druhou mocninou napätia – pri ${fmt(u, 3)} % napätia je maximálny moment ${fmt((u / 100) ** 2 * 100, 3)} % pôvodného.`;
+      else note = u < 99.5
+        ? `Pracovný bod leží na stabilnej časti charakteristiky. Moment klesá s druhou mocninou napätia – pri ${fmt(u, 3)} % napätia je maximálny moment len ${fmt((u / 100) ** 2 * 100, 3)} % pôvodného.`
+        : 'Pracovný bod leží na strmej, stabilnej časti charakteristiky. Skús znížiť napätie alebo zväčšiť záťaž až po zvratový moment.';
       return {
         chart,
         readouts: [

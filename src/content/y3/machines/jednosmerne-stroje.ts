@@ -46,7 +46,7 @@ function dcMotorExplorer(): HTMLElement {
       });
       let note: string;
       if (nw <= 0) note = 'Pri takom malom napätí a veľkom zaťažení motor nevyvinie dosť momentu – kotva stojí a tečie ňou prúd `$I_{a} = @f{$U}{$R_{a}}`.';
-      else if (Ia > 2 * In) note = `Prúd kotvy ${fmt(Ia, 3)} A je viac ako dvojnásobok menovitého (20 A) – pri zoslabenom budení potrebuje motor na ten istý moment väčší prúd. Motor by sa prehrieval.`;
+      else if (Ia > 2 * In) note = `Prúd kotvy ${fmt(Ia, 3)} A je viac ako dvojnásobok menovitého (20 A) – motor by sa prehrieval.${phi < 99 ? ' Pri zoslabenom budení potrebuje na ten istý moment väčší prúd.' : ''}`;
       else if (phi < 99) note = 'Zoslabením budenia otáčky stúpnu nad menovité. Pri rovnakom momente však rastie prúd kotvy.';
       else if (u < 219) note = 'Znížením napätia kotvy sa charakteristika posunie nadol – otáčky klesnú, sklon charakteristiky sa nezmení.';
       else note = 'So zaťažením otáčky klesajú len o úbytok napätia na odpore kotvy – charakteristika je tvrdá.';

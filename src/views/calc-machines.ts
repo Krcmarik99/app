@@ -15,7 +15,7 @@ const formulas = (...src: string[]) => h('div', { class: 'used-formulas' }, h('p
 function transformerCalc(): HTMLElement {
   let mode: 'turns' | 'ratio' = 'turns';
   let load: 'z' | 'i' | 's' = 'z';
-  let sys: '1' | '3' = '1';
+  let sys: '1' | '3' = '3';
   const out = h('div', { class: 'calc-result' });
   const out2 = h('div', { class: 'calc-result' });
   const fig = h('div', { class: 'sch-panel calc-figure' });

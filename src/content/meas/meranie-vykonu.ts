@@ -23,6 +23,7 @@ function aronExplorer(): HTMLElement {
       const UI = 400 * 10;
       const p1 = (d: number) => (UI * Math.cos(rad(30 - d))) / 1000;
       const p2 = (d: number) => (UI * Math.cos(rad(30 + d))) / 1000;
+      const sgn = (x: number, sig: number) => `${x < 0 ? '−' : ''}${fmt(Math.abs(x), sig)}`;
       const P1 = p1(phi);
       const P2 = p2(phi);
       const chart = lineChart({
@@ -37,7 +38,7 @@ function aronExplorer(): HTMLElement {
           { points: sample((d) => p1(d) + p2(d), 0, 90, 90), className: 'copper' },
         ],
         vlines: [{ x: 60, label: 'cos φ = 0,5' }],
-        markers: [{ x: phi, y: P2, label: `P₂ = ${fmt(P2, 3)} kW` }],
+        markers: [{ x: phi, y: P2, label: `P₂ = ${sgn(P2, 3)} kW` }],
         legend: [{ label: 'P₁', className: 'thin' }, { label: 'P₂', className: 'green' }, { label: 'P = P₁ + P₂', className: 'copper' }],
       });
       return {
@@ -45,7 +46,7 @@ function aronExplorer(): HTMLElement {
         readouts: [
           ['`cos $φ`', fmt(Math.cos(rad(phi)), 3)],
           ['Wattmeter W1 `$P_{1}`', `${fmt(P1 * 1000, 4)} W`],
-          ['Wattmeter W2 `$P_{2}`', `${fmt(P2 * 1000, 4)} W`],
+          ['Wattmeter W2 `$P_{2}`', `${sgn(P2 * 1000, 4)} W`],
           ['Činný výkon `$P = $P_{1} + $P_{2}`', `${fmt((P1 + P2) * 1000, 4)} W`],
         ],
         note: phi > 60

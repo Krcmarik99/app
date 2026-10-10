@@ -610,7 +610,7 @@ export function faultLoopFigure(): SVGSVGElement {
     s('polyline', { points: '330,98 342,106 336,111 350,118 344,123 370,130', class: 'w bad' }),
     txt(290, 106, 'kovový kryt', 'small'),
     txt(290, 122, '(trieda I)', 'val'),
-    txt(372, 160, 'porucha izolácie', 'small bad', 'end'),
+    txt(308, 164, 'porucha', 'small bad', 'start'),
     cond('PE', [300, 142], [300, yR], [xsplit, yR]),
     cond('PEN', [xsplit, yR], [xs, yR]),
     dot([xsplit, yR]),
@@ -829,22 +829,40 @@ export function lissajousFigure(fx: number, fy: number, phaseDeg: number): SVGSV
   return schematic(S + 2 * X0, S + 2 * Y0, 'Lissajousov obrazec na obrazovke osciloskopu v režime XY', ...parts);
 }
 
-/** Elipsa v režime XY pri rovnakých frekvenciách: vyznačí úseky Y0 (priesečníky s osou y) a Ym (výška). */
+/** Elipsa v režime XY pri rovnakých frekvenciách: vyznačí úseky 2Y0 (priesečníky s osou y) a 2Ym (celková výška). */
 export function ellipseFigure(phaseDeg: number): SVGSVGElement {
   const svg = lissajousFigure(1, 1, phaseDeg);
   const X0 = 12;
   const Y0 = 10;
-  const c = 96;
+  const S = 192;
+  const c = S / 2;
   const a = 3.4 * 24;
-  const y0 = a * Math.sin((phaseDeg * Math.PI) / 180);
-  const xr = X0 + 2 * c - 14;
+  const ph = (phaseDeg * Math.PI) / 180;
+  const y0 = a * Math.sin(ph);
+  // Najvyšší bod elipsy: sin(t + φ) = 1, t = 90° − φ.
+  const xTop = a * Math.cos(ph);
+  const W = X0 + S + 96;
+  const H = S + 2 * Y0;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', String(Math.round(W * 1.25)));
+  const d1 = X0 + S + 16;
+  const d2 = X0 + S + 54;
+  const yA = Y0 + c - y0;
+  const yB = Y0 + c + y0;
+  const yT = Y0 + c - a;
+  const yU = Y0 + c + a;
+  const tick = (x: number, y: number) => s('line', { x1: x - 5, x2: x + 5, y1: r1(y), y2: r1(y), class: 'pw-dim' });
   svg.append(
-    s('line', { x1: X0 + c, x2: X0 + c, y1: r1(Y0 + c - y0), y2: r1(Y0 + c + y0), class: 'pw-dim', 'stroke-width': 3 }),
-    s('text', { x: X0 + c + 6, y: Y0 + c + 16, class: 'pw-dim-text' }, '2Y₀'),
-    s('line', { x1: xr, x2: xr, y1: r1(Y0 + c - a), y2: r1(Y0 + c + a), class: 'pw-dim' }),
-    s('line', { x1: xr - 5, x2: xr + 5, y1: r1(Y0 + c - a), y2: r1(Y0 + c - a), class: 'pw-dim' }),
-    s('line', { x1: xr - 5, x2: xr + 5, y1: r1(Y0 + c + a), y2: r1(Y0 + c + a), class: 'pw-dim' }),
-    s('text', { x: xr - 6, y: Y0 + 24, 'text-anchor': 'end', class: 'pw-dim-text' }, '2Yₘ'),
+    s('circle', { cx: X0 + c, cy: r1(yA), r: 3.2, class: 'pw-dim', fill: 'currentColor' }),
+    s('circle', { cx: X0 + c, cy: r1(yB), r: 3.2, class: 'pw-dim', fill: 'currentColor' }),
+    s('line', { x1: X0 + c, x2: d1, y1: r1(yA), y2: r1(yA), class: 'pw-dim', 'stroke-dasharray': '3 3' }),
+    s('line', { x1: X0 + c, x2: d1, y1: r1(yB), y2: r1(yB), class: 'pw-dim', 'stroke-dasharray': '3 3' }),
+    s('line', { x1: d1, x2: d1, y1: r1(yA), y2: r1(yB), class: 'pw-dim' }), tick(d1, yA), tick(d1, yB),
+    s('text', { x: d1 + 6, y: r1(Y0 + c + 4), class: 'pw-dim-text' }, '2Y₀'),
+    s('line', { x1: r1(X0 + c + xTop), x2: d2, y1: r1(yT), y2: r1(yT), class: 'pw-dim', 'stroke-dasharray': '3 3' }),
+    s('line', { x1: r1(X0 + c - xTop), x2: d2, y1: r1(yU), y2: r1(yU), class: 'pw-dim', 'stroke-dasharray': '3 3' }),
+    s('line', { x1: d2, x2: d2, y1: r1(yT), y2: r1(yU), class: 'pw-dim' }), tick(d2, yT), tick(d2, yU),
+    s('text', { x: d2 + 6, y: r1(Y0 + c + 4), class: 'pw-dim-text' }, '2Yₘ'),
   );
   return svg;
 }

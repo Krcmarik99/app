@@ -36,7 +36,7 @@ function transformerExplorer(): HTMLElement {
         width: 460,
         height: 250,
         x: { min: 0, max: 40, ticks: [0, 10, 20, 30, 40], format: (v) => `${v}`, label: 't [ms]' },
-        y: { min: -top, max: top, ticks: [-top, -top / 2, 0, top / 2, top], format: (v) => fmt(v, 3), label: 'u [V]' },
+        y: { min: -top, max: top, ticks: [-top, -top / 2, 0, top / 2, top], format: (v) => (v < 0 ? `−${fmt(-v, 3)}` : fmt(v, 3)), label: 'u [V]' },
         series: [
           { points: sample((t) => u1 * Math.SQRT2 * Math.sin((w * t) / 1000), 0, 40, 240), className: 'thin' },
           { points: sample((t) => U2 * Math.SQRT2 * Math.sin((w * t) / 1000), 0, 40, 240), className: 'copper' },

@@ -10,7 +10,7 @@ type Base = '10' | '2' | '16';
 
 const MAX = (1n << 64n) - 1n;
 const NBSP = ' ';
-const SUB: Record<Base, string> = { '10': '₁₀', '2': '₂', '16': '₁₆' };
+const SUB: Record<Base, string> = { '10': 'DEC', '2': 'BIN', '16': 'HEX' };
 const HINT: Record<Base, string> = {
   '10': 'Celé číslo, môže byť aj záporné (napr. 181 alebo −45).',
   '2': 'Iba číslice 0 a 1, medzery sa ignorujú (napr. 1011 0101).',
@@ -144,7 +144,7 @@ function sustavyCalc(): HTMLElement {
           ),
         ),
         div.length > shown.length ? h('p', { class: 'calc-note' }, `Zobrazených je prvých ${shown.length} z ${div.length} krokov.`) : null,
-        h('p', null, `Výsledok: ${dec(abs)} = `, h('strong', null, grp(abs.toString(2))), SUB['2']),
+        h('p', null, `Výsledok: ${dec(abs)} = `, h('strong', null, grp(abs.toString(2))), '₂'),
       );
     }
     steps.replaceChildren(...blocks.filter((b): b is HTMLElement => b !== null));
@@ -165,17 +165,19 @@ function sustavyCalc(): HTMLElement {
   input.addEventListener('input', update);
   update();
 
-  return h('div', { class: 'calc' },
-    h('div', { class: 'calc-inputs' },
-      seg,
-      h('div', { class: 'field' },
-        h('label', { for: 'sus-in' }, 'Číslo'),
-        h('div', { class: 'field-box' }, input, unit),
-        hint,
+  return h('div', { class: 'calc-stack' },
+    h('div', { class: 'calc' },
+      h('div', { class: 'calc-inputs' },
+        seg,
+        h('div', { class: 'field' },
+          h('label', { for: 'sus-in' }, 'Číslo'),
+          h('div', { class: 'field-box' }, input, unit),
+          hint,
+        ),
+        steps,
       ),
-      steps,
+      h('div', { class: 'calc-outputs' }, out, fig),
     ),
-    h('div', { class: 'calc-outputs' }, out, fig),
   );
 }
 

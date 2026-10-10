@@ -5,7 +5,7 @@
  */
 import './fig-digital.css';
 import { h, s, type Attrs } from '../lib/dom';
-import { rich } from '../lib/formula';
+import { formula, rich } from '../lib/formula';
 import { arrowHead, dot, schematic, wire, type Pt } from './schematic';
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -424,7 +424,7 @@ export function divisionFigure(n: number): SVGSVGElement {
     txt(254, y(last) - 1, 'MSB', 'small'),
   );
   const bits = n.toString(2);
-  parts.push(fx(20, y(rows.length) + 14, `${n} = ${bits}_{2}`), txt(296, y(rows.length) + 14, 'zvyšky čítaj zdola nahor', 'small dg-muted', 'end'));
+  parts.push(fx(20, y(rows.length) + 14, `${n} = ${groupBits(bits)}_{2}`), txt(296, y(rows.length) + 14, 'zvyšky čítaj zdola nahor', 'small dg-muted', 'end'));
   return schematic(310, y(rows.length) + 30, `Prevod čísla ${n} do dvojkovej sústavy delením dvoma: zvyšky čítané zdola nahor dávajú ${bits}`, ...parts);
 }
 
@@ -720,7 +720,7 @@ export function dTimingFigure(): SVGSVGElement {
     shade: [[2, 4], [6, 8], [10, 12], [14, 16], [18, 20], [22, 24]],
     waves: [
       { label: 'C (hodiny)', levels: C, cls: 'ink', small: true },
-      { label: 'D', levels: D, cls: 'trace' },
+      { label: 'D', levels: D, cls: 'trace', small: true },
       { label: 'Q – hladinový', levels: latch, cls: 'good', small: true },
       { label: 'Q – hranový', levels: ff, cls: 'copper', small: true },
     ],
@@ -971,7 +971,7 @@ export function gateExplorer(): HTMLElement {
       })),
     );
     const y = gateOut(gate, a, b);
-    expr.replaceChildren(h('span', { class: 'fx' }, rich(GATE_EXPR[gate])), h('span', { class: `dg-lampbox${y ? ' is-on' : ''}` }, `Y = ${y}`));
+    expr.replaceChildren(h('span', { class: 'fx' }, formula(GATE_EXPR[gate])), h('span', { class: `dg-lampbox${y ? ' is-on' : ''}` }, `Y = ${y}`));
     desc.textContent = GATE_DESC[gate];
   };
   update();
@@ -1103,7 +1103,7 @@ export function flipFlopExplorer(): HTMLElement {
     }
     lampQ.textContent = `Q = ${q}`;
     lampQ.classList.toggle('is-on', q === 1);
-    lampQn.replaceChildren(h('span', { class: 'fx' }, rich(`@o{$Q}`)), ` = ${q ? 0 : 1}`);
+    lampQn.replaceChildren(h('span', { class: 'fx' }, formula('@o{$Q}')), ` = ${q ? 0 : 1}`);
     lampQn.classList.toggle('is-on', q === 0);
     const clk: number[] = [];
     const qs: number[] = [];

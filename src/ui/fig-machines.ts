@@ -272,7 +272,7 @@ export function lossesChart(): SVGSVGElement {
       { points: sample((b) => P0 + b * b * Pk, 0, 1.4, 120) },
     ],
     vlines: [{ x: bOpt, label: `βopt = ${fmt(bOpt, 2)}` }],
-    markers: [{ x: bOpt, y: P0, label: 'ΔPCu = ΔP₀', above: true }],
+    markers: [{ x: bOpt, y: P0, label: 'ΔPCu = ΔP₀', above: false }],
     legend: [{ label: 'ΔP₀ (železo)', className: 'copper' }, { label: 'β² · ΔPk (vinutie)', className: 'green' }, { label: 'spolu' }],
   };
   return lineChart(o);
@@ -349,7 +349,7 @@ export function windingConnectionsFigure(): SVGSVGElement {
   });
   parts.push(wire(cy, [85, 146]), terminal([85, 146]), lab([85, 162], 'N'), dot(cy), small(85, 192, 'hviezda Y, y', 'middle', 'label'));
   // Trojuholník.
-  const cd: Pt = [235, 110];
+  const cd: Pt = [250, 110];
   const vtx: Pt[] = dirs.map((d) => add(cd, d, 58));
   vtx.forEach((v, i) => {
     const w = vtx[(i + 1) % 3];
@@ -358,17 +358,17 @@ export function windingConnectionsFigure(): SVGSVGElement {
     const out = add(cd, dirs[i], 74);
     parts.push(wire(v, out), dot(v), terminal(out), lab(add(cd, dirs[i], 88), 'UVW'[i]));
   });
-  parts.push(small(235, 192, 'trojuholník D, d', 'middle', 'label'));
+  parts.push(small(250, 192, 'trojuholník D, d', 'middle', 'label'));
   // Lomená hviezda: každá fáza má dve polovice vinutia na rôznych stĺpoch.
-  const cz: Pt = [385, 100];
+  const cz: Pt = [410, 96];
   const zz: [Pt, Pt][] = [[[0, -1], [-0.866, -0.5]], [[0.866, 0.5], [0.866, -0.5]], [[-0.866, 0.5], [0, 1]]];
   zz.forEach(([d1, d2], i) => {
-    const p1 = add(cz, d1, 32);
-    const p2 = add(p1, d2, 32);
+    const p1 = add(cz, d1, 37);
+    const p2 = add(p1, d2, 37);
     parts.push(...coilSegment(cz, p1, 2, 0.18, 0.86), ...coilSegment(p1, p2, 2, 0.14, 0.82), dot(p1), terminal(p2), lab(add(p2, d2, 14), 'UVW'[i]));
   });
-  parts.push(wire(cz, [385, 146]), terminal([385, 146]), lab([385, 162], 'N'), dot(cz), small(395, 192, 'lomená hviezda Z, z', 'middle', 'label'));
-  return schematic(470, 200, 'Zapojenie vinutí trojfázového transformátora: hviezda so stredným vodičom, trojuholník a lomená hviezda', ...parts);
+  parts.push(wire(cz, [410, 146]), terminal([410, 146]), lab([410, 162], 'N'), dot(cz), small(420, 192, 'lomená hviezda Z, z', 'middle', 'label'));
+  return schematic(500, 200, 'Zapojenie vinutí trojfázového transformátora: hviezda so stredným vodičom, trojuholník a lomená hviezda', ...parts);
 }
 
 /** Autotransformátor: jedno vinutie s odbočkou, spoločnou časťou tečie rozdiel prúdov. */
@@ -526,7 +526,7 @@ export function torqueCharacteristicChart(): SVGSVGElement {
   const svg = lineChart(o);
   svg.append(
     chartNote(o, 560, 1.25, 'nestabilná oblasť', 'middle', 'mch-muted'),
-    chartNote(o, 1330, 2.75, 'stabilná', 'middle', 'mch-muted'),
+    chartNote(o, 1495, 2.88, 'stabilná oblasť', 'end', 'mch-muted'),
     chartNote(o, 1470, 0.18, 'ns', 'end', 'mch-trace'),
   );
   return svg;
@@ -640,7 +640,7 @@ export function dcSpeedChart(): SVGSVGElement {
       { points: sample((m) => 1.05 - 0.05 * m, 0, 2, 20) },
       { points: sample((m) => 1.1 / Math.sqrt(m) - 0.1, 0.1, 2, 200), className: 'copper' },
     ],
-    markers: [{ x: 1, y: 1, label: 'menovitý bod' }],
+    markers: [{ x: 1, y: 1, label: 'menovitý bod', above: true }],
     legend: [{ label: 'derivačné (cudzie) budenie' }, { label: 'sériové budenie', className: 'copper' }],
   };
   const svg = lineChart(o);
