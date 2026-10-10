@@ -1,0 +1,55 @@
+/* Obrázky kapitoly Elektronika – iba doplnky, ostatné štýly sú v styles.css. */
+
+/* Popis v ploche grafu so „svätožiarou“, aby bol čitateľný aj cez čiary. */
+.chart .el-note,
+.sch .el-note {
+  font: 600 12px var(--font-body);
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.chart .el-note.el-trace,
+.sch .el-note.el-trace {
+  fill: var(--trace);
+}
+
+.chart .el-note.el-copper,
+.sch .el-note.el-copper {
+  fill: var(--copper);
+}
+
+.chart .el-note.el-muted,
+.sch .el-note.el-muted {
+  fill: var(--ink-2);
+  font-weight: 500;
+}
+
+/* Časový diagram (pruhy signálov). */
+.sch .el-lane {
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+
+.sch .el-sig {
+  fill: none;
+  stroke: var(--trace);
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+}
+
+.sch .el-sig.el-copper {
+  stroke: var(--copper);
+}
+
+.sch .el-sig.el-good {
+  stroke: var(--good);
+}
+
+.sch .el-level {
+  stroke: var(--ink-2);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}

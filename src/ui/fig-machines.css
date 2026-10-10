@@ -1,0 +1,140 @@
+/* Obrázky kapitoly Elektrické stroje – iba doplnky, ostatné štýly sú v styles.css. */
+
+/* Závity vinutia (meď) a teleso cievky. */
+.sch .mch-turn {
+  fill: none;
+  stroke: var(--copper);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.sch .mch-turn.mch-thick {
+  stroke-width: 3.8;
+}
+
+.sch .mch-coil {
+  fill: var(--copper-soft);
+  stroke: none;
+}
+
+/* Prierez vinutí: NN (meď) a VN (modrá). */
+.sch .mch-nn {
+  fill: var(--copper-soft);
+  stroke: var(--copper);
+  stroke-width: 1.2;
+}
+
+.sch .mch-vn {
+  fill: var(--trace-soft);
+  stroke: var(--trace);
+  stroke-width: 1.2;
+}
+
+/* Naznačené plechy jadra. */
+.sch .mch-lam {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 0.6;
+  opacity: 0.45;
+}
+
+/* Magnetický tok v jadre. */
+.sch .mch-flux {
+  fill: none;
+  stroke: var(--trace);
+  stroke-width: 1.6;
+  stroke-dasharray: 6 4;
+}
+
+.sch .mch-flux-head {
+  fill: var(--trace);
+}
+
+/* Póly a tyče rotora. */
+.sch .mch-pole-n {
+  fill: var(--bad-soft);
+  stroke: var(--bad);
+  stroke-width: 1.4;
+}
+
+.sch .mch-pole-s {
+  fill: var(--trace-soft);
+  stroke: var(--trace);
+  stroke-width: 1.4;
+}
+
+.sch .mch-bar {
+  fill: var(--copper);
+  stroke: none;
+}
+
+.sch .mch-seg {
+  fill: var(--copper-soft);
+  stroke: var(--copper);
+  stroke-width: 1.4;
+}
+
+.sch .mch-brush {
+  fill: var(--ink-2);
+  stroke: none;
+}
+
+/* Fázy vinutia statora: U meď, V modrá, W zelená. */
+.sch .mch-ph-u {
+  fill: var(--copper-soft);
+  stroke: var(--copper);
+  stroke-width: 1.8;
+}
+
+.sch .mch-ph-v {
+  fill: var(--trace-soft);
+  stroke: var(--trace);
+  stroke-width: 1.8;
+}
+
+.sch .mch-ph-w {
+  fill: var(--good-soft);
+  stroke: var(--good);
+  stroke-width: 1.8;
+}
+
+/* Spojky na svorkovnici. */
+.sch .mch-link {
+  fill: var(--copper);
+  fill-opacity: 0.85;
+  stroke: var(--copper-strong);
+  stroke-width: 1;
+}
+
+/* Popis v ploche grafu alebo schémy so „svätožiarou“, aby bol čitateľný aj cez čiary. */
+.chart .mch-note,
+.sch text.mch-note {
+  font: 600 12px var(--font-body);
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.chart .mch-note.mch-muted,
+.sch text.mch-note.mch-muted {
+  fill: var(--ink-2);
+  font-weight: 500;
+}
+
+.chart .mch-note.mch-copper,
+.sch text.mch-note.mch-copper {
+  fill: var(--copper);
+}
+
+.chart .mch-note.mch-trace,
+.sch text.mch-note.mch-trace {
+  fill: var(--trace);
+}
+
+.chart .mch-area {
+  fill: var(--good-soft);
+  stroke: none;
+  opacity: 0.7;
+}

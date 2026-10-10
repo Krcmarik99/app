@@ -1,0 +1,219 @@
+/* Obrázky ku kapitole Elektroenergetika a bezpečnosť a k lekciám merania (fig-power.ts). */
+
+/* Farby vodičov podľa STN EN 60445; v tmavom režime svetlejšie odtiene, „čierny“ vodič L2 kreslí farba textu. */
+:root {
+  --pw-brown: #8b5523;
+  --pw-grey: #858f9a;
+  --pw-blue: #2467c7;
+  --pw-green: #1f8446;
+  --pw-yellow: #e2b200;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --pw-brown: #cc8b52;
+    --pw-grey: #a7b0ba;
+    --pw-blue: #6da5f2;
+    --pw-green: #4cbb72;
+    --pw-yellow: #e8c53e;
+  }
+}
+
+:root[data-theme='dark'] {
+  --pw-brown: #cc8b52;
+  --pw-grey: #a7b0ba;
+  --pw-blue: #6da5f2;
+  --pw-green: #4cbb72;
+  --pw-yellow: #e8c53e;
+}
+
+.sch .pw-c {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+}
+
+.sch .pw-l1 {
+  stroke: var(--pw-brown);
+}
+
+.sch .pw-l2 {
+  stroke: var(--ink);
+}
+
+.sch .pw-l3 {
+  stroke: var(--pw-grey);
+}
+
+.sch .pw-n {
+  stroke: var(--pw-blue);
+}
+
+.sch .pw-pe {
+  stroke: var(--pw-green);
+}
+
+.sch .pw-pe-y {
+  stroke: var(--pw-yellow);
+  stroke-dasharray: 7 7;
+}
+
+.sch .pw-swatch-n {
+  fill: var(--pw-blue);
+}
+
+/* Obrazovka osciloskopu a Lissajousove obrazce. */
+.sch .pw-screen {
+  fill: var(--surface-2);
+  stroke: var(--ink-2);
+  stroke-width: 1.4;
+}
+
+.sch .pw-grid {
+  stroke: var(--ink-2);
+  stroke-opacity: 0.3;
+  stroke-width: 1;
+}
+
+.sch .pw-axis {
+  stroke: var(--ink-2);
+  stroke-opacity: 0.75;
+  stroke-width: 1.1;
+}
+
+.sch .pw-ch1 {
+  fill: none;
+  stroke: var(--copper);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+
+.sch .pw-ch2 {
+  fill: none;
+  stroke: var(--trace);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+
+.sch .pw-dim {
+  stroke: var(--bad);
+  stroke-width: 1.4;
+}
+
+.sch text.pw-dim-text {
+  fill: var(--bad);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Grafy s logaritmickými osami (pásma účinkov prúdu, vypínacie charakteristiky). */
+.pw-chart .pw-minor {
+  stroke-opacity: 0.45;
+}
+
+.pw-chart .pw-zone2 {
+  fill: var(--good-soft);
+  fill-opacity: 0.85;
+}
+
+.pw-chart .pw-zone3 {
+  fill: var(--warn-soft);
+  fill-opacity: 0.85;
+}
+
+.pw-chart .pw-zone4 {
+  fill: var(--bad-soft);
+  fill-opacity: 0.85;
+}
+
+.pw-chart .pw-zone-label {
+  font: 600 13px var(--font-body);
+  fill: var(--ink);
+}
+
+.pw-chart .pw-curve-label {
+  font: italic 13px var(--font-formula);
+  fill: var(--ink);
+}
+
+.pw-chart .pw-note {
+  font: 12px var(--font-body);
+  fill: var(--ink-2);
+}
+
+.pw-chart .pw-thermal {
+  fill: var(--surface-2);
+}
+
+.pw-chart .pw-band-b {
+  fill: var(--trace-soft);
+  stroke: var(--trace);
+}
+
+.pw-chart .pw-band-c {
+  fill: var(--copper-soft);
+  stroke: var(--copper);
+}
+
+.pw-chart .pw-band-d {
+  fill: var(--good-soft);
+  stroke: var(--good);
+}
+
+.pw-chart .pw-band {
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.pw-chart .pw-edge-b {
+  stroke: var(--trace);
+  stroke-width: 1.8;
+}
+
+.pw-chart .pw-edge-c {
+  stroke: var(--copper);
+  stroke-width: 1.8;
+}
+
+.pw-chart .pw-edge-d {
+  stroke: var(--good);
+  stroke-width: 1.8;
+}
+
+.pw-chart text.pw-letter-b {
+  font: 700 15px var(--font-body);
+  fill: var(--trace);
+}
+
+.pw-chart text.pw-letter-c {
+  font: 700 15px var(--font-body);
+  fill: var(--copper);
+}
+
+.pw-chart text.pw-letter-d {
+  font: 700 15px var(--font-body);
+  fill: var(--good);
+}
+
+.pw-chart .pw-range {
+  stroke: var(--bad);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.pw-chart .pw-rcd {
+  stroke: var(--trace);
+  stroke-width: 1.6;
+  stroke-dasharray: 6 4;
+}
+
+.pw-chart text.pw-rcd-label {
+  font: 600 12px var(--font-mono);
+  fill: var(--trace);
+}
+
+.sch text.pw-muted {
+  fill: var(--ink-2);
+}

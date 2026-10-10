@@ -1,0 +1,372 @@
+/* Číslicová technika – doplnky obrázkov a interaktívnych prvkov (prefix dg-). Iba CSS premenné, aby fungoval tmavý režim. */
+
+/* ---------------------------------------------------------------- obrázky (SVG) */
+
+.sch text.dg-qual {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sch text.dg-sm {
+  font-size: 13.5px;
+}
+
+.sch text.dg-pin {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--ink-2);
+}
+
+.sch text.dg-idx {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--ink-2);
+}
+
+.sch text.dg-big {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.sch text.dg-muted,
+.sch tspan.dg-muted {
+  fill: var(--ink-2);
+}
+
+.sch text.dg-mark {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  fill: var(--copper);
+  font-weight: 600;
+}
+
+.sch .dg-rule {
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+
+.sch .dg-axis {
+  stroke: var(--ink-2);
+  stroke-width: 1.2;
+}
+
+.sch .dg-cell {
+  fill: var(--surface);
+  stroke: var(--ink-2);
+  stroke-width: 1.1;
+}
+
+.sch .dg-cell.is-one {
+  fill: var(--copper-soft);
+}
+
+.sch .dg-shade {
+  fill: var(--trace-soft);
+  stroke: none;
+}
+
+.sch .dg-edge {
+  stroke: var(--copper);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  fill: none;
+}
+
+.sch .dg-wave {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke: var(--trace);
+}
+
+.sch .dg-wave.ink {
+  stroke: var(--ink);
+}
+
+.sch .dg-wave.copper {
+  stroke: var(--copper);
+}
+
+.sch .dg-wave.good {
+  stroke: var(--good);
+}
+
+/* Skupiny v Karnaughovej mape. */
+.sch .dg-grp {
+  fill: none;
+  stroke-width: 2.4;
+}
+
+.sch .dg-grp.trace {
+  stroke: var(--trace);
+}
+
+.sch .dg-grp.copper {
+  stroke: var(--copper);
+}
+
+.sch .dg-grp.good {
+  stroke: var(--good);
+}
+
+.sch .dg-grp-key.trace {
+  stroke: var(--trace);
+}
+
+.sch .dg-grp-key.copper {
+  stroke: var(--copper);
+}
+
+.sch .dg-grp-key.good {
+  stroke: var(--good);
+}
+
+.sch .dg-grp-key {
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* 7-segmentový displej. */
+.sch .dg-seg {
+  fill: var(--surface-2);
+  stroke: var(--rule-strong);
+  stroke-width: 1;
+}
+
+.sch .dg-seg.is-on {
+  fill: var(--copper);
+  stroke: var(--copper-strong);
+}
+
+.sch .dg-display {
+  fill: var(--paper);
+  stroke: var(--rule-strong);
+  stroke-width: 1.2;
+}
+
+/* Vodič v stave 1 a kontrolka výstupu. */
+.sch .w.dg-hi {
+  stroke: var(--copper);
+  stroke-width: 2.6;
+}
+
+.sch text.dg-hi {
+  fill: var(--copper);
+  font-weight: 600;
+}
+
+.sch .dg-lamp {
+  fill: var(--surface-2);
+  stroke: var(--ink-2);
+  stroke-width: 1.6;
+}
+
+.sch .dg-lamp.is-on {
+  fill: var(--copper);
+  stroke: var(--copper-strong);
+}
+
+.sch .dg-glow {
+  fill: var(--copper-soft);
+  stroke: none;
+}
+
+/* ---------------------------------------------------------------- interaktívne prvky */
+
+.dg-section {
+  display: grid;
+  gap: 8px;
+}
+
+.dg-k {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.dg-bits {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.dg-bits.dg-bits-4 {
+  grid-template-columns: repeat(4, minmax(0, 72px));
+}
+
+.dg-bit {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 6px 0;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font: 600 1.4rem/1.1 var(--font-mono);
+  cursor: pointer;
+  transition: background-color 0.12s, border-color 0.12s;
+}
+
+.dg-bit small {
+  font: 500 11px/1.2 var(--font-mono);
+  color: var(--ink-2);
+}
+
+.dg-bit:hover {
+  border-color: var(--copper);
+}
+
+.dg-bit[aria-pressed='true'] {
+  background: var(--copper-soft);
+  border-color: var(--copper);
+  color: var(--copper-strong);
+}
+
+.dg-bit:focus-visible,
+.dg-in:focus-visible {
+  outline: 2px solid var(--trace);
+  outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+  .dg-bits {
+    gap: 4px;
+  }
+
+  .dg-bit {
+    font-size: 1.2rem;
+  }
+
+  .dg-bit small {
+    font-size: 10px;
+  }
+}
+
+.dg-range {
+  width: 100%;
+  accent-color: var(--copper);
+}
+
+.dg-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dg-in {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 84px;
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font: 600 15px var(--font-mono);
+  cursor: pointer;
+}
+
+.dg-in:hover {
+  border-color: var(--copper);
+}
+
+.dg-in[aria-pressed='true'] {
+  background: var(--copper-soft);
+  border-color: var(--copper);
+  color: var(--copper-strong);
+}
+
+.dg-in:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dg-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .dg-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dg-stage .sch-panel {
+  padding: 10px;
+}
+
+.dg-truth {
+  justify-self: center;
+  border-collapse: collapse;
+  font: 15px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dg-truth th,
+.dg-truth td {
+  min-width: 46px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+}
+
+.dg-truth th {
+  font: italic 600 16px var(--font-formula);
+  color: var(--ink-2);
+}
+
+.dg-truth tr.is-active td {
+  background: var(--copper-soft);
+  color: var(--copper-strong);
+  font-weight: 600;
+}
+
+.dg-out {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  font-size: 15px;
+}
+
+.dg-lampbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 15px var(--font-mono);
+}
+
+.dg-lampbox::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 2px solid var(--rule-strong);
+}
+
+.dg-lampbox.is-on::before {
+  background: var(--copper);
+  border-color: var(--copper-strong);
+  box-shadow: 0 0 0 4px var(--copper-soft);
+}
+
+.dg-msg {
+  min-height: 1.4em;
+  font-size: 14px;
+  color: var(--ink-2);
+}
