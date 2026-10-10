@@ -5,21 +5,38 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
 
 ## Čo obsahuje
 
-- **20 lekcií** v piatich kapitolách – od elektrických veličín cez Ohmov a Kirchhoffove zákony,
-  kondenzátor, cievku a striedavý prúd, farebný kód rezistorov a LED až po **elektrotechnické merania**
-  (zákonné jednotky SI, meracie prístroje, trieda presnosti, chyby a neistota merania, chyby číslicových
-  prístrojov, meranie odporu ohmmetrom a Ohmovou metódou). Každá lekcia má teóriu, vzorce s vysvetlením
-  veličín, schémy, riešené príklady a krátky test na konci.
-- **Cvičenie** – vyberieš témy a počet otázok. Číselné príklady (vyše 90 typov) sa generujú
-  s novými hodnotami pri každom pokuse a pri chybe ukážu celý postup riešenia. K tomu viac ako 110 otázok
+- **45 lekcií** v deviatich kapitolách, ktoré idú po ročníkoch strednej priemyselnej školy elektrotechnickej:
+  - *1. ročník* – jednosmerný prúd (veličiny, Ohmov a Kirchhoffove zákony, reálny zdroj, výkon), elektrické
+    a magnetické pole (kondenzátor, cievka), súčiastky v praxi (farebný kód, dióda a LED);
+  - *2. a 3. ročník* – striedavý prúd (sínusové veličiny, obvody RLC, výkon a účinník s kompenzáciou,
+    sériový a paralelný rezonančný obvod, filtre RC a RL a decibely, trojfázová sústava) a elektrotechnické
+    merania (jednotky SI, meracie prístroje, trieda presnosti, chyby merania a číslicových prístrojov,
+    meranie odporu, Ohmova metóda, meranie výkonu a energie, mostíkové metódy, osciloskop);
+  - *3. ročník* – elektrické stroje (transformátor – princíp a prevod, prevádzkové stavy, straty a účinnosť,
+    trojfázové a špeciálne transformátory; asynchrónny motor; jednosmerné a synchrónne stroje), elektronika
+    (usmerňovače, stabilizátory, tranzistor a zosilňovač, operačný zosilňovač, oscilátory a časovač 555),
+    číslicová technika (číselné sústavy, logické členy, kombinačné obvody, klopné obvody a čítače)
+    a elektroenergetika a bezpečnosť (výroba a rozvod energie, ochrana pred úrazom elektrickým prúdom,
+    istenie vedení).
+
+  Každá lekcia má teóriu, vzorce s vysvetlením veličín, schémy, grafy, riešené príklady a krátky test.
+  V 25 lekciách sú **interaktívne grafy** – posuvníkmi meníš súčiastky a hneď vidíš rezonančnú krivku,
+  Bodeho diagram filtra, momentovú charakteristiku motora, účinnosť transformátora, priebehy usmerňovača
+  či časovača 555, prúd stredným vodičom a podobne. Číslicová technika má klikateľné logické členy,
+  prevodník bitov a klopné obvody s časovým diagramom.
+- **Cvičenie** – vyberieš témy a počet otázok. Číselné príklady (vyše 280 typov) sa generujú
+  s novými hodnotami pri každom pokuse a pri chybe ukážu celý postup riešenia. K tomu vyše 300 otázok
   s výberom odpovede.
-- **11 kalkulačiek** – Ohmov zákon a výkon, sériové a paralelné spájanie rezistorov aj kondenzátorov,
+- **Kalkulačky** – Ohmov zákon a výkon, sériové a paralelné spájanie rezistorov aj kondenzátorov,
   delič napätia (aj s návrhom rezistora z rady E24), farebný kód rezistorov oboma smermi,
   časová konštanta RC/RL s grafom, striedavý obvod RLC s trojuholníkom impedancií,
   predradný rezistor pre LED, odpor/úbytok napätia na vedení, chyba analógového a číslicového
-  meracieho prístroja, Ohmova metóda (AV/VA) a konštanta a spotreba prístroja.
+  meracieho prístroja, Ohmova metóda (AV/VA), konštanta a spotreba prístroja, filter RC a RL,
+  výkon a kompenzácia účinníka (1f aj 3f), transformátor, asynchrónny motor, časovač 555,
+  stabilizátor napätia, prevod číselných sústav, ochrana samočinným odpojením a odčítanie z osciloskopu.
 - **Kartičky** na opakovanie – veličiny a jednotky, vzorce, schematické značky, pojmy z meraní,
-  základné jednotky SI a predpony.
+  základné jednotky SI a predpony, striedavé obvody, elektrické stroje, elektronika, číslicová technika
+  a elektroenergetika a bezpečnosť.
 - **Pokrok** – preštudované lekcie, úspešnosť podľa tém, séria dní učenia. Ukladá sa iba
   v prehliadači (localStorage).
 - **Registrácia a prihlásenie** – online účty (Supabase): prihlásiš sa na hocijakom zariadení a pokrok
@@ -113,9 +130,12 @@ npm run typecheck
 src/
   content/      lekcie, otázky s výberom, kartičky (len dáta)
   content/meas/ kapitola Elektrotechnické merania – každá lekcia s otázkami a generátormi v jednom súbore
+  content/y3/   učivo 3. ročníka po kapitolách (ac, machines, electronics, digital, power) – moduly lekcií,
+                kartičky; pomocné obrázky v ui/fig-*.ts, kalkulačky vo views/calc-*.ts
   practice/     generátory číselných príkladov a zostavenie cvičenia
   lib/          výpočty (electro), jednotky a predpony (units), farebný kód, vzorce, pokrok, účty (auth)
-  ui/           schémy, grafy, karta otázky, interaktívny obvod na úvodnej stránke
+  ui/           schémy, grafy, interaktívne grafy (explorer), fázorové diagramy, karta otázky,
+                interaktívny obvod na úvodnej stránke
   lab/          zapájanie obvodov: súčiastky, uzly, simulácia, značky, osciloskop, ukážky
   views/        stránky: domov, lekcie, cvičenie, kalkulačky, kartičky, zapájanie, účet
   router.ts     navigácia cez #kotvy (funguje aj na statickom hostingu)
@@ -124,9 +144,11 @@ tests/          testy (Vitest)
 
 ### Ako pridať obsah
 
-- **Lekcia:** doplň objekt do `LESSONS` v `src/content/lessons.ts`. Text môže obsahovať vzorce
-  v spätných apostrofoch: `` `$I = @f{$U}{$R}` `` – `$X` je veličina kurzívou, `_{1}` dolný index,
-  `^{2}` horný index, `@f{a}{b}` zlomok, `@s{a}` odmocnina.
+- **Lekcia:** vytvor modul v `src/content/y3/<kapitola>/` (vzor `ac/vykon-striedavy.ts`) – v jednom súbore
+  je lekcia, otázky s výberom aj generátory príkladov – a pridaj ho do poľa `MODULES` v `index.ts`
+  kapitoly. Text môže obsahovať vzorce v spätných apostrofoch: `` `$I = @f{$U}{$R}` `` – `$X` je veličina
+  kurzívou, `_{1}` dolný index, `^{2}` horný index, `@f{a}{b}` zlomok, `@s{a}` odmocnina, `@o{a}` pruh
+  (negácia). Blok `explore` vloží interaktívny graf (`src/ui/explorer.ts`).
 - **Otázka s výberom:** pridaj ju do `QUESTIONS` v `src/content/questions.ts` (prvá možnosť je správna,
   pri zobrazení sa zamiešajú).
 - **Typ číselného príkladu:** pridaj generátor do `src/practice/generators.ts`. Test v

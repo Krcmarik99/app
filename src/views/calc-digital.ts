@@ -174,10 +174,10 @@ function sustavyCalc(): HTMLElement {
           h('div', { class: 'field-box' }, input, unit),
           hint,
         ),
-        steps,
       ),
       h('div', { class: 'calc-outputs' }, out, fig),
     ),
+    steps,
   );
 }
 
