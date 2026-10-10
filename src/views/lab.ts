@@ -2,15 +2,19 @@
  * Zapájanie obvodov: súčiastky a meracie prístroje sa vkladajú do mriežky, spájajú vodičmi
  * a obvod sa hneď simuluje. Merače ukazujú hodnoty priamo v schéme, osciloskop pod ňou.
  */
+import { compileSketch } from '../arduino/compiler';
+import { MODE, PIN_COUNT, PWM_PINS, pinName } from '../arduino/vm';
 import { currentAccount } from '../lib/auth';
 import { pushCircuit } from '../lib/sync';
 import { frag, h, s } from '../lib/dom';
 import { formatSI, parseQuantity } from '../lib/units';
+import { arduinoPanel, type ArduinoPanel } from '../lab/arduino-panel';
+import { BuzzerSound } from '../lab/audio';
 import { Simulator, glowLevel, meterReading, type PartState } from '../lab/engine';
 import { DEMO_FOR, EXAMPLES, exampleById, paletteIdOf } from '../lab/examples';
 import { buildNets, onSegmentInterior, routeWire } from '../lab/netlist';
 import {
-  KINDS, PALETTE, createPart, displayName, newId, num, parseCircuit, terminalsOf,
+  KINDS, PALETTE, SEG_NAMES, arduinoTerm, createPart, displayName, newId, num, parseCircuit, terminalsOf,
   type Circuit, type PaletteItem, type Part, type PropDef, type Pt, type Rot, type Wire,
 } from '../lab/parts';
 import { circuitPreview } from '../lab/preview';
@@ -44,6 +48,16 @@ const HELP: Record<Part['kind'], string> = {
   multimeter: 'Prepni funkciu: napätie (zapojenie paralelne), prúd (do série) alebo odpor (súčiastka musí byť bez napätia).',
   wattmeter: 'Prúdovú cievku (vývody I*, I) zapoj do série so spotrebičom, napäťovú (U*, U) paralelne k nemu. Začiatky cievok sú označené hviezdičkou.',
   scope: 'Kanály CH1 a CH2 ukazujú napätie voči svorke ⏚. Obrazovka osciloskopu je pod schémou.',
+  arduino: 'Mikrokontrolér, ktorý vykonáva tvoj program. Piny 0 až 13 sú digitálne (so značkou ~ majú PWM), A0 až A5 sú analógové vstupy. Pin dá najviac 40 mA – LED pripájaj cez rezistor. Program píšeš pod schémou.',
+  button: 'Spája vývody, kým ho držíš stlačené – klikni naň v schéme a drž. Na Arduine potrebuje pull-down rezistor k GND alebo pinMode(pin, INPUT_PULLUP).',
+  pot: 'Delič napätia s posuvným jazdcom. Krajné vývody pripoj na 5V a GND, jazdec na analógový vstup (napr. A0). Polohu jazdca meníš posuvníkom.',
+  ldr: 'Jeho odpor klesá so svetlom: v tme asi 1 MΩ, v izbe niekoľko kΩ. S rezistorom tvorí delič napätia pre analógový vstup.',
+  tmp36: 'Výstup Vout má 0,5 V pri 0 °C a pridá 10 mV na každý stupeň (pri 25 °C je 0,75 V). Napája sa napätím 2,7 až 5,5 V.',
+  seg7: 'Osem LED (segmenty a až g a bodka) v jednom puzdre. Pri spoločnej katóde ide COM na GND a segment svieti pri HIGH. Každý segment potrebuje vlastný rezistor.',
+  lcd: 'Displej so 16 znakmi v 2 riadkoch s prevodníkom I2C: GND, VCC na 5V, SDA na A4 a SCL na A5. Ovláda sa knižnicou LiquidCrystal_I2C. Diakritiku nevie zobraziť.',
+  buzzer: 'Pasívny bzučiak hrá tón, ktorý mu pošle tone(pin, frekvencia). Aktívny pípa sám, stačí naň pustiť napätie. Zvuk sa ozve po prvom kliknutí na stránku.',
+  servo: 'Natočí rameno na uhol 0° až 180° podľa šírky impulzov (544 až 2400 µs) z knižnice Servo. Hnedý vodič patrí na GND, červený na 5V a oranžový na signálový pin.',
+  rgbled: 'Tri LED – červená, zelená a modrá – v jednom puzdre so spoločnou katódou. Každú farbu pripoj cez rezistor na PWM pin a miešaj ich pomocou analogWrite.',
 };
 
 /** Nastavenia, ktoré vydržia aj prechod na inú stránku. */
@@ -52,6 +66,7 @@ let powered = true;
 /** Stop: čas obvodu stojí, merače ukazujú posledné hodnoty. */
 let running = true;
 let zoom: number | null = null;
+let muted = false;
 
 const storeKey = () => `elektrolab:lab:${currentAccount()?.id ?? 'guest'}`;
 
@@ -110,6 +125,13 @@ export function labView(): HTMLElement {
   const drawings = new Map<string, PartDrawing>();
   const partGroups = new Map<string, SVGGElement>();
   let scopes: ScopePanel[] = [];
+  let panels: ArduinoPanel[] = [];
+  /** Tlačidlá, ktoré práve držíš (stav sa neukladá). */
+  const pressed = new Set<string>();
+  const sound = new BuzzerSound();
+  sound.muted = muted;
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let renderQueued = false;
 
   // ------------------------------------------------------------------ plátno
   const defs = s('defs', null,
@@ -141,6 +163,7 @@ export function labView(): HTMLElement {
   const warningsBox = h('div', { class: 'lab-warnings', 'aria-live': 'polite' });
   const inspector = h('aside', { class: 'lab-inspector', 'aria-label': 'Vlastnosti' });
   const scopesBox = h('div', { class: 'lab-scopes' });
+  const panelsBox = h('div', { class: 'lab-arduinos' });
   const paletteButtons = new Map<string, HTMLButtonElement>();
 
   const toolBtn = (t: 'select' | 'wire', label: string, iconName: 'arrow' | 'plus') => {
@@ -183,12 +206,20 @@ export function labView(): HTMLElement {
   const cancelWireBtn = h('button', { type: 'button', class: 'btn btn-sm btn-quiet lab-cancel-wire', hidden: true },
     icon('close', 16), 'Zrušiť vodič');
   cancelWireBtn.addEventListener('click', () => cancelWire());
+  const muteBtn = h('button', { type: 'button', class: 'btn btn-sm btn-quiet lab-mute', hidden: true });
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    sound.muted = muted;
+    sound.unlock();
+    syncTools();
+  });
   const speedSel = h('select', { class: 'field-input', 'aria-label': 'Rýchlosť simulácie' },
     SPEEDS.map(([v, t]) => h('option', { value: v, selected: v === speed }, t)));
   speedSel.addEventListener('change', () => { speed = Number(speedSel.value); });
   const exampleSel = h('select', { class: 'field-input', 'aria-label': 'Ukážkové zapojenia' },
     h('option', { value: '' }, 'Ukážky zapojení…'),
-    EXAMPLES.map((e) => h('option', { value: e.id }, e.title)),
+    h('optgroup', { label: 'Obvody' }, EXAMPLES.filter((e) => !e.id.startsWith('ard-')).map((e) => h('option', { value: e.id }, e.title))),
+    h('optgroup', { label: 'Arduino' }, EXAMPLES.filter((e) => e.id.startsWith('ard-')).map((e) => h('option', { value: e.id }, e.title))),
     h('option', { value: '__empty' }, 'Prázdna doska'),
   );
   exampleSel.addEventListener('change', () => {
@@ -234,6 +265,9 @@ export function labView(): HTMLElement {
     stopBtn.setAttribute('aria-pressed', String(!running));
     stopBtn.disabled = !powered;
     cancelWireBtn.hidden = wirePath.length === 0;
+    muteBtn.hidden = !circuit.parts.some((p) => p.kind === 'buzzer');
+    muteBtn.textContent = muted ? '🔇 Zvuk vypnutý' : '🔊 Zvuk zapnutý';
+    muteBtn.setAttribute('aria-pressed', String(muted));
     svg.classList.toggle('is-wiring', tool === 'wire' || wirePath.length > 0);
     svg.classList.toggle('is-placing', !!armed);
     updateHint();
@@ -282,6 +316,36 @@ export function labView(): HTMLElement {
 
   function rebuildSim(keepState: boolean): void {
     sim = powered ? new Simulator(clone(circuit), keepState && sim ? sim.exportState() : undefined) : null;
+    if (!keepState) pressed.clear();
+    pressed.forEach((id) => sim?.setPressed(id, true));
+  }
+
+  /** Uloženie po chvíli (písanie programu, posúvanie posuvníkov). */
+  function scheduleSave(): void {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      saveCircuit(circuit);
+    }, 700);
+  }
+
+  function scheduleRender(): void {
+    if (renderQueued) return;
+    renderQueued = true;
+    const run = () => {
+      renderQueued = false;
+      render();
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+    else run();
+  }
+
+  function press(id: string, on: boolean): void {
+    if (on === pressed.has(id)) return;
+    if (on) pressed.add(id);
+    else pressed.delete(id);
+    sim?.setPressed(id, on);
+    updateLive(true);
   }
 
   /**
@@ -298,6 +362,7 @@ export function labView(): HTMLElement {
     render();
     renderInspector();
     renderScopes();
+    renderPanels();
     syncTools();
   }
 
@@ -318,6 +383,10 @@ export function labView(): HTMLElement {
   function rotateSelected(): void {
     const part = selected?.type === 'part' ? partById(selected.id) : undefined;
     if (!part) return;
+    if (KINDS[part.kind].fixedRot) {
+      status.textContent = `${displayName(part)} sa neotáča – presuň ho ťahaním.`;
+      return;
+    }
     pushHistory();
     const ends = attachedEnds(part);
     const c0 = centroid(terminalsOf(part));
@@ -472,22 +541,24 @@ export function labView(): HTMLElement {
   let lastPanels = 0;
   function updateLive(force = false): void {
     const hasAC = sim?.hasAC ?? false;
+    const avg = sim?.averaged ?? false;
     const warned = new Set((sim?.warnings() ?? []).map((w) => w.part));
     for (const part of circuit.parts) {
       const d = drawings.get(part.id);
       const st = sim?.states.get(part.id);
       if (!d) continue;
       if (d.display) {
-        const r = sim && st ? meterReading(part, st, hasAC) : null;
+        const r = sim && st ? meterReading(part, st, avg) : null;
         d.display.textContent = !r ? '—' : r.value === null ? 'OL' : fmtValue(r.value, r.unit);
       }
       if (d.glow) {
-        const b = glowLevel(part, st, hasAC);
+        const b = glowLevel(part, st, hasAC, sim?.smooth ?? false);
         d.glow.setAttribute('opacity', b < 0.005 ? '0' : String((0.25 + 0.75 * Math.sqrt(b)).toFixed(2)));
       }
+      d.live?.({ sim, st });
       if (d.body && st) {
         const pmax = num(part.props.pmax, 0.25);
-        const heat = Math.min(1, Math.sqrt(Math.max(0, hasAC ? st.mp : st.p) / (pmax * 2)));
+        const heat = Math.min(1, Math.sqrt(Math.max(0, avg ? st.mp : st.p) / (pmax * 2)));
         d.body.style.fill = `color-mix(in srgb, var(--copper) ${Math.round(heat * 85)}%, var(--surface))`;
       } else if (d.body) {
         d.body.style.fill = '';
@@ -500,6 +571,7 @@ export function labView(): HTMLElement {
       renderWarnings();
       updateInspectorLive();
       scopes.forEach((sc) => sc.update(sim));
+      panels.forEach((pn) => pn.update(sim));
       timeOut.textContent = !sim ? 'vypnuté' : `t = ${formatSI(sim.time, 's', 3)}${!running ? ' · zastavené' : slowed ? ' · spomalené' : ''}`;
     }
   }
@@ -527,9 +599,100 @@ export function labView(): HTMLElement {
 
   // ------------------------------------------------------------------ vlastnosti súčiastky
   let liveRows: { set: (st: PartState | undefined) => void } | null = null;
+  let livePins: (() => void) | null = null;
+
+  /** Je k bodu mriežky niečo pripojené (vodič alebo vývod inej súčiastky)? */
+  function connectedAt(pt: Pt, self: Part): boolean {
+    return circuit.wires.some((w) => same(w.a, pt) || same(w.b, pt) || onSegmentInterior(pt, w))
+      || circuit.parts.some((p) => p !== self && terminalsOf(p).some((t) => same(t, pt)));
+  }
+
+  /** Tabuľka pinov Arduina: režim a stav každého používaného pinu. */
+  function pinTable(part: Part): { el: HTMLElement; set: () => void } {
+    const tbody = h('tbody');
+    const el = h('div', { class: 'lab-pins' },
+      h('p', { class: 'eyebrow' }, 'Piny'),
+      h('table', null, h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Pin'), h('th', { scope: 'col' }, 'Režim'), h('th', { scope: 'col' }, 'Stav'))), tbody));
+    const terms = terminalsOf(part);
+    const set = () => {
+      const mcu = sim?.mcus.get(part.id);
+      const pd = sim?.pins.get(part.id);
+      const rows: HTMLElement[] = [];
+      for (let pin = 0; pin < PIN_COUNT; pin++) {
+        const ps = mcu?.pins[pin];
+        if (!ps) continue;
+        const used = connectedAt(terms[arduinoTerm(pin)], part);
+        if (!used && ps.mode === MODE.INPUT && !ps.out && ps.readAt < 0) continue;
+        const v = pd?.v[pin] ?? 0;
+        let mode: string;
+        let state: string;
+        if (ps.servo) {
+          mode = 'servo';
+          state = `impulzy ${ps.servo.us} µs`;
+        } else if (ps.tone && mcu!.time < ps.tone.until) {
+          mode = 'tón';
+          state = `${ps.tone.f} Hz`;
+        } else if (ps.mode === MODE.OUTPUT) {
+          mode = PWM_PINS.includes(pin) && ps.pwm ? 'výstup PWM' : 'výstup';
+          state = ps.pwm ? `${Math.round(ps.pwm / 2.55)} % (${ps.pwm})` : ps.out ? 'HIGH' : 'LOW';
+        } else {
+          mode = ps.mode === MODE.INPUT_PULLUP || ps.out ? 'vstup + pull-up' : 'vstup';
+          state = pin >= 14 ? `${fmtValue(v, 'V')} → ${Math.max(0, Math.min(1023, Math.floor((v / 5) * 1024)))}`
+            : `${fmtValue(v, 'V')} ${v >= 2.6 ? 'HIGH' : v <= 2.1 ? 'LOW' : '?'}`;
+        }
+        rows.push(h('tr', null, h('th', { scope: 'row' }, pinName(pin)), h('td', null, mode), h('td', null, state)));
+      }
+      if (!rows.length) rows.push(h('tr', null, h('td', { colspan: 3 }, sim ? 'Program zatiaľ nepoužíva žiadny pin.' : 'Napájanie je vypnuté.')));
+      tbody.replaceChildren(...rows);
+    };
+    return { el, set };
+  }
+
+  /** Tlačidlo v paneli: drží sa myšou, prstom alebo medzerníkom. */
+  function holdButton(part: Part): HTMLElement {
+    const b = h('button', { type: 'button', class: 'btn btn-primary lab-hold' }, 'Drž ma – tlačidlo je stlačené');
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      sound.unlock();
+      press(part.id, true);
+    });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => press(part.id, false));
+    b.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        press(part.id, true);
+      }
+    });
+    b.addEventListener('keyup', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') press(part.id, false);
+    });
+    b.addEventListener('blur', () => press(part.id, false));
+    return b;
+  }
 
   function propField(part: Part, def: PropDef): HTMLElement {
     const id = `lab-prop-${def.key}`;
+    if (def.slider) {
+      // Posuvník mení hodnotu počas behu – Arduino a obvod bežia ďalej bez prestavby.
+      const sl = def.slider;
+      const value = num(part.props[def.key], 0);
+      const input = h('input', {
+        id, type: 'range', class: 'lab-range', min: sl.min, max: sl.max, step: sl.step, value: sl.fromValue ? sl.fromValue(value) : value,
+      });
+      const out = h('output', { for: id, class: 'lab-range-val' }, sl.format(value));
+      input.addEventListener('input', () => {
+        const v = sl.toValue ? sl.toValue(Number(input.value)) : Number(input.value);
+        part.props[def.key] = v;
+        out.textContent = sl.format(v);
+        sim?.setLive(part.id, def.key, v);
+        scheduleSave();
+        scheduleRender();
+      });
+      return h('div', { class: 'field lab-slider' },
+        h('div', { class: 'lab-slider-head' }, h('label', { for: id }, def.label), out),
+        input,
+        def.hint ? h('p', { class: 'field-hint' }, def.hint) : null);
+    }
     if (def.options) {
       const sel = h('select', { id, class: 'field-input' },
         def.options.map(([v, t]) => h('option', { value: v, selected: String(part.props[def.key]) === v }, t)));
@@ -571,13 +734,15 @@ export function labView(): HTMLElement {
         return;
       }
       const ac = sim.hasAC;
+      // S Arduinom (PWM, blikanie) ukazujeme priemer za 0,1 s.
+      const mean = !ac && sim.averaged;
       const rows: [string, string][] = [];
       const ef = (m2: number) => Math.sqrt(Math.max(0, m2));
-      const u = ac ? ef(st.mu2) : st.u;
-      const i = ac ? ef(st.mi2) : st.i;
-      const p = ac ? st.mp : st.p;
-      const suffix = ac ? ' (ef.)' : '';
-      const reading = meterReading(part, st, ac);
+      const u = ac ? ef(st.mu2) : mean ? st.mu : st.u;
+      const i = ac ? ef(st.mi2) : mean ? st.mi : st.i;
+      const p = ac || mean ? st.mp : st.p;
+      const suffix = ac ? ' (ef.)' : mean ? ' (priemer)' : '';
+      const reading = meterReading(part, st, sim.averaged);
       switch (part.kind) {
         case 'ammeter':
         case 'voltmeter':
@@ -606,6 +771,50 @@ export function labView(): HTMLElement {
         case 'dc':
         case 'ac':
           rows.push([`Napätie na svorkách${suffix}`, fmtValue(u, 'V')], [`Dodávaný prúd${suffix}`, fmtValue(i, 'A')], ['Dodávaný výkon', fmtValue(p, 'W')]);
+          break;
+        case 'arduino':
+          rows.push(['Napätie pinu 5V', fmtValue(st.u, 'V')], ['Odber z pinu 5V', fmtValue((st.extra.i5 ?? 0) < 1e-6 ? 0 : st.extra.i5, 'A')]);
+          break;
+        case 'button':
+          rows.push(['Stav', pressed.has(part.id) ? 'stlačené – spája' : 'pustené – rozpojené'], ['Napätie U', fmtValue(st.u, 'V')], ['Prúd I', fmtValue(st.i, 'A')]);
+          break;
+        case 'pot':
+          rows.push(['Napätie na celej dráhe', fmtValue(Math.abs(st.u), 'V')],
+            ['Napätie medzi jazdcom a vývodom 1', fmtValue(Math.abs(st.u - (st.extra.uw ?? 0)), 'V')],
+            ['Prúd dráhou', fmtValue(Math.abs(st.i), 'A')]);
+          break;
+        case 'ldr':
+          rows.push(['Odpor', fmtValue(st.extra.r ?? 0, 'Ω')], ['Napätie U', fmtValue(st.u, 'V')], ['Prúd I', fmtValue(st.i, 'A')]);
+          break;
+        case 'tmp36': {
+          const vout = st.extra.vout ?? 0;
+          rows.push(['Napájanie', fmtValue(st.u, 'V')], ['Výstup Vout', fmtValue(vout, 'V')],
+            ['Teplota podľa Vout', st.u >= 2.7 ? `${((vout - 0.5) * 100).toFixed(1).replace('.', ',')} °C` : 'senzor nemá napájanie']);
+          break;
+        }
+        case 'seg7': {
+          const lit = SEG_NAMES.filter((_, k) => (st.extra[`e${k}`] ?? 0) > 0.0005);
+          rows.push(['Svietia segmenty', lit.length ? lit.join(' ') : 'žiadny'], ['Prúd spolu', fmtValue(st.i, 'A')]);
+          break;
+        }
+        case 'rgbled':
+          ['Červená', 'Zelená', 'Modrá'].forEach((n, k) => rows.push([`${n} – prúd`, fmtValue(st.extra[`e${k}`] ?? 0, 'A')]));
+          break;
+        case 'lcd': {
+          const lcd = sim.lcds.get(part.id);
+          const on = !!st.extra.on;
+          rows.push(['Napájanie', fmtValue(st.u, 'V')],
+            ['Stav', !on ? 'bez napájania (treba 5 V)' : !lcd?.initialized ? 'čaká na lcd.init() z programu' : 'zobrazuje text'],
+            ['Podsvietenie', on && lcd?.backlight ? 'zapnuté' : 'vypnuté']);
+          break;
+        }
+        case 'buzzer':
+          rows.push(['Zvuk', st.extra.snd ? `${Math.round(st.extra.freq ?? 0)} Hz` : 'ticho'], ['Napätie U', fmtValue(st.u, 'V')], ['Prúd I', fmtValue(st.i, 'A')]);
+          break;
+        case 'servo':
+          rows.push(['Uhol ramena', `${Math.round(st.extra.angle ?? 90)}°`],
+            ['Šírka impulzu', st.extra.pulse ? `${Math.round((st.extra.pulse ?? 0) * 1e6)} µs` : 'žiadne impulzy'],
+            ['Napájanie', fmtValue(st.u, 'V')]);
           break;
         default:
           rows.push([`Napätie U${suffix}`, fmtValue(u, 'V')], [`Prúd I${suffix}`, fmtValue(i, 'A')], ['Výkon P', fmtValue(p, 'W')]);
@@ -664,8 +873,25 @@ export function labView(): HTMLElement {
     );
   }
 
+  /** Tlačidlá pri Arduine: skok na program a reset. */
+  function arduinoActions(part: Part): HTMLElement {
+    const edit = h('button', { type: 'button', class: 'btn btn-sm btn-primary' }, 'Upraviť program');
+    edit.addEventListener('click', () => {
+      const panel = panels.find((pn) => pn.partId === part.id);
+      panel?.el.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      panel?.focus();
+    });
+    const reset = h('button', { type: 'button', class: 'btn btn-sm btn-secondary' }, '↺ Reset');
+    reset.addEventListener('click', () => {
+      sim?.resetMcu(part.id);
+      status.textContent = 'Arduino sa reštartovalo – program beží znova od setup().';
+    });
+    return h('div', { class: 'lab-insp-actions' }, edit, reset);
+  }
+
   function renderInspector(): void {
     liveRows = null;
+    livePins = null;
     if (armed && !(selected?.type === 'part')) {
       const item = armed;
       inspector.replaceChildren(frag(
@@ -682,6 +908,8 @@ export function labView(): HTMLElement {
       const rows = readingRows(part);
       liveRows = rows;
       const info = KINDS[part.kind];
+      const pins = part.kind === 'arduino' ? pinTable(part) : null;
+      livePins = pins?.set ?? null;
       inspector.replaceChildren(frag(
         h('p', { class: 'eyebrow' }, part.name),
         h('h3', null, displayName(part)),
@@ -692,8 +920,11 @@ export function labView(): HTMLElement {
             onClick: () => setProp(part, 'on', !part.props.on),
           }, part.props.on ? 'Zapnutý – vypnúť' : 'Vypnutý – zapnúť')
           : null,
+        part.kind === 'button' ? holdButton(part) : null,
+        part.kind === 'arduino' ? arduinoActions(part) : null,
         part.kind === 'scope' ? null : info.props.map((d) => propField(part, d)),
         rows.el,
+        pins?.el,
         h('p', { class: 'lab-terms-info' }, 'Vývody: ', info.terminalNames.join(', ')),
         h('div', { class: 'lab-insp-actions' },
           h('button', { type: 'button', class: 'btn btn-sm btn-secondary', onClick: rotateSelected }, 'Otočiť (R)'),
@@ -702,6 +933,7 @@ export function labView(): HTMLElement {
         demoSection(paletteIdOf(part.kind, part.props)),
       ));
       rows.set(sim?.states.get(part.id));
+      pins?.set();
       return;
     }
     if (selected?.type === 'wire') {
@@ -722,6 +954,7 @@ export function labView(): HTMLElement {
         h('li', null, 'Vodič začni na svorke (krúžok na konci vývodu). Kliknutím do mriežky pridáš zlom – vodič sa dokončí, až keď ho privedieš na svorku alebo iný vodič. Pravé tlačidlo myši alebo Esc kreslenie zruší.'),
         h('li', null, 'Kliknutím súčiastku vyberieš – tu jej nastavíš hodnotu, otočíš ju alebo zmažeš. Ťahaním ju presunieš.'),
         h('li', null, 'Spínač prepneš kliknutím. Merače ukazujú hodnoty priamo v schéme. Stop zastaví obvod a hodnoty na meračoch ostanú.'),
+        h('li', null, 'Arduino nájdeš v skupine Arduino a moduly. Program mu napíšeš v editore pod schémou a nahráš tlačidlom → Nahrať do Arduina. Tlačidlo v schéme podržíš myšou.'),
       ),
       h('p', { class: 'lab-help' }, 'Skratky: R otočí, Delete zmaže, Esc zruší, Ctrl + Z vráti späť.'),
     );
@@ -729,6 +962,7 @@ export function labView(): HTMLElement {
 
   function updateInspectorLive(): void {
     if (liveRows && selected?.type === 'part') liveRows.set(sim?.states.get(selected.id));
+    livePins?.();
   }
 
   function renderScopes(): void {
@@ -739,6 +973,57 @@ export function labView(): HTMLElement {
     scopesBox.replaceChildren(...scopes.map((sc) => sc.el));
     scopesBox.hidden = scopes.length === 0;
     scopes.forEach((sc) => sc.update(sim));
+  }
+
+  /** Panely Arduina pod schémou – editor a sériový monitor zostanú, kým je Arduino na doske. */
+  function renderPanels(): void {
+    const boards = circuit.parts.filter((p) => p.kind === 'arduino');
+    const before = panels;
+    panels = boards.map((part) => {
+      const existing = before.find((pn) => pn.partId === part.id);
+      if (existing) {
+        existing.sync(part);
+        return existing;
+      }
+      const id = part.id;
+      return arduinoPanel(part, {
+        onCode: (code) => {
+          const p = partById(id);
+          if (!p) return;
+          p.props.code = code;
+          scheduleSave();
+        },
+        onTemplate: (code) => {
+          const p = partById(id);
+          if (p) setProp(p, 'code', code);
+        },
+        onUpload: (code) => {
+          const p = partById(id);
+          if (p) {
+            p.props.code = code;
+            saveCircuit(circuit);
+          }
+          if (!sim) return null;
+          const r = sim.upload(id, code);
+          if (r.ok) {
+            status.textContent = 'Program je nahratý – Arduino ho vykonáva od začiatku.';
+            if (!running) status.textContent += ' Obvod je zastavený, spusti ho tlačidlom ▶.';
+          }
+          return r;
+        },
+        onVerify: (code) => compileSketch(code),
+        onReset: () => {
+          sim?.resetMcu(id);
+          status.textContent = 'Arduino sa reštartovalo – program beží znova od setup().';
+        },
+        onSerial: (text) => sim?.mcus.get(id)?.sendSerial(text),
+        onSerialClear: () => sim?.mcus.get(id)?.clearSerial(),
+      });
+    });
+    const changed = before.length !== panels.length || panels.some((pn, i) => pn !== before[i]);
+    if (changed) panelsBox.replaceChildren(...panels.map((pn) => pn.el));
+    panelsBox.hidden = panels.length === 0;
+    panels.forEach((pn) => pn.update(sim));
   }
 
   // ------------------------------------------------------------------ myš a dotyk
@@ -761,6 +1046,7 @@ export function labView(): HTMLElement {
   svg.addEventListener('contextmenu', (e) => e.preventDefault());
 
   svg.addEventListener('pointerdown', (e) => {
+    sound.unlock();
     if (e.pointerType === 'mouse' && e.button !== 0) {
       if (e.button === 2) {
         e.preventDefault();
@@ -805,6 +1091,7 @@ export function labView(): HTMLElement {
       e.preventDefault();
       const id = partEl.getAttribute('data-part')!;
       const part = partById(id)!;
+      if (part.kind === 'button') press(id, true);
       const changed = !(selected?.type === 'part' && selected.id === id);
       selected = { type: 'part', id };
       drag = {
@@ -842,6 +1129,7 @@ export function labView(): HTMLElement {
       if (nx === part.x && ny === part.y) return;
       if (!drag.moved) pushHistory(drag.before);
       drag.moved = true;
+      if (pressed.has(part.id)) press(part.id, false);
       const dx = nx - drag.origin[0];
       const dy = ny - drag.origin[1];
       part.x = nx;
@@ -858,6 +1146,7 @@ export function labView(): HTMLElement {
   const endPointer = (e: PointerEvent) => {
     const current = drag;
     drag = null;
+    if (current?.kind === 'part' && pressed.has(current.id)) press(current.id, false);
     if (!current) return;
     if (current.kind === 'part') {
       if (current.moved) {
@@ -911,11 +1200,24 @@ export function labView(): HTMLElement {
   // ------------------------------------------------------------------ simulácia v čase
   let last = 0;
   const frame = (t: number) => {
-    if (!root.isConnected && last !== 0) return;
+    if (!root.isConnected && last !== 0) {
+      sound.stop();
+      return;
+    }
     const realDt = last ? Math.min(0.05, (t - last) / 1000) : 0;
     last = t;
     if (sim && running && realDt > 0) slowed = !sim.advance(realDt * speed);
     updateLive();
+    // Bzučiaky hrajú, len kým obvod beží.
+    const tones = new Map<string, number>();
+    if (sim && running) {
+      for (const part of circuit.parts) {
+        if (part.kind !== 'buzzer') continue;
+        const st = sim.states.get(part.id);
+        if (st?.extra.snd) tones.set(part.id, st.extra.freq ?? 0);
+      }
+    }
+    sound.update(tones);
     requestAnimationFrame(frame);
   };
 
@@ -927,12 +1229,13 @@ export function labView(): HTMLElement {
       h('div', { class: 'lab-main' },
         h('div', { class: 'lab-toolbar' },
           h('div', { class: 'lab-tool-group' }, selectTool, wireTool, undoBtn, cancelWireBtn),
-          h('div', { class: 'lab-tool-group' }, powerBtn, stopBtn, h('div', { class: 'field-box lab-select' }, speedSel), timeOut),
+          h('div', { class: 'lab-tool-group' }, powerBtn, stopBtn, h('div', { class: 'field-box lab-select' }, speedSel), timeOut, muteBtn),
           h('div', { class: 'lab-tool-group' }, h('div', { class: 'field-box lab-select' }, exampleSel), zoomOut, zoomOutText, zoomIn),
         ),
         canvasWrap,
         status,
         warningsBox,
+        panelsBox,
         scopesBox,
       ),
       inspector,
@@ -946,6 +1249,7 @@ export function labView(): HTMLElement {
   render();
   renderInspector();
   renderScopes();
+  renderPanels();
   syncTools();
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(frame);
   return root;

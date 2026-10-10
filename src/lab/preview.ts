@@ -56,13 +56,14 @@ export function circuitPreview(key: string, title: string, circuit: Circuit, foc
     const d = drawPart(part);
     const st = sim?.states.get(part.id);
     if (d.display) {
-      const r = sim && st ? meterReading(part, st, sim.hasAC) : null;
+      const r = sim && st ? meterReading(part, st, sim.averaged) : null;
       d.display.textContent = !r ? '—' : r.value === null ? 'OL' : formatSI(Math.abs(r.value) < 1e-12 ? 0 : r.value, r.unit, 4);
     }
     if (d.glow) {
-      const b = glowLevel(part, st, sim?.hasAC ?? false);
+      const b = glowLevel(part, st, sim?.hasAC ?? false, sim?.smooth ?? false);
       d.glow.setAttribute('opacity', b < 0.005 ? '0' : String((0.25 + 0.75 * Math.sqrt(b)).toFixed(2)));
     }
+    d.live?.({ sim, st });
     g.append(d.g);
   }
   for (const [x, y] of buildNets(circuit).junctions) g.append(s('circle', { cx: x * G, cy: y * G, r: 3.4, class: 'dot' }));

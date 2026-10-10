@@ -298,4 +298,44 @@ describe('zapájanie obvodov', () => {
     expect(el.querySelectorAll('.lab-svg .lab-part-g')).toHaveLength(exampleById('rl')!.build().parts.length);
     expect(el.querySelector('.lab-status')?.textContent).toContain('Späť');
   });
+
+  it('Arduino má editor programu, nahrávanie s hlásením chýb a sériový monitor', () => {
+    const el = mount(labView());
+    const select = el.querySelector<HTMLSelectElement>('select[aria-label="Ukážkové zapojenia"]')!;
+    select.value = 'ard-blink';
+    select.dispatchEvent(new Event('change'));
+    const panel = el.querySelector('.ard-panel')!;
+    expect(panel).not.toBeNull();
+    const ta = panel.querySelector<HTMLTextAreaElement>('.code-input')!;
+    expect(ta.value).toContain('digitalWrite(LED, HIGH)');
+    expect(panel.querySelector('.code-hl .c-fn')?.textContent).toBe('setup');
+    expect(panel.querySelector('.ard-status')?.textContent).toContain('Program beží');
+
+    // Chyba v programe: hlásenie s číslom riadka, riadok je označený.
+    ta.value = ta.value.replace('pinMode(LED, OUTPUT);', 'pinMode(LED, OUTPUT)');
+    ta.dispatchEvent(new Event('input'));
+    const upload = [...panel.querySelectorAll('button')].find((b) => b.textContent?.includes('Nahrať'))!;
+    upload.click();
+    expect(panel.querySelector('.ard-msg.is-error')?.textContent).toContain('bodkočiarka');
+    expect(panel.querySelector('.code-gutter .is-error')?.textContent).toBe('7');
+
+    // Vzorový program sa vloží a dá sa nahrať.
+    const templates = panel.querySelector<HTMLSelectElement>('select[aria-label="Vzorové programy"]')!;
+    templates.value = 'serial';
+    templates.dispatchEvent(new Event('change'));
+    expect(ta.value).toContain('Serial.readStringUntil');
+    upload.click();
+    expect(panel.querySelector('.ard-msg.is-ok')?.textContent).toContain('nahratý');
+    const saved = JSON.parse(localStorage.getItem('elektrolab:lab:guest')!) as { parts: { kind: string; props: { code: string } }[] };
+    expect(saved.parts.find((p) => p.kind === 'arduino')!.props.code).toContain('Serial.readStringUntil');
+
+    // Arduino sa nedá otáčať; v paneli vlastností sú piny.
+    const board = el.querySelector<SVGGElement>('.lab-part-g:has(.lab-arduino)')!;
+    board.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10 }));
+    board.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 10, clientY: 10 }));
+    expect(el.querySelector('.lab-inspector h3')?.textContent).toBe('Arduino UNO');
+    expect(el.querySelector('.lab-inspector .lab-pins')).not.toBeNull();
+    [...el.querySelectorAll<HTMLButtonElement>('.lab-inspector button')].find((b) => b.textContent?.startsWith('Otočiť'))!.click();
+    expect(el.querySelector('.lab-status')?.textContent).toContain('neotáča');
+  });
 });

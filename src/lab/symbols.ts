@@ -4,76 +4,13 @@
  * a osciloskop majú vlastné značky. Texty sa neotáčajú spolu so súčiastkou.
  */
 import { s } from '../lib/dom';
-import { formatSI } from '../lib/units';
 import { comp, type CompKind } from '../ui/schematic';
-import { KINDS, num, rotate, terminalsOf, type Part, type Pt, type Rot } from './parts';
+import { G, arrow, labels, line, local, px, rotated, text, twoPole } from './draw';
+import { drawModule } from './modules';
+import { KINDS, terminalsOf, type Part, type Pt, type Rot } from './parts';
+import type { PartState, Simulator } from './engine';
 
-export const G = 20;
-
-const px = ([x, y]: Pt): Pt => [x * G, y * G];
-const r1 = (n: number) => Math.round(n * 10) / 10;
-
-function arrow(x: number, y: number, angleDeg: number, size = 4.5): SVGPolygonElement {
-  const a = (angleDeg * Math.PI) / 180;
-  const p = (dx: number, dy: number) => `${r1(x + dx * Math.cos(a) - dy * Math.sin(a))},${r1(y + dx * Math.sin(a) + dy * Math.cos(a))}`;
-  return s('polygon', { points: `${p(0, 0)} ${p(-size * 1.6, -size * 0.75)} ${p(-size * 1.6, size * 0.75)}`, class: 'f' });
-}
-
-const line = (x1: number, y1: number, x2: number, y2: number, cls = 'w') => s('line', { x1, y1, x2, y2, class: cls });
-
-/** Skupina otočená podľa súčiastky; (0, 0) je prvý vývod. */
-function rotated(part: Part, ...children: SVGElement[]): SVGGElement {
-  const [x, y] = px([part.x, part.y]);
-  return s('g', { transform: `translate(${x} ${y}) rotate(${part.rot * 90})` }, ...children);
-}
-
-/** Bod zadaný v pixeloch v súradniciach súčiastky prepočíta na pixely schémy. */
-function local(part: Part, lx: number, ly: number): Pt {
-  const [rx, ry] = rotate([lx, ly], part.rot);
-  return [part.x * G + rx, part.y * G + ry];
-}
-
-function text(x: number, y: number, value: string, cls: string, anchor: 'start' | 'middle' | 'end' = 'middle'): SVGTextElement {
-  return s('text', { x: r1(x), y: r1(y), 'text-anchor': anchor, class: cls }, value);
-}
-
-/** Dvojpól s vlastným telom (polovičná dĺžka `half` v smere vodiča). */
-function twoPole(part: Part, half: number, ...body: SVGElement[]): SVGGElement {
-  const mid = 1.5 * G;
-  return rotated(part,
-    line(0, 0, mid - half, 0),
-    line(mid + half, 0, 3 * G, 0),
-    s('g', { transform: `translate(${mid} 0)` }, ...body),
-  );
-}
-
-/** Hodnota súčiastky v schéme (jeden alebo dva riadky). */
-export function valueLabel(part: Part): string[] {
-  const p = part.props;
-  switch (part.kind) {
-    case 'resistor': return [formatSI(num(p.R, 1000), 'Ω', 3)];
-    case 'lamp': return [formatSI(num(p.U, 12), 'V', 3), formatSI(num(p.P, 5), 'W', 3)];
-    case 'capacitor': return [formatSI(num(p.C, 1e-6), 'F', 3)];
-    case 'ecap': return [formatSI(num(p.C, 1e-4), 'F', 3), `${String(p.umax).replace('.', ',')} V`];
-    case 'inductor': return [formatSI(num(p.L, 0.1), 'H', 3)];
-    case 'dc': return [formatSI(num(p.U, 12), 'V', 4)];
-    case 'ac': return [formatSI(num(p.U, 10), 'V', 4), formatSI(num(p.f, 50), 'Hz', 3)];
-    case 'bjt': return [p.type === 'pnp' ? 'PNP' : 'NPN'];
-    case 'mosfet': return [p.type === 'p' ? 'P-MOS' : 'N-MOS'];
-    default: return [];
-  }
-}
-
-/** Popis súčiastky: kurzívou označenie, pod ním hodnota. */
-function labels(part: Part, anchorLocal: Pt, dirAway: Pt): SVGElement[] {
-  const [ax, ay] = local(part, anchorLocal[0], anchorLocal[1]);
-  const [dx, dy] = rotate(dirAway, part.rot);
-  const anchor: 'start' | 'middle' | 'end' = dx > 0 ? 'start' : dx < 0 ? 'end' : 'middle';
-  const lines = [part.name, ...valueLabel(part)].filter(Boolean);
-  const total = (lines.length - 1) * 13;
-  const y0 = dy > 0 ? ay + 12 : dy < 0 ? ay - total - 2 : ay - total / 2 + 4;
-  return lines.map((t, i) => text(ax, y0 + i * 13, t, i === 0 ? 'lab-name' : 'val', anchor));
-}
+export { G, valueLabel } from './draw';
 
 /** Ako ďaleko od vodiča siaha značka – podľa toho sa odsadí popis. */
 const EXTENT: Partial<Record<Part['kind'], number>> = {
@@ -94,6 +31,13 @@ export interface PartDrawing {
   /** Displej meracieho prístroja. */
   display?: SVGTextElement;
   displayBox?: SVGRectElement;
+  /** Prekreslenie stavu počas simulácie (displeje, servo, tlačidlo, LED na doske Arduina). */
+  live?: (ctx: LiveCtx) => void;
+}
+
+export interface LiveCtx {
+  sim: Simulator | null;
+  st: PartState | undefined;
 }
 
 /** Stred súčiastky v pixeloch (priemer polôh vývodov). */
@@ -179,6 +123,8 @@ function multiTerminal(part: Part, iconOnly: boolean): SVGGElement {
 }
 
 export function drawPart(part: Part, iconOnly = false): PartDrawing {
+  const module = drawModule(part, iconOnly);
+  if (module) return module;
   const a = px([part.x, part.y]);
   const terms = terminalsOf(part);
   const horizontal = part.rot % 2 === 0;
@@ -253,14 +199,17 @@ export function hitBox(part: Part): { x: number; y: number; width: number; heigh
   let x1 = Math.max(...xs);
   let y0 = Math.min(...ys);
   let y1 = Math.max(...ys);
-  if (part.kind === 'scope') {
-    const c = [local(part, G, -0.8 * G), local(part, 4.4 * G, 2.8 * G)];
+  const body = KINDS[part.kind].body;
+  if (part.kind === 'scope' || body) {
+    const c = body
+      ? [local(part, body[0] * G, body[1] * G), local(part, body[2] * G, body[3] * G)]
+      : [local(part, G, -0.8 * G), local(part, 4.4 * G, 2.8 * G)];
     x0 = Math.min(x0, ...c.map((p) => p[0]));
     x1 = Math.max(x1, ...c.map((p) => p[0]));
     y0 = Math.min(y0, ...c.map((p) => p[1]));
     y1 = Math.max(y1, ...c.map((p) => p[1]));
   }
-  const pad = 12;
+  const pad = body ? 4 : 12;
   return { x: x0 - pad, y: y0 - pad, width: x1 - x0 + 2 * pad, height: y1 - y0 + 2 * pad };
 }
 
@@ -275,6 +224,9 @@ export function partIcon(kind: Part['kind'], props: Record<string, string | numb
   if (kind === 'scope') [x0, x1, y0, y1] = [0, 4.6 * G, -0.9 * G, 2.9 * G];
   if (kind === 'bjt' || kind === 'mosfet') [x0, x1, y0, y1] = [0, 48, -28, 28];
   if (kind === 'wattmeter') [x0, x1, y0, y1] = [8, 72, -26, 26];
+  const body = KINDS[kind].body;
+  if (body) [x0, x1, y0, y1] = [body[0] * G, body[2] * G, body[1] * G, body[3] * G];
+  if (kind === 'pot') [x0, x1, y0, y1] = [0, 80, -16, 42];
   const pad = 4;
   return s('svg', {
     viewBox: `${x0 - pad} ${y0 - pad} ${x1 - x0 + 2 * pad} ${y1 - y0 + 2 * pad}`,

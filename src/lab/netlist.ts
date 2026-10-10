@@ -2,7 +2,7 @@
  * Z polôh súčiastok a vodičov zistí uzly obvodu. Spojené sú body na tom istom mieste mriežky,
  * oba konce vodiča a bod, ktorý leží na vodiči (odbočka „T“). Kríženie dvoch vodičov nie je spoj.
  */
-import { terminalsOf, type Circuit, type Pt, type Wire } from './parts';
+import { KINDS, terminalsOf, type Circuit, type Pt, type Wire } from './parts';
 
 export const key = ([x, y]: Pt): string => `${x},${y}`;
 
@@ -63,6 +63,12 @@ export function buildNets(circuit: Circuit): Nets {
 
   const terminals = circuit.parts.map((p) => terminalsOf(p));
   terminals.flat().forEach((t) => bump(t));
+  // Vývody spojené vo vnútri súčiastky (všetky GND Arduina, oba COM displeja).
+  circuit.parts.forEach((p, i) => {
+    for (const group of KINDS[p.kind].bridges ?? []) {
+      for (const k of group.slice(1)) uf.union(key(terminals[i][group[0]]), key(terminals[i][k]));
+    }
+  });
   for (const w of circuit.wires) {
     if (w.a[0] === w.b[0] && w.a[1] === w.b[1]) continue;
     bump(w.a);
@@ -94,7 +100,8 @@ export function buildNets(circuit: Circuit): Nets {
   circuit.parts.forEach((part, i) => partNodes.set(part.id, terminals[i].map(nodeOf)));
   for (const p of pointList) nodeOf(p);
 
-  const terminalKeys = new Set(terminals.flat().map(key));
+  // Moduly s mnohými pinmi (Arduino) nemusia mať zapojené všetky vývody.
+  const terminalKeys = new Set(circuit.parts.flatMap((p, i) => (KINDS[p.kind].optionalPins ? [] : terminals[i].map(key))));
   return {
     partNodes,
     nodeCount: ids.size,

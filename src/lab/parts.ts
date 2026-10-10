@@ -3,11 +3,13 @@
  * nastaviteľné parametre a predvolené hodnoty. Súradnice sú v políčkach mriežky.
  */
 import { LED_COLORS } from '../lib/electro';
+import { BLINK_SKETCH } from '../arduino/sketches';
 
 export type PartKind =
   | 'resistor' | 'lamp' | 'capacitor' | 'ecap' | 'inductor' | 'diode' | 'led' | 'bjt' | 'mosfet'
   | 'dc' | 'ac' | 'switch'
-  | 'ammeter' | 'voltmeter' | 'multimeter' | 'wattmeter' | 'scope';
+  | 'ammeter' | 'voltmeter' | 'multimeter' | 'wattmeter' | 'scope'
+  | 'arduino' | 'button' | 'pot' | 'ldr' | 'tmp36' | 'seg7' | 'lcd' | 'buzzer' | 'servo' | 'rgbled';
 
 export type Pt = [number, number];
 export type Rot = 0 | 1 | 2 | 3;
@@ -46,6 +48,8 @@ export interface PropDef {
   max?: number;
   options?: [string, string][];
   hint?: string;
+  /** Posuvník, ktorý mení hodnotu priamo počas behu (bez prestavby obvodu). */
+  slider?: { min: number; max: number; step: number; toValue?: (s: number) => number; fromValue?: (v: number) => number; format: (v: number) => string };
 }
 
 export interface KindInfo {
@@ -56,9 +60,41 @@ export interface KindInfo {
   terminalNames: string[];
   props: PropDef[];
   defaults: Record<string, PropValue>;
+  /** Vývody spojené vo vnútri súčiastky (napr. všetky GND Arduina). */
+  bridges?: number[][];
+  /** Súčiastka sa neotáča (Arduino, displeje, moduly). */
+  fixedRot?: boolean;
+  /** Obrys tela v políčkach mriežky pri otočení 0: [x0, y0, x1, y1]. */
+  body?: [number, number, number, number];
+  /** Nepripojené vývody sa neoznačujú ako chyba (Arduino má veľa pinov). */
+  optionalPins?: boolean;
 }
 
 const TWO: Pt[] = [[0, 0], [3, 0]];
+
+/** Vývody Arduina UNO: horný rad (GND, D13 až D0) a spodný rad (3V3, 5V, GND, GND, A0 až A5). */
+const ARDUINO_TERMS: Pt[] = [
+  [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [8, 0], [9, 0], [10, 0], [11, 0], [12, 0], [13, 0], [14, 0], [15, 0],
+  [4, 9], [5, 9], [6, 9], [7, 9], [10, 9], [11, 9], [12, 9], [13, 9], [14, 9], [15, 9],
+];
+export const ARDUINO_TERM_NAMES = [
+  'GND', 'D13', 'D12', 'D11', 'D10', 'D9', 'D8', 'D7', 'D6', 'D5', 'D4', 'D3', 'D2', 'D1/TX', 'D0/RX',
+  '3V3', '5V', 'GND', 'GND', 'A0', 'A1', 'A2', 'A3', 'A4/SDA', 'A5/SCL',
+];
+/** Index vývodu Arduina pre číslo pinu (0 až 13 digitálne, 14 až 19 = A0 až A5). */
+export const arduinoTerm = (pin: number): number => (pin < 14 ? 14 - pin : pin + 5);
+export const ARD_GND = 0;
+export const ARD_3V3 = 15;
+export const ARD_5V = 16;
+
+/** Segmenty 7-segmentového displeja (a až g, bodka) → index vývodu. */
+export const SEG_TERMS = [3, 4, 8, 6, 5, 1, 0, 9];
+export const SEG_NAMES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'dp'];
+
+/** Osvetlenie fotorezistora: posuvník 0 až 100 → 0,1 lx až 10 000 lx (logaritmicky). */
+const luxOf = (s: number) => Number((0.1 * 10 ** (s / 20)).toPrecision(2));
+const sliderOfLux = (lux: number) => Math.round(20 * Math.log10(Math.max(0.1, lux) / 0.1));
+const fmtNum = (v: number, d = 0) => v.toFixed(d).replace('.', ',');
 
 export const LED_OPTIONS: [string, string][] = LED_COLORS.map(([id, name]) => [id, name]);
 export const MULTIMETER_MODES: [string, string][] = [
@@ -177,6 +213,66 @@ export const KINDS: Record<PartKind, KindInfo> = {
     ],
     defaults: { tdiv: '0.005', v1: 'auto', v2: 'auto' },
   },
+  arduino: {
+    name: 'Arduino UNO', prefix: 'U', terminals: ARDUINO_TERMS, terminalNames: ARDUINO_TERM_NAMES,
+    props: [], defaults: { code: BLINK_SKETCH },
+    bridges: [[0, 17, 18]], fixedRot: true, body: [-2.3, 0.45, 16.8, 8.55], optionalPins: true,
+  },
+  button: {
+    name: 'Tlačidlo', prefix: 'S', terminals: TWO, terminalNames: ['1', '2'],
+    props: [], defaults: {},
+  },
+  pot: {
+    name: 'Potenciometer', prefix: 'P', terminals: [[0, 0], [4, 0], [2, 2]], terminalNames: ['1', '2', 'jazdec'],
+    props: [
+      { key: 'R', label: 'Odpor dráhy', unit: 'Ω', min: 10, max: 1e7 },
+      { key: 'pos', label: 'Poloha jazdca', slider: { min: 0, max: 100, step: 1, format: (v) => `${fmtNum(v)} %` }, hint: 'Pri 0 % je jazdec pri vývode 1, pri 100 % pri vývode 2.' },
+    ],
+    defaults: { R: 10000, pos: 50 },
+  },
+  ldr: {
+    name: 'Fotorezistor', prefix: 'R', terminals: TWO, terminalNames: ['1', '2'],
+    props: [{
+      key: 'lux', label: 'Osvetlenie',
+      slider: { min: 0, max: 100, step: 1, toValue: luxOf, fromValue: sliderOfLux, format: (v) => `${v < 10 ? fmtNum(v, 1) : fmtNum(v)} lx` },
+      hint: 'Tma je pod 1 lx, izba okolo 100 až 500 lx, slnečný deň tisíce lx.',
+    }],
+    defaults: { lux: 100 },
+  },
+  tmp36: {
+    name: 'Teplotný senzor TMP36', prefix: 'U', terminals: [[0, 0], [1, 0], [2, 0]], terminalNames: ['+Vs', 'Vout', 'GND'],
+    props: [{ key: 'temp', label: 'Teplota okolia', slider: { min: -40, max: 125, step: 0.5, format: (v) => `${fmtNum(v, 1)} °C` } }],
+    defaults: { temp: 22 }, fixedRot: true, body: [-0.7, -2.6, 2.7, -0.2],
+  },
+  seg7: {
+    name: '7-segmentový displej', prefix: 'DS',
+    terminals: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [0, 6], [1, 6], [2, 6], [3, 6], [4, 6]],
+    terminalNames: ['g', 'f', 'COM', 'a', 'b', 'e', 'd', 'COM', 'c', 'dp'],
+    props: [
+      { key: 'type', label: 'Zapojenie', options: [['cc', 'spoločná katóda (COM na GND)'], ['ca', 'spoločná anóda (COM na +5 V)']] },
+      { key: 'color', label: 'Farba', options: LED_OPTIONS },
+    ],
+    defaults: { type: 'cc', color: 'red' }, bridges: [[2, 7]], fixedRot: true, body: [-0.75, 0.45, 4.75, 5.55], optionalPins: true,
+  },
+  lcd: {
+    name: 'LCD displej 16×2 (I2C)', prefix: 'LCD', terminals: [[0, 0], [0, 1], [0, 2], [0, 3]], terminalNames: ['GND', 'VCC', 'SDA', 'SCL'],
+    props: [{ key: 'addr', label: 'Adresa I2C', options: [['39', '0x27'], ['63', '0x3F']], hint: 'Adresa musí byť rovnaká ako v programe: LiquidCrystal_I2C lcd(0x27, 16, 2);' }],
+    defaults: { addr: '39' }, fixedRot: true, body: [0.45, -1.3, 15.4, 4.3],
+  },
+  buzzer: {
+    name: 'Bzučiak', prefix: 'BZ', terminals: TWO, terminalNames: ['+', '−'],
+    props: [{ key: 'type', label: 'Druh', options: [['passive', 'pasívny – hrá tón z tone()'], ['active', 'aktívny – pípa sám, stačí napätie']] }],
+    defaults: { type: 'passive' },
+  },
+  servo: {
+    name: 'Servomotor', prefix: 'M', terminals: [[0, 0], [0, 1], [0, 2]], terminalNames: ['GND', '+5V', 'signál'],
+    props: [], defaults: {}, fixedRot: true, body: [0.4, -1.3, 6.9, 3.3],
+  },
+  rgbled: {
+    name: 'RGB LED', prefix: 'LED', terminals: [[0, 0], [0, 3], [0, 6], [4, 3]], terminalNames: ['R', 'G', 'B', 'COM'],
+    props: [{ key: 'type', label: 'Zapojenie', options: [['cc', 'spoločná katóda (COM na GND)'], ['ca', 'spoločná anóda (COM na +5 V)']] }],
+    defaults: { type: 'cc' }, fixedRot: true, body: [0, -1.2, 5.4, 6.7],
+  },
 };
 
 function formatDiv(x: number, unit: string): string {
@@ -225,6 +321,21 @@ export const PALETTE: { title: string; items: PaletteItem[] }[] = [
       { id: 'pnp', kind: 'bjt', label: 'Tranzistor PNP', props: { type: 'pnp' } },
       { id: 'nmos', kind: 'mosfet', label: 'MOSFET N', props: { type: 'n' } },
       { id: 'pmos', kind: 'mosfet', label: 'MOSFET P', props: { type: 'p' } },
+    ],
+  },
+  {
+    title: 'Arduino a moduly',
+    items: [
+      { id: 'arduino', kind: 'arduino', label: 'Arduino UNO' },
+      { id: 'button', kind: 'button', label: 'Tlačidlo' },
+      { id: 'pot', kind: 'pot', label: 'Potenciometer' },
+      { id: 'ldr', kind: 'ldr', label: 'Fotorezistor' },
+      { id: 'tmp36', kind: 'tmp36', label: 'Teplotný senzor' },
+      { id: 'seg7', kind: 'seg7', label: '7-segmentový displej' },
+      { id: 'lcd', kind: 'lcd', label: 'LCD displej 16×2' },
+      { id: 'rgbled', kind: 'rgbled', label: 'RGB LED' },
+      { id: 'buzzer', kind: 'buzzer', label: 'Bzučiak' },
+      { id: 'servo', kind: 'servo', label: 'Servomotor' },
     ],
   },
 ];

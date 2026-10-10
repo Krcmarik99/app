@@ -37,6 +37,26 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
   súčiastkou a nameranými hodnotami a jedným tlačidlom sa ukážka otvorí na doske.
   Vodič sa kreslí od svorky so zlommi a dokončí sa až na svorke alebo inom vodiči; pravé tlačidlo myši
   (alebo Esc) kreslenie zruší. Tlačidlo Stop zastaví čas obvodu a merače ukazujú posledné hodnoty.
+- **Arduino UNO** v laboratóriu – doska s piny D0 až D13, A0 až A5, 5V, 3V3 a GND a moduly k nej:
+  tlačidlo (drží sa myšou), potenciometer, fotorezistor, teplotný senzor TMP36, 7-segmentový displej,
+  LCD 16×2 s prevodníkom I2C, RGB LED, bzučiak (zvuk cez Web Audio) a servomotor SG90. Program sa píše
+  v editore pod schémou (zvýrazňovanie syntaxe, čísla riadkov, vzorové programy), nahrá sa tlačidlom
+  a chyby prekladu sa ukážu po slovensky s číslom riadka. Sériový monitor zobrazuje `Serial.print`
+  a posiela text do `Serial.read`. Dvanásť ukážok zapojenia s programami (blikanie, tlačidlo, PWM,
+  potenciometer, semafor, 7-segmentový a LCD displej, servo, bzučiak, nočné svetlo, teplomer, RGB LED).
+
+### Ako funguje Arduino
+
+Program v jazyku Arduino (podmnožina C/C++) sa preloží do bajtkódu (`src/arduino/`) a vykonáva ho
+virtuálny mikrokontrolér, ktorého čas beží spolu so simuláciou obvodu. Typy zodpovedajú ATmega328P –
+`int` má 16 bitov a pretečie ako na skutočnej doske, `float` aj `double` majú 32 bitov. Podporované sú
+premenné a konštanty, polia (aj dvojrozmerné), vlastné funkcie a rekurzia, `if`, `for`, `while`, `do`,
+`switch`, `enum`, `#define`, typ `String`, funkcie `pinMode`, `digitalWrite/Read`, `analogRead/Write`,
+`delay`, `millis`, `tone`, `map`, `constrain`, `random`, matematické funkcie, `Serial` a knižnice
+`Servo` a `LiquidCrystal_I2C`. Pin je v obvode Nortonov zdroj (5 V cez 25 Ω, vstup s pull-up 35 kΩ),
+PWM má 490 Hz (piny 5 a 6 976 Hz) a kroky simulácie končia presne na jeho hranách. Aplikácia upozorní
+na prúd z pinu nad 40 mA, napätie mimo 0 až 5 V, nepripojený („plávajúci“) vstup, `analogWrite` na
+pine bez PWM a podobne. Nepodporované sú ukazovatele, štruktúry, prerušenia a `pulseIn`.
 - **Interaktívny obvod** na úvodnej stránke – napätie 0 až 500 V a odpor 0 Ω až 5 MΩ posuvníkom
   alebo zadaním hodnoty, schéma s rezistorom alebo s LED a predradným rezistorom.
 

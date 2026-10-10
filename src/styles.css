@@ -3785,3 +3785,665 @@ input[type='checkbox'] {
     transition: none;
   }
 }
+
+/* ------------------------------------------------------------------ Arduino a moduly */
+
+.sch .ard-board {
+  fill: #0e7c83;
+  stroke: #075a60;
+  stroke-width: 1.5;
+}
+
+.sch .ard-usb {
+  fill: #c4cad0;
+  stroke: #7f878f;
+  stroke-width: 1;
+}
+
+.sch .ard-usb-in {
+  fill: #98a1aa;
+}
+
+.sch .ard-jack {
+  fill: #1e1e1e;
+}
+
+.sch .ard-jack-in {
+  fill: #3a3a3a;
+  stroke: #5a5a5a;
+}
+
+.sch .ard-reset {
+  fill: #d9dde0;
+  stroke: #9aa0a6;
+  stroke-width: 0.8;
+}
+
+.sch .ard-reset-btn {
+  fill: #c62d2d;
+}
+
+.sch .ard-mount {
+  fill: var(--surface);
+  stroke: #cfd8dc;
+  stroke-width: 1.2;
+}
+
+.sch .ard-hdr {
+  fill: #1b1b1b;
+}
+
+.sch .ard-hole {
+  fill: #4d4d4d;
+}
+
+.sch .ard-chip {
+  fill: #1c1c1c;
+}
+
+.sch .ard-notch {
+  fill: #3a3a3a;
+}
+
+.sch .ard-leg {
+  fill: #b8bec4;
+}
+
+.sch .ard-led {
+  fill: #31463c;
+  stroke: #22312a;
+  stroke-width: 0.6;
+}
+
+.sch .ard-led-l.is-on {
+  fill: #ffb23d;
+}
+
+.sch .ard-led-tx.is-on {
+  fill: #ffe066;
+}
+
+.sch .ard-led-on.is-on {
+  fill: #4be36f;
+}
+
+.sch .ard-glow {
+  fill: #ffb23d;
+  pointer-events: none;
+  filter: blur(3px);
+}
+
+.sch text.ard-txt {
+  font: 600 7.6px var(--font-body);
+  fill: #f2fbfb;
+}
+
+.sch text.ard-cap {
+  font: 600 7px var(--font-body);
+  letter-spacing: 0.08em;
+  fill: #bfe9ec;
+}
+
+.sch text.ard-tiny {
+  font: 600 6.5px var(--font-body);
+  fill: #e5f6f7;
+}
+
+.sch text.ard-logo {
+  font: 700 13px var(--font-body);
+  letter-spacing: 0.14em;
+  fill: #ffffff;
+}
+
+.sch text.ard-uno {
+  font: 700 28px var(--font-display);
+  letter-spacing: 0.04em;
+  fill: #ffffff;
+}
+
+.sch text.ard-chip-txt {
+  font: 600 7px var(--font-mono);
+  fill: #9a9a9a;
+}
+
+.sch text.ard-name {
+  fill: #ffffff;
+}
+
+.lab-button .btn-down {
+  display: none;
+}
+
+.lab-button.is-pressed .btn-up {
+  display: none;
+}
+
+.lab-button.is-pressed .btn-down {
+  display: inline;
+}
+
+.lab-button.is-pressed {
+  color: var(--copper);
+}
+
+.lab-buzzer .buzz-wave {
+  display: none;
+}
+
+.lab-buzzer.is-sounding .buzz-wave {
+  display: inline;
+  color: var(--copper);
+  animation: buzz-wave 0.35s ease-in-out infinite alternate;
+}
+
+@keyframes buzz-wave {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.sch .tmp-body {
+  fill: #262626;
+  stroke: #0f0f0f;
+  stroke-width: 1;
+}
+
+.sch text.mod-txt {
+  font: 700 8.5px var(--font-body);
+  fill: #f2f2f2;
+}
+
+.sch text.mod-in {
+  font: 700 8px var(--font-body);
+  fill: #d0d0d0;
+}
+
+.sch text.mod-tiny {
+  font: 600 8.5px var(--font-body);
+  fill: var(--ink-2);
+}
+
+.sch .seg-body {
+  fill: #1d1d1f;
+  stroke: #000;
+  stroke-width: 1;
+}
+
+.sch .seg-seg {
+  fill: #3a2a2a;
+  transition: fill 0.05s;
+}
+
+.sch text.seg-txt {
+  font: 600 7px var(--font-body);
+  fill: #b9b9b9;
+}
+
+.sch .lcd-pcb {
+  fill: #17663a;
+  stroke: #0d4325;
+  stroke-width: 1.2;
+}
+
+.sch .lcd-bezel {
+  fill: #141414;
+}
+
+.sch .lcd-screen {
+  fill: #1f3150;
+}
+
+.lab-lcd.is-backlit .lcd-screen {
+  fill: #2f6fe0;
+}
+
+.lab-lcd.is-off .lcd-screen {
+  fill: #1b2533;
+}
+
+.sch .lcd-px-off {
+  fill: rgba(255, 255, 255, 0.05);
+}
+
+.lab-lcd.is-backlit .lcd-px-off {
+  fill: rgba(255, 255, 255, 0.12);
+}
+
+.lab-lcd.is-off .lcd-px-off {
+  fill: transparent;
+}
+
+.sch .lcd-px-on {
+  fill: #8d9bb3;
+}
+
+.lab-lcd.is-backlit .lcd-px-on {
+  fill: #f6f9ff;
+}
+
+.sch .servo-body {
+  fill: #2f74c0;
+  stroke: #1f4f86;
+  stroke-width: 1.2;
+}
+
+.sch .servo-tab {
+  fill: #4a8bd3;
+  stroke: #1f4f86;
+  stroke-width: 1;
+}
+
+.sch .servo-gear {
+  fill: #e9edf2;
+  stroke: #9aa5b1;
+  stroke-width: 1;
+}
+
+.sch .servo-arm {
+  fill: #fafafa;
+  stroke: #8a95a1;
+  stroke-width: 1;
+}
+
+.sch .servo-hub {
+  fill: #dfe4ea;
+  stroke: #8a95a1;
+  stroke-width: 1;
+}
+
+.sch .servo-hole {
+  fill: #8a95a1;
+}
+
+.sch .servo-wire {
+  fill: none;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.sch .servo-gnd {
+  stroke: #7a4a28;
+}
+
+.sch .servo-vcc {
+  stroke: #d42d2d;
+}
+
+.sch .servo-sig {
+  stroke: #f39a1e;
+}
+
+.sch .rgb-glow {
+  pointer-events: none;
+  filter: blur(4px);
+}
+
+.sch .rgb-mix {
+  fill: var(--surface);
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+
+.sch .rgb-tri-0 {
+  fill: color-mix(in srgb, #ff3b2f 20%, var(--surface));
+}
+
+.sch .rgb-tri-1 {
+  fill: color-mix(in srgb, #22d65a 20%, var(--surface));
+}
+
+.sch .rgb-tri-2 {
+  fill: color-mix(in srgb, #3d7bff 20%, var(--surface));
+}
+
+.lab-slider {
+  gap: 4px;
+}
+
+.lab-slider-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lab-range {
+  width: 100%;
+  accent-color: var(--copper);
+}
+
+.lab-range-val {
+  font: 500 14px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-hold {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.lab-pins table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.lab-pins th,
+.lab-pins td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  font-weight: 500;
+}
+
+.lab-pins thead th {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.lab-pins td:last-child {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.lab-arduinos {
+  display: grid;
+  gap: 16px;
+}
+
+.ard-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  scroll-margin-top: calc(var(--header-h) + 16px);
+}
+
+.ard-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.ard-head h3 {
+  font: 600 1.4rem/1.1 var(--font-display);
+}
+
+.ard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ard-status {
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.ard-status.is-run {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.ard-status.is-error {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.ard-status.is-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.ard-status.is-off {
+  color: var(--ink-2);
+}
+
+.ard-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+}
+
+.ard-code,
+.ard-serial {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ard-hint {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.ard-msgs,
+.ard-notes {
+  display: grid;
+  gap: 6px;
+}
+
+.ard-msg {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font: 500 13.5px/1.4 var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ard-msg.is-error {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.ard-msg.is-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.ard-msg.is-ok {
+  background: var(--good-soft);
+  color: var(--good);
+  cursor: default;
+}
+
+.ard-msg-line {
+  flex: none;
+  font: 600 12px var(--font-mono);
+}
+
+.ard-serial-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.ard-serial-head h4 {
+  margin-right: auto;
+  font: 600 1.1rem var(--font-display);
+}
+
+.ard-baud {
+  font: 500 12px var(--font-mono);
+  color: var(--ink-2);
+}
+
+.ard-serial-out {
+  height: 280px;
+  margin: 0;
+  padding: 10px 12px;
+  overflow: auto;
+  background: #0f1a14;
+  border-radius: var(--radius-sm);
+  color: #b8f5c8;
+  font: 13px/1.45 var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ard-serial-in {
+  display: flex;
+  gap: 6px;
+}
+
+.ard-serial-in .field-box {
+  flex: 1;
+}
+
+.code-edit {
+  --code-lh: 20px;
+  --code-pad: 10px;
+  --code-lines: 20;
+  display: flex;
+  height: min(480px, calc(var(--code-lines) * var(--code-lh) + 2 * var(--code-pad) + 16px));
+  overflow: hidden;
+  background: #0f1720;
+  border: 1px solid #1f2a36;
+  border-radius: var(--radius-sm);
+}
+
+.code-edit:focus-within {
+  outline: 2px solid var(--trace);
+  outline-offset: 2px;
+}
+
+.code-gutter-wrap {
+  flex: none;
+  overflow: hidden;
+  background: #0c131b;
+}
+
+.code-gutter {
+  margin: 0;
+  padding: var(--code-pad) 8px var(--code-pad) 12px;
+  color: #5d6b7b;
+  font: 13.5px/var(--code-lh) var(--font-mono);
+  text-align: right;
+  user-select: none;
+}
+
+.code-gutter span {
+  display: block;
+}
+
+.code-gutter .is-error {
+  background: rgba(255, 80, 70, 0.2);
+  color: #ff9d94;
+}
+
+.code-gutter .is-warn {
+  background: rgba(255, 200, 80, 0.14);
+  color: #ffd27a;
+}
+
+.code-area {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.code-hl,
+.code-input {
+  margin: 0;
+  padding: var(--code-pad);
+  border: 0;
+  font: 13.5px/var(--code-lh) var(--font-mono);
+  letter-spacing: 0;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.code-hl {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  color: #d7e0ea;
+  pointer-events: none;
+}
+
+.code-input {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: transparent;
+  color: transparent;
+  caret-color: #ffffff;
+  outline: none;
+  resize: none;
+  scrollbar-color: #3a4a5c transparent;
+}
+
+.code-input::selection {
+  background: rgba(120, 170, 255, 0.35);
+  color: transparent;
+}
+
+.c-com {
+  color: #7b8fa3;
+  font-style: italic;
+}
+
+.c-str {
+  color: #a8e07c;
+}
+
+.c-num {
+  color: #f6b56f;
+}
+
+.c-key {
+  color: #ff92b4;
+}
+
+.c-type {
+  color: #6fc9ff;
+}
+
+.c-const {
+  color: #f3d672;
+}
+
+.c-fn {
+  color: #c9abff;
+}
+
+.c-pre {
+  color: #8fd6ca;
+}
+
+@media (max-width: 1180px) {
+  .ard-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-buzzer.is-sounding .buzz-wave {
+    animation: none;
+  }
+}

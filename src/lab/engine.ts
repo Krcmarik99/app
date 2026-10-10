@@ -3,9 +3,11 @@
  * do sústavy G · u = i. Nelineárne prvky (diódy, tranzistory) sa riešia Newtonovou iteráciou,
  * kondenzátory a cievky časovým krokom metódou BDF2 (Gear), ktorá je presná aj stabilná.
  */
+import { compileSketch, type CompileResult } from '../arduino/compiler';
+import { Mcu, PIN_COUNT, newLcdState, pinName, type LcdState } from '../arduino/vm';
 import { LED_COLORS } from '../lib/electro';
 import { buildNets, type Nets } from './netlist';
-import { num, type Circuit, type Part } from './parts';
+import { ARD_3V3, ARD_5V, ARD_GND, SEG_NAMES, SEG_TERMS, arduinoTerm, num, type Circuit, type Part } from './parts';
 
 export const VT = 0.025852;
 const GMIN = 1e-12;
@@ -30,6 +32,24 @@ const SOURCE_MAX = 5;
 export const AMMETER_MAX = 10;
 export const VOLTMETER_MAX = 1000;
 const MAX_ITER = 100;
+const PIN_MAX = 0.04;
+const USB_MAX = 0.5;
+const REG3V3_MAX = 0.15;
+const LDR_R10 = 15e3;
+const LDR_GAMMA = 0.7;
+const LDR_DARK = 1e6;
+const TMP36_R_OUT = 100;
+const LCD_R_LOGIC = 5000;
+const LCD_R_BACKLIGHT = 220;
+const SERVO_R_IDLE = 500;
+const SERVO_R_MOVE = 40;
+/** Rýchlosť serva SG90: asi 60° za 0,1 s. */
+const SERVO_SPEED = 600;
+const BUZZER_R: Record<string, number> = { passive: 1000, active: 180 };
+/** Časová konštanta „oka“ pre jas LED pri PWM a blikaní. */
+const EMA_TAU = 0.02;
+/** RGB LED: prahové napätia červenej, zelenej a modrej. */
+const RGB_UF = [2.0, 3.0, 3.1];
 
 /** e^x s lineárnym pokračovaním nad x = 80, aby výpočet nepretiekol. */
 function safeExp(x: number): number {
@@ -161,7 +181,12 @@ type Elem =
   | { t: 'I'; a: number; b: number; i: number }
   | { t: 'D'; a: number; k: number; is: number; nvt: number; vcrit: number; key: string }
   | { t: 'Q'; b: number; c: number; e: number; pol: number; bf: number; vcrit: number; key: string }
-  | { t: 'M'; g: number; d: number; s: number; pol: number; vth: number; key: string };
+  | { t: 'M'; g: number; d: number; s: number; pol: number; vth: number; key: string }
+  | { t: 'PIN'; a: number; b: number; mcu: Mcu; pin: number }
+  | { t: 'NS'; a: number; b: number; g: number; e: number };
+
+type DiodeElem = Extract<Elem, { t: 'D' }>;
+type RElem = Extract<Elem, { t: 'R' }>;
 
 /**
  * Okamžité hodnoty na súčiastke a ich priemery za celé periódy striedavého zdroja
@@ -179,6 +204,40 @@ export interface PartState {
   mi: number;
   mi2: number;
   mp: number;
+  /** Prúd vyhladený s časovou konštantou 20 ms (jas LED pri PWM). */
+  ei: number;
+}
+
+/** Prúdy a napätia pinov Arduina. */
+export interface PinData {
+  /** Prúd z pinu do obvodu. */
+  i: Float64Array;
+  /** Napätie pinu voči GND. */
+  v: Float64Array;
+  /** Vyhladená veľkosť prúdu. */
+  a: Float64Array;
+}
+
+interface ServoState {
+  angle: number;
+  target: number;
+  hi: number;
+  high: boolean;
+  pulse: number;
+}
+
+interface BuzzState {
+  t0: number;
+  lo: number;
+  hi: number;
+  plo: number;
+  phi: number;
+  above: boolean;
+  rises: number;
+  first: number;
+  last: number;
+  freq: number;
+  on: boolean;
 }
 
 export interface SimState {
@@ -190,6 +249,10 @@ export interface SimState {
   /** Dĺžka posledného kroku (0 = bez histórie). */
   hPrev: number;
   time: number;
+  mcus?: Map<string, Mcu>;
+  lcds?: Map<string, LcdState>;
+  servos?: Map<string, ServoState>;
+  pressed?: Set<string>;
 }
 
 /** Koeficienty derivácie x' ≈ (a0·x₊ − a1·x + a2·x₋) / h; bez histórie implicitná Eulerova metóda. */
@@ -258,6 +321,20 @@ export class Simulator {
   readonly fMin: number;
   readonly states = new Map<string, PartState>();
   readonly traces = new Map<string, Trace>();
+  /** Mikrokontroléry (Arduino) podľa id súčiastky. */
+  readonly mcus = new Map<string, Mcu>();
+  /** Obsah LCD displejov podľa id súčiastky. */
+  readonly lcds: Map<string, LcdState>;
+  readonly pins = new Map<string, PinData>();
+  /** Meracie prístroje ukazujú priemer za 0,1 s (striedavé zdroje alebo Arduino s PWM). */
+  readonly averaged: boolean;
+  /** Jas LED sa vyhladzuje (Arduino môže rýchlo blikať alebo používať PWM). */
+  readonly smooth: boolean;
+  private readonly servos: Map<string, ServoState>;
+  private readonly buzz = new Map<string, BuzzState>();
+  private readonly pressed: Set<string>;
+  private readonly partElems = new Map<string, Elem[]>();
+  private readonly mcuParts: { part: Part; mcu: Mcu; nodes: number[] }[] = [];
 
   private readonly elems: Elem[] = [];
   private readonly row: Int32Array;
@@ -285,11 +362,23 @@ export class Simulator {
     this.indI1 = new Map(prev?.indI1 ?? []);
     this.hPrev = prev?.hPrev ?? 0;
     this.time = prev?.time ?? 0;
+    this.lcds = new Map(prev?.lcds ?? []);
+    this.servos = new Map([...(prev?.servos ?? [])].map(([k, v]) => [k, { ...v }]));
+    this.pressed = new Set(prev?.pressed ?? []);
+    for (const part of circuit.parts) {
+      if (part.kind === 'arduino') {
+        const mcu = prev?.mcus?.get(part.id) ?? createMcu(part, this.time);
+        this.mcus.set(part.id, mcu);
+      }
+      if (part.kind === 'lcd' && !this.lcds.has(part.id)) this.lcds.set(part.id, newLcdState());
+      if (part.kind === 'servo' && !this.servos.has(part.id)) this.servos.set(part.id, { angle: 90, target: 90, hi: 0, high: false, pulse: 0 });
+    }
 
     const N = this.nets.nodeCount;
     const sources = circuit.parts.filter((p) => p.kind === 'dc' || p.kind === 'ac');
     const refPart = sources[0];
-    const ref = refPart ? this.nets.partNodes.get(refPart.id)![1] : 0;
+    const board = circuit.parts.find((p) => p.kind === 'arduino');
+    const ref = refPart ? this.nets.partNodes.get(refPart.id)![1] : board ? this.nets.partNodes.get(board.id)![ARD_GND] : 0;
     this.row = new Int32Array(Math.max(N, 1));
     let m = 0;
     for (let n = 0; n < N; n++) this.row[n] = n === ref ? -1 : m++;
@@ -300,13 +389,15 @@ export class Simulator {
     this.hasAC = freqs.length > 0;
     this.fMax = freqs.length ? Math.max(...freqs) : 0;
     this.fMin = freqs.length ? Math.min(...freqs) : 0;
-    this.avgWindow = this.hasAC ? Math.ceil(0.1 * this.fMin) / this.fMin : 0;
+    this.smooth = this.mcus.size > 0;
+    this.averaged = this.hasAC || this.smooth;
+    this.avgWindow = this.hasAC ? Math.ceil(0.1 * this.fMin) / this.fMin : this.smooth ? 0.1 : 0;
     this.minWindow = Math.min(...circuit.parts.filter((p) => p.kind === 'scope').map((p) => 10 * num(p.props.tdiv, 5e-3)));
 
     for (const part of circuit.parts) {
       this.partsById.set(part.id, part);
       this.compile(part, this.nets.partNodes.get(part.id)!);
-      this.states.set(part.id, { u: 0, i: 0, p: 0, extra: {}, mu: 0, mu2: 0, mi: 0, mi2: 0, mp: 0 });
+      this.states.set(part.id, { u: 0, i: 0, p: 0, extra: {}, mu: 0, mu2: 0, mi: 0, mi2: 0, mp: 0, ei: 0 });
       this.sums.set(part.id, [0, 0, 0, 0, 0]);
       if (part.kind === 'scope') {
         const window = 10 * num(part.props.tdiv, 5e-3);
@@ -314,19 +405,186 @@ export class Simulator {
       }
     }
     this.nonlinear = this.elems.some((e) => e.t === 'D' || e.t === 'Q' || e.t === 'M');
+    for (const part of circuit.parts) this.applyProps(part);
+    for (const { part, mcu, nodes } of this.mcuParts) {
+      this.pins.set(part.id, { i: new Float64Array(PIN_COUNT), v: new Float64Array(PIN_COUNT), a: new Float64Array(PIN_COUNT) });
+      mcu.host = {
+        pinVoltage: (pin) => this.v(nodes[arduinoTerm(pin)]) - this.v(nodes[ARD_GND]),
+        pinFloating: (pin) => this.floating(nodes[arduinoTerm(pin)], mcu, pin),
+        circuitTime: () => this.time,
+        lcd: (addr) => this.lcdOnBus(nodes, addr),
+      };
+    }
+    // Arduino číta vstupy hneď po zapnutí – obvod sa najprv raz vypočíta.
+    if (this.mcuParts.length) this.tryStep(1e-9);
+  }
+
+  /** Text programu sa preloží a nahrá do Arduina (ako cez USB). */
+  upload(partId: string, code: string): CompileResult {
+    const r = compileSketch(code);
+    const mcu = this.mcus.get(partId);
+    if (r.ok && mcu) mcu.upload(r.program, code);
+    return r;
+  }
+
+  /** Tlačidlo RESET na doske Arduina. */
+  resetMcu(partId: string): void {
+    this.mcus.get(partId)?.reset(this.time);
+  }
+
+  /** Stlačenie alebo pustenie tlačidla (bez prestavby obvodu). */
+  setPressed(partId: string, on: boolean): void {
+    if (on) this.pressed.add(partId);
+    else this.pressed.delete(partId);
+    const part = this.partsById.get(partId);
+    if (part) this.applyProps(part);
+  }
+
+  isPressed(partId: string): boolean {
+    return this.pressed.has(partId);
+  }
+
+  /** Zmena nastavenia počas behu – poloha potenciometra, osvetlenie, teplota. */
+  setLive(partId: string, key: string, value: number): void {
+    const part = this.partsById.get(partId);
+    if (!part) return;
+    part.props[key] = value;
+    this.applyProps(part);
+  }
+
+  servoAngle(partId: string): number | null {
+    return this.servos.get(partId)?.angle ?? null;
+  }
+
+  /** Nastaví vodivosti prvkov podľa vlastností súčiastky a stlačených tlačidiel. */
+  private applyProps(part: Part): void {
+    const els = this.partElems.get(part.id);
+    if (!els) return;
+    switch (part.kind) {
+      case 'button':
+        (els[0] as RElem).g = this.pressed.has(part.id) ? 1 / R_SWITCH : 0;
+        break;
+      case 'pot': {
+        const R = Math.max(1, num(part.props.R, 10000));
+        const pos = Math.max(0, Math.min(1, num(part.props.pos, 50) / 100));
+        (els[0] as RElem).g = 1 / Math.max(0.5, R * pos);
+        (els[1] as RElem).g = 1 / Math.max(0.5, R * (1 - pos));
+        break;
+      }
+      case 'ldr':
+        (els[0] as RElem).g = 1 / ldrResistance(num(part.props.lux, 100));
+        break;
+    }
+  }
+
+  /** Prvky, ktorých vlastnosti závisia od stavu obvodu (napájanie senzora, podsvietenie LCD, pohyb serva). */
+  private refreshDynamic(): void {
+    for (const part of this.circuit.parts) {
+      const els = this.partElems.get(part.id);
+      if (!els) continue;
+      const nodes = this.nets.partNodes.get(part.id)!;
+      const V = (k: number) => this.v(nodes[k]);
+      if (part.kind === 'tmp36') {
+        const out = els[1] as Extract<Elem, { t: 'NS' }>;
+        out.e = V(0) - V(2) >= 2.7 ? 0.5 + 0.01 * num(part.props.temp, 22) : 0;
+      } else if (part.kind === 'lcd') {
+        const lcd = this.lcds.get(part.id);
+        const on = V(1) - V(0) >= 4.5;
+        (els[0] as RElem).g = on ? 1 / LCD_R_LOGIC + (lcd?.backlight ? 1 / LCD_R_BACKLIGHT : 0) : 1 / LCD_R_LOGIC;
+      } else if (part.kind === 'servo') {
+        const sv = this.servos.get(part.id);
+        const moving = !!sv && Math.abs(sv.target - sv.angle) > 0.5 && V(1) - V(0) >= 4;
+        (els[0] as RElem).g = 1 / (moving ? SERVO_R_MOVE : SERVO_R_IDLE);
+      }
+    }
+  }
+
+  /** Je uzol pinu „vo vzduchu“ – okrem samotného pinu k nemu nie je nič vodivo pripojené? */
+  private floating(node: number, mcu: Mcu, pin: number): boolean {
+    const r = this.row[node];
+    if (r < 0) return false;
+    const m = this.sys.m;
+    const other = this.sys.A[r * m + r] - mcu.pinDrive(pin, this.time).g - GMIN;
+    return other < 5e-8;
+  }
+
+  /** LCD pripojený na zbernicu I2C Arduina (SDA = A4, SCL = A5, spoločná zem), napájaný a s danou adresou. */
+  private lcdOnBus(nodes: number[], addr: number): LcdState | null {
+    for (const part of this.circuit.parts) {
+      if (part.kind !== 'lcd' || Number(part.props.addr) !== addr) continue;
+      const ln = this.nets.partNodes.get(part.id)!;
+      if (ln[0] !== nodes[ARD_GND] || ln[2] !== nodes[arduinoTerm(18)] || ln[3] !== nodes[arduinoTerm(19)]) continue;
+      if (this.v(ln[1]) - this.v(ln[0]) < 4.5) continue;
+      return this.lcds.get(part.id) ?? null;
+    }
+    return null;
   }
 
   exportState(): SimState {
     return {
       capV: new Map(this.capV), indI: new Map(this.indI), capV1: new Map(this.capV1), indI1: new Map(this.indI1),
-      hPrev: this.hPrev, time: this.time,
+      hPrev: this.hPrev, time: this.time, mcus: new Map(this.mcus), lcds: new Map(this.lcds), servos: new Map(this.servos),
+      pressed: new Set(this.pressed),
     };
   }
 
   private compile(part: Part, nodes: number[]): void {
     const [a, b] = nodes;
     const R = (n1: number, n2: number, r: number) => this.elems.push({ t: 'R', a: n1, b: n2, g: 1 / r });
+    /** Prvky súčiastky, ku ktorým sa treba vrátiť (premenlivé vodivosti, diódy displeja). */
+    const own = (...list: Elem[]) => {
+      this.elems.push(...list);
+      this.partElems.set(part.id, list);
+    };
+    const led = (an: number, k: number, uf: number, key: string): DiodeElem => {
+      const nvt = LED_N * VT;
+      const is = LED_MAX / Math.exp(uf / nvt);
+      return { t: 'D', a: an, k, is, nvt, vcrit: vcritOf(is, nvt), key };
+    };
     switch (part.kind) {
+      case 'arduino': {
+        const mcu = this.mcus.get(part.id)!;
+        const gnd = nodes[ARD_GND];
+        const list: Elem[] = [];
+        for (let pin = 0; pin < PIN_COUNT; pin++) list.push({ t: 'PIN', a: nodes[arduinoTerm(pin)], b: gnd, mcu, pin });
+        list.push({ t: 'V', a: nodes[ARD_5V], b: gnd, e: () => 5, part: `${part.id}:5v` });
+        list.push({ t: 'V', a: nodes[ARD_3V3], b: gnd, e: () => 3.3, part: `${part.id}:3v3` });
+        own(...list);
+        this.mcuParts.push({ part, mcu, nodes });
+        break;
+      }
+      case 'button':
+        own({ t: 'R', a, b, g: 0 });
+        break;
+      case 'pot':
+        own({ t: 'R', a, b: nodes[2], g: 1 }, { t: 'R', a: nodes[2], b, g: 1 });
+        break;
+      case 'ldr':
+        own({ t: 'R', a, b, g: 1e-4 });
+        break;
+      case 'tmp36':
+        own({ t: 'R', a, b: nodes[2], g: 1e-5 }, { t: 'NS', a: nodes[1], b: nodes[2], g: 1 / TMP36_R_OUT, e: 0 });
+        break;
+      case 'seg7': {
+        const uf = LED_COLORS.find(([id]) => id === part.props.color)?.[2] ?? 2;
+        const ca = part.props.type === 'ca';
+        own(...SEG_TERMS.map((t, k) => (ca ? led(nodes[2], nodes[t], uf, `${part.id}:${k}`) : led(nodes[t], nodes[2], uf, `${part.id}:${k}`))));
+        break;
+      }
+      case 'rgbled': {
+        const ca = part.props.type === 'ca';
+        own(...[0, 1, 2].map((t, k) => (ca ? led(nodes[3], nodes[t], RGB_UF[k], `${part.id}:${k}`) : led(nodes[t], nodes[3], RGB_UF[k], `${part.id}:${k}`))));
+        break;
+      }
+      case 'lcd':
+        own({ t: 'R', a: nodes[1], b: nodes[0], g: 1 / LCD_R_LOGIC });
+        break;
+      case 'buzzer':
+        own({ t: 'R', a, b, g: 1 / (BUZZER_R[String(part.props.type)] ?? 1000) });
+        break;
+      case 'servo':
+        own({ t: 'R', a: nodes[1], b: nodes[0], g: 1 / SERVO_R_IDLE }, { t: 'R', a: nodes[2], b: nodes[0], g: 1e-5 });
+        break;
       case 'resistor':
         R(a, b, Math.max(1e-6, num(part.props.R, 1000)));
         break;
@@ -436,6 +694,17 @@ export class Simulator {
         }
         case 'I':
           sys.current(el.a, el.b, el.i);
+          break;
+        case 'PIN': {
+          // Výstup sa počas kroku nemení (kroky končia na hranách PWM) – stav v strede kroku.
+          const d = el.mcu.pinDrive(el.pin, time - dt / 2);
+          sys.conductance(el.a, el.b, d.g);
+          if (d.e) sys.current(el.a, el.b, -d.g * d.e);
+          break;
+        }
+        case 'NS':
+          sys.conductance(el.a, el.b, el.g);
+          if (el.e) sys.current(el.a, el.b, -el.g * el.e);
           break;
         case 'D': {
           const raw = vv(el.a) - vv(el.k);
@@ -564,9 +833,10 @@ export class Simulator {
       }
     }
     this.avgTime += dt;
-    const latch = this.hasAC && this.avgTime >= this.avgWindow - dt / 2;
+    const latch = this.averaged && this.avgTime >= this.avgWindow - dt / 2;
     for (const part of this.circuit.parts) this.measure(part, dt, latch);
     if (latch) this.avgTime = 0;
+    this.refreshDynamic();
   }
 
   private measure(part: Part, dt: number, latch: boolean): void {
@@ -624,12 +894,16 @@ export class Simulator {
         u = V(2) - V(3);
         p = u * i;
         break;
-      case 'scope':
+      case 'scope': {
         u = V(0) - V(2);
         st.extra.v1 = u;
         st.extra.v2 = V(1) - V(2);
-        this.traces.get(part.id)?.push(this.time, st.extra.v1, st.extra.v2);
+        const trace = this.traces.get(part.id);
+        // S Arduinom sú kroky dlhšie a končia na hranách – hodnota platí celý krok (schodíky).
+        if (this.smooth) trace?.push(this.time - dt * 0.98, st.extra.v1, st.extra.v2);
+        trace?.push(this.time, st.extra.v1, st.extra.v2);
         break;
+      }
       case 'bjt': {
         const pol = part.props.type === 'pnp' ? -1 : 1;
         const [b, c, e] = [V(0), V(1), V(2)];
@@ -639,6 +913,104 @@ export class Simulator {
         u = c - e;
         i = pol * q.ic;
         p = (c - e) * pol * q.ic + (b - e) * pol * q.ib;
+        break;
+      }
+      case 'arduino': {
+        const mcu = this.mcus.get(part.id)!;
+        const els = this.partElems.get(part.id)!;
+        const pd = this.pins.get(part.id)!;
+        const gv = V(ARD_GND);
+        const mid = this.time - dt / 2;
+        const k = 1 - Math.exp(-dt / EMA_TAU);
+        for (let pin = 0; pin < PIN_COUNT; pin++) {
+          const el = els[pin] as Extract<Elem, { t: 'PIN' }>;
+          const d = mcu.pinDrive(pin, mid);
+          const v = this.v(el.a) - gv;
+          const ip = d.g * (d.e - v);
+          pd.i[pin] = ip;
+          pd.v[pin] = v;
+          pd.a[pin] += (Math.abs(ip) - pd.a[pin]) * k;
+        }
+        u = V(ARD_5V) - gv;
+        i = (5 - u) / R_SOURCE;
+        const i33 = (3.3 - (V(ARD_3V3) - gv)) / R_SOURCE;
+        st.extra.i5 = (st.extra.i5 ?? 0) + (Math.abs(i) - (st.extra.i5 ?? 0)) * k;
+        st.extra.i33 = (st.extra.i33 ?? 0) + (Math.abs(i33) - (st.extra.i33 ?? 0)) * k;
+        p = u * i + 3.3 * i33;
+        break;
+      }
+      case 'button':
+        i = this.pressed.has(part.id) ? u / R_SWITCH : 0;
+        break;
+      case 'pot': {
+        const els = this.partElems.get(part.id)! as RElem[];
+        i = (V(0) - V(2)) * els[0].g;
+        st.extra.uw = V(2) - V(1);
+        p = (V(0) - V(2)) ** 2 * els[0].g + (V(2) - V(1)) ** 2 * els[1].g;
+        break;
+      }
+      case 'ldr': {
+        const g = (this.partElems.get(part.id)![0] as RElem).g;
+        i = u * g;
+        st.extra.r = 1 / g;
+        break;
+      }
+      case 'tmp36':
+        u = V(0) - V(2);
+        st.extra.vout = V(1) - V(2);
+        i = u * 1e-5;
+        break;
+      case 'seg7':
+      case 'rgbled': {
+        const els = this.partElems.get(part.id)! as DiodeElem[];
+        const k = 1 - Math.exp(-dt / EMA_TAU);
+        i = 0;
+        els.forEach((el, n) => {
+          const id = el.is * (safeExp((this.v(el.a) - this.v(el.k)) / el.nvt) - 1);
+          st.extra[`s${n}`] = id;
+          st.extra[`e${n}`] = (st.extra[`e${n}`] ?? 0) + (id - (st.extra[`e${n}`] ?? 0)) * k;
+          i += id;
+        });
+        u = part.kind === 'seg7' ? V(SEG_TERMS[0]) - V(2) : V(0) - V(3);
+        break;
+      }
+      case 'lcd': {
+        u = V(1) - V(0);
+        i = u * (this.partElems.get(part.id)![0] as RElem).g;
+        const on = u >= 4.5;
+        const lcd = this.lcds.get(part.id);
+        // Bez napájania displej zabudne obsah; po zapnutí čaká na inicializáciu programom.
+        if (!on && lcd && (lcd.initialized || !lcd.backlight)) this.lcds.set(part.id, newLcdState());
+        st.extra.on = on ? 1 : 0;
+        break;
+      }
+      case 'buzzer':
+        i = u * (this.partElems.get(part.id)![0] as RElem).g;
+        this.listen(part, u);
+        break;
+      case 'servo': {
+        u = V(1) - V(0);
+        i = u * (this.partElems.get(part.id)![0] as RElem).g;
+        const sv = this.servos.get(part.id)!;
+        const sig = V(2) - V(0);
+        if (sig >= 2.5) {
+          if (!sv.high) sv.hi = 0;
+          sv.hi += dt;
+          sv.high = true;
+        } else if (sv.high) {
+          sv.high = false;
+          // Šírka impulzu 544 µs až 2400 µs určuje uhol 0° až 180°.
+          if (sv.hi > 3e-4 && sv.hi < 3e-3) {
+            sv.pulse = sv.hi;
+            sv.target = Math.max(0, Math.min(180, ((sv.hi * 1e6 - 544) / (2400 - 544)) * 180));
+          }
+        }
+        if (u >= 4) {
+          const step = SERVO_SPEED * dt;
+          sv.angle += Math.max(-step, Math.min(step, sv.target - sv.angle));
+        }
+        st.extra.angle = sv.angle;
+        st.extra.pulse = sv.pulse;
         break;
       }
       case 'mosfet': {
@@ -657,7 +1029,8 @@ export class Simulator {
     st.u = u;
     st.i = i;
     st.p = p ?? u * i;
-    if (!this.hasAC) {
+    if (this.smooth) st.ei += (i - st.ei) * (1 - Math.exp(-dt / EMA_TAU));
+    if (!this.averaged) {
       st.mu = u;
       st.mu2 = u * u;
       st.mi = i;
@@ -684,6 +1057,7 @@ export class Simulator {
    */
   advance(duration: number, maxSteps = 400): boolean {
     if (this.error || duration <= 0) return true;
+    if (this.mcuParts.length) return this.advanceWithMcu(duration, maxSteps);
     let dt = duration / 20;
     if (this.hasAC) dt = Math.min(dt, 1 / (this.fMax * 80));
     // Osciloskop potrebuje aspoň 400 bodov na šírku obrazovky.
@@ -695,6 +1069,80 @@ export class Simulator {
     return full;
   }
 
+  /**
+   * Simulácia s Arduinom: program beží po kúskoch najviac 1 ms a obvod sa počíta po rovnakých
+   * krokoch. Kroky končia presne na hranách PWM, tónov a impulzov serva a v okamihu, keď program
+   * zmení výstup – vtedy sa obvod najprv dopočíta až po tento čas.
+   */
+  private advanceWithMcu(duration: number, maxSteps: number): boolean {
+    const target = this.time + duration;
+    let dtMax = 1e-3;
+    if (this.hasAC) dtMax = Math.min(dtMax, 1 / (this.fMax * 80));
+    if (Number.isFinite(this.minWindow)) dtMax = Math.min(dtMax, this.minWindow / 60);
+    let budget = 400000;
+    let steps = 0;
+    while (this.time < target - 1e-12) {
+      if (steps >= maxSteps || budget <= 0) return false;
+      let tEnd = Math.min(target, this.time + dtMax);
+      for (const { mcu } of this.mcuParts) {
+        if (mcu.time < tEnd) budget -= mcu.run(tEnd, budget);
+        if (mcu.waitingForCircuit) tEnd = Math.min(tEnd, Math.max(mcu.time, this.time + 1e-6));
+        else if (mcu.time < tEnd) tEnd = Math.min(tEnd, mcu.time);
+      }
+      for (const { mcu } of this.mcuParts) {
+        let edge = mcu.nextEdge(this.time);
+        if (edge - this.time < 1e-9) edge = mcu.nextEdge(this.time + 1e-9);
+        tEnd = Math.min(tEnd, edge);
+      }
+      if (tEnd > this.time + 1e-12 && !this.step(tEnd - this.time)) return false;
+      for (const { mcu } of this.mcuParts) mcu.synced();
+      steps += 1;
+    }
+    return true;
+  }
+
+  /** Bzučiak: z priebehu napätia zistí, či a akú frekvenciu hrá. */
+  private listen(part: Part, u: number): void {
+    let b = this.buzz.get(part.id);
+    if (!b) {
+      b = { t0: this.time, lo: u, hi: u, plo: 0, phi: 0, above: false, rises: 0, first: 0, last: 0, freq: 0, on: false };
+      this.buzz.set(part.id, b);
+    }
+    const st = this.states.get(part.id)!;
+    if (part.props.type === 'active') {
+      // Aktívny bzučiak má vlastný oscilátor – pípa, kým je na ňom napätie.
+      b.on = u > 2.5;
+      b.freq = 2300;
+    } else {
+      b.lo = Math.min(b.lo, u);
+      b.hi = Math.max(b.hi, u);
+      if (b.phi - b.plo > 1) {
+        const hiTh = b.plo + 0.7 * (b.phi - b.plo);
+        const loTh = b.plo + 0.3 * (b.phi - b.plo);
+        if (!b.above && u > hiTh) {
+          b.above = true;
+          if (!b.rises) b.first = this.time;
+          b.last = this.time;
+          b.rises += 1;
+        } else if (b.above && u < loTh) {
+          b.above = false;
+        }
+      }
+      if (this.time - b.t0 >= 0.04) {
+        b.on = b.rises >= 2 && b.hi - b.lo > 1 && b.last > b.first;
+        b.freq = b.on ? (b.rises - 1) / (b.last - b.first) : 0;
+        b.plo = b.lo;
+        b.phi = b.hi;
+        b.lo = u;
+        b.hi = u;
+        b.rises = 0;
+        b.t0 = this.time;
+      }
+    }
+    st.extra.snd = b.on ? 1 : 0;
+    st.extra.freq = b.on ? b.freq : 0;
+  }
+
   get stepSize(): number {
     return this.lastDt;
   }
@@ -702,7 +1150,8 @@ export class Simulator {
   /** Upozornenia na preťažené alebo zle zapojené súčiastky. */
   warnings(): Warning[] {
     const out: Warning[] = [];
-    const avg = (st: PartState) => (this.hasAC ? Math.sqrt(Math.max(0, st.mi2)) : Math.abs(st.i));
+    const avg = (st: PartState) => (this.averaged ? Math.sqrt(Math.max(0, st.mi2)) : Math.abs(st.i));
+    const mA = (a: number) => `${Math.round(a * 1000)} mA`;
     for (const part of this.circuit.parts) {
       const st = this.states.get(part.id)!;
       const w = (text: string) => out.push({ part: part.id, text: `${part.name}: ${text}` });
@@ -750,17 +1199,73 @@ export class Simulator {
             w('multimeter v režime merania prúdu je zapojený ako skrat. Na meranie napätia prepni na V.');
           }
           break;
+        case 'arduino': {
+          const pd = this.pins.get(part.id);
+          if (!pd) break;
+          for (let pin = 0; pin < PIN_COUNT; pin++) {
+            const v = pd.v[pin];
+            if (v > 5.5 || v < -0.5) {
+              w(`na pine ${pinName(pin)} je ${fmtV(v)} – piny Arduina znesú len 0 až 5 V! Vyššie napätie ho zničí.`);
+            } else if (pd.a[pin] > PIN_MAX) {
+              w(`pin ${pinName(pin)} dodáva ${mA(pd.a[pin])} – pin Arduina znesie najviac 40 mA (odporúča sa do 20 mA). Pridaj rezistor.`);
+            }
+          }
+          if ((st.extra.i5 ?? 0) > USB_MAX) w(`z pinu 5V sa odoberá ${mA(st.extra.i5)} – z USB sa dá odobrať najviac 500 mA. Nie je tam skrat?`);
+          if ((st.extra.i33 ?? 0) > REG3V3_MAX) w(`z pinu 3V3 sa odoberá ${mA(st.extra.i33)} – znesie najviac 150 mA.`);
+          break;
+        }
+        case 'seg7':
+        case 'rgbled': {
+          const names = part.kind === 'seg7' ? SEG_NAMES : ['červená', 'zelená', 'modrá'];
+          const over = names.filter((_, k) => (st.extra[`e${k}`] ?? 0) > LED_MAX * 1.05);
+          if (over.length) w(`${part.kind === 'seg7' ? 'segment' : 'LED'} ${over.join(', ')}: prúd je väčší ako 20 mA – pridaj predradný rezistor.`);
+          break;
+        }
+        case 'lcd':
+          if (st.u > 5.6) w(`LCD je na napätí ${fmtV(st.u)} – patrí na 5 V.`);
+          break;
+        case 'tmp36':
+          if (st.u > 5.6) w(`senzor je na napätí ${fmtV(st.u)} – znesie najviac 5,5 V.`);
+          break;
+        case 'servo':
+          if (st.u > 7) w(`servo je na napätí ${fmtV(st.u)} – SG90 znesie najviac 6 V.`);
+          break;
       }
     }
     return out;
   }
 }
 
-/** Jas LED (podľa prúdu, 20 mA = naplno) alebo žiarovky (podľa výkonu) v rozsahu 0 až 1. */
-export function glowLevel(part: Part, st: PartState | undefined, hasAC: boolean): number {
+/**
+ * Jas LED (podľa prúdu, 20 mA = naplno) alebo žiarovky (podľa výkonu) v rozsahu 0 až 1.
+ * Pri Arduine (`smooth`) sa berie prúd vyhladený ako vníma oko – PWM tak svieti slabšie.
+ */
+export function glowLevel(part: Part, st: PartState | undefined, hasAC: boolean, smooth = false): number {
   if (!st) return 0;
-  if (part.kind === 'lamp') return Math.min(1, Math.max(0, hasAC ? st.mp : st.p) / num(part.props.P, 5));
+  if (part.kind === 'lamp') {
+    const p = smooth ? (st.ei * st.ei) * lampResistance(part) : hasAC ? st.mp : st.p;
+    return Math.min(1, Math.max(0, p) / num(part.props.P, 5));
+  }
+  if (smooth) return Math.min(1, Math.max(0, st.ei) / LED_MAX);
   return Math.min(1, (hasAC ? Math.sqrt(Math.max(0, st.mi2)) : Math.max(0, st.i)) / LED_MAX);
+}
+
+/** Jas segmentu displeja alebo farby RGB LED (0 až 1). */
+export function segmentLevel(st: PartState | undefined, k: number): number {
+  return st ? Math.min(1, Math.max(0, st.extra[`e${k}`] ?? 0) / LED_MAX) : 0;
+}
+
+/** Odpor fotorezistora (GL5528) pri danom osvetlení v luxoch. */
+export function ldrResistance(lux: number): number {
+  if (lux <= 0) return LDR_DARK;
+  return Math.min(LDR_DARK, LDR_R10 * (lux / 10) ** -LDR_GAMMA);
+}
+
+/** Arduino s programom zo súčiastky (pri chybe v programe bez programu). */
+function createMcu(part: Part, time: number): Mcu {
+  const code = String(part.props.code ?? '');
+  const r = compileSketch(code);
+  return r.ok ? new Mcu(r.program, null, time, code) : new Mcu(null, r.error, time, code);
 }
 
 export interface MeterReading {
@@ -815,6 +1320,7 @@ export function lampResistance(part: Part): number {
 }
 
 const fmtW = (w: number) => `${String(Number(w.toPrecision(3))).replace('.', ',')} W`;
+const fmtV = (v: number) => `${String(Number(v.toPrecision(3))).replace('.', ',')} V`;
 
 /** Ebersov–Mollov model tranzistora NPN: prúdy do vývodov a ich derivácie podľa U_BE a U_BC. */
 function bjtCurrents(vbe: number, vbc: number, bf: number) {
