@@ -15,6 +15,11 @@ import {
 import {
   calcLayout, compact, errorMsg, field, ok, result, segmented, si, v, type CalculatorInfo, type Field,
 } from './calc-kit';
+import { CALCS as AC_CALCS } from './calc-ac';
+import { CALCS as DIGITAL_CALCS } from './calc-digital';
+import { CALCS as ELECTRONICS_CALCS } from './calc-electronics';
+import { CALCS as MACHINES_CALCS } from './calc-machines';
+import { CALCS as POWER_CALCS } from './calc-power';
 import { MEAS_CALCULATORS } from './calculators-meas';
 import { backLink, pageHead } from './common';
 
@@ -642,6 +647,11 @@ export const CALCULATORS: readonly CalculatorInfo[] = [
   { id: 'led', title: 'Predradný rezistor pre LED', short: 'Odpor, hodnota z rady E12 a zaťaženie rezistora.', render: ledCalc },
   { id: 'vodic', title: 'Odpor a úbytok na vedení', short: 'Odpor kábla podľa materiálu, prierezu a teploty.', render: wireCalc },
   ...MEAS_CALCULATORS,
+  ...AC_CALCS,
+  ...MACHINES_CALCS,
+  ...ELECTRONICS_CALCS,
+  ...DIGITAL_CALCS,
+  ...POWER_CALCS,
 ];
 
 export function calculatorsView(): HTMLElement {

@@ -95,7 +95,7 @@ export function homeView(): HTMLElement {
     h('div', { class: 'hero-copy' },
       h('p', { class: 'eyebrow' }, account ? `Ahoj, ${account.name.split(' ')[0]}` : 'Základy elektrotechniky · stredná škola'),
       h('h1', { class: 'hero-title' }, 'Elektrotechnika krok za krokom'),
-      h('p', { class: 'lead' }, `${LESSONS.length} lekcií od Ohmovho zákona po elektrotechnické merania. Ku každej téme riešené príklady, cvičenia s novými hodnotami pri každom pokuse, kalkulačky a kartičky na opakovanie.`),
+      h('p', { class: 'lead' }, `${LESSONS.length} lekcií od Ohmovho zákona cez striedavé obvody, transformátory a motory až po elektroniku, číslicovú techniku a merania. Ku každej téme riešené príklady, cvičenia s novými hodnotami pri každom pokuse, kalkulačky a kartičky na opakovanie.`),
       h('div', { class: 'hero-actions' },
         linkButton(`#lekcia-${target.id}`, started ? `Pokračovať: ${target.title}` : `Začať: ${target.title}`, 'primary', 'arrow'),
         linkButton('#cvicenie', 'Precvičovať príklady', 'secondary'),
@@ -111,10 +111,10 @@ export function homeView(): HTMLElement {
       h('a', { href: '#lekcie', class: 'text-link' }, 'Všetky lekcie'),
     ),
     h('div', { class: 'chapters' },
-      CHAPTERS.map((ch) => {
+      CHAPTERS.filter((ch) => LESSONS.some((l) => l.chapter === ch.id)).map((ch) => {
         const lessons = LESSONS.filter((l) => l.chapter === ch.id);
         return h('div', { class: 'chapter' },
-          h('h3', null, ch.title),
+          h('h3', null, ch.title, h('span', { class: 'chapter-grade-inline' }, ch.grade)),
           h('ol', { class: 'chapter-lessons', start: lessonIndex(lessons[0].id) + 1 },
             lessons.map((l) => h('li', { class: p.lessonsDone.includes(l.id) ? 'is-done' : '' },
               h('a', { href: `#lekcia-${l.id}` }, l.title),

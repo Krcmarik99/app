@@ -1,14 +1,4 @@
-import type { Generator } from '../../practice/helpers';
-import type { Lesson } from '../lessons';
-import type { StaticQuestion } from '../questions';
+import type { LessonModule } from '../module';
 
-/**
- * Jedna lekcia kapitoly Elektrotechnické merania spolu s otázkami a generátormi príkladov.
- * Modul nesmie importovať hodnoty z lessons.ts, questions.ts ani generators.ts (iba typy) –
- * tie si moduly načítavajú samy a vznikol by kruhový import.
- */
-export interface MeasModule {
-  lesson: Lesson;
-  questions: StaticQuestion[];
-  generators: Generator[];
-}
+/** Jedna lekcia kapitoly Elektrotechnické merania (pozri LessonModule). */
+export type MeasModule = LessonModule;

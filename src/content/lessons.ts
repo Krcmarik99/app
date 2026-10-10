@@ -1,26 +1,32 @@
 import type { FigureFn } from '../practice/types';
 import type { FigureId } from '../ui/figures';
-import { MEAS_MODULES } from './meas';
+import { MODULES } from './all-modules';
 
 /*
  * Obsah lekcií. Vo vzorcoch (v `...` a v blokoch formula) platí zápis z lib/formula.ts:
  * $U je veličina kurzívou, _{1} dolný index, ^{2} horný index, @f{a}{b} zlomok, @s{a} odmocnina.
  */
 
-export type ChapterId = 'dc' | 'fields' | 'ac' | 'parts' | 'meas';
+export type ChapterId = 'dc' | 'fields' | 'ac' | 'parts' | 'machines' | 'electronics' | 'digital' | 'power' | 'meas';
 
 export interface Chapter {
   id: ChapterId;
   title: string;
   blurb: string;
+  /** V ktorom ročníku strednej priemyselnej školy elektrotechnickej sa učivo zvyčajne preberá. */
+  grade: string;
 }
 
 export const CHAPTERS: readonly Chapter[] = [
-  { id: 'dc', title: 'Jednosmerný prúd', blurb: 'Veličiny, Ohmov a Kirchhoffove zákony, výkon a reálny zdroj.' },
-  { id: 'fields', title: 'Elektrické a magnetické pole', blurb: 'Kondenzátor, cievka, elektromagnetická indukcia.' },
-  { id: 'ac', title: 'Striedavý prúd', blurb: 'Sínusové veličiny, reaktancia, impedancia a rezonancia.' },
-  { id: 'parts', title: 'Súčiastky v praxi', blurb: 'Farebný kód rezistorov, diódy a LED.' },
-  { id: 'meas', title: 'Elektrotechnické merania', blurb: 'Jednotky SI, meracie prístroje, triedy presnosti, chyby merania a meranie odporu.' },
+  { id: 'dc', title: 'Jednosmerný prúd', blurb: 'Veličiny, Ohmov a Kirchhoffove zákony, výkon a reálny zdroj.', grade: '1. ročník' },
+  { id: 'fields', title: 'Elektrické a magnetické pole', blurb: 'Kondenzátor, cievka, elektromagnetická indukcia.', grade: '1. ročník' },
+  { id: 'parts', title: 'Súčiastky v praxi', blurb: 'Farebný kód rezistorov, diódy a LED.', grade: '1. ročník' },
+  { id: 'ac', title: 'Striedavý prúd', blurb: 'Sínusové veličiny, impedancia, výkon a účinník, rezonančné obvody, filtre a trojfázová sústava.', grade: '2. a 3. ročník' },
+  { id: 'machines', title: 'Elektrické stroje', blurb: 'Transformátory, asynchrónny motor, jednosmerné a synchrónne stroje.', grade: '3. ročník' },
+  { id: 'electronics', title: 'Elektronika', blurb: 'Usmerňovače, stabilizátory, tranzistorový a operačný zosilňovač, oscilátory.', grade: '3. ročník' },
+  { id: 'digital', title: 'Číslicová technika', blurb: 'Číselné sústavy, logické členy, kombinačné a sekvenčné obvody.', grade: '3. ročník' },
+  { id: 'power', title: 'Elektroenergetika a bezpečnosť', blurb: 'Výroba a rozvod energie, ochrana pred úrazom elektrickým prúdom, istenie vedení.', grade: '3. ročník' },
+  { id: 'meas', title: 'Elektrotechnické merania', blurb: 'Jednotky SI, meracie prístroje, chyby merania, meranie odporu, výkonu a osciloskop.', grade: '2. a 3. ročník' },
 ];
 
 export type Block =
@@ -32,6 +38,8 @@ export type Block =
   | { t: 'example'; title: string; given: string[]; steps: string[]; result: string }
   | { t: 'table'; head: string[]; rows: string[][] }
   | { t: 'figure'; fig: FigureId | FigureFn; caption?: string }
+  /** Interaktívny graf s posuvníkmi. */
+  | { t: 'explore'; build: () => HTMLElement; caption?: string }
   | { t: 'colortable' };
 
 export interface Lesson {
@@ -588,8 +596,11 @@ const BASE_LESSONS: readonly Lesson[] = [
   },
 ];
 
-/** Všetky lekcie v poradí kurzu – základy elektrotechniky a za nimi elektrotechnické merania. */
-export const LESSONS: readonly Lesson[] = [...BASE_LESSONS, ...MEAS_MODULES.map((m) => m.lesson)];
+/** Všetky lekcie v poradí kurzu – po kapitolách v poradí CHAPTERS. */
+export const LESSONS: readonly Lesson[] = (() => {
+  const all = [...BASE_LESSONS, ...MODULES.map((m) => m.lesson)];
+  return CHAPTERS.flatMap((ch) => all.filter((l) => l.chapter === ch.id));
+})();
 
 export function lessonById(id: string): Lesson | undefined {
   return LESSONS.find((l) => l.id === id);

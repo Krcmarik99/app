@@ -650,6 +650,14 @@ dt .frac {
   margin-top: 0.16em;
 }
 
+/* Negácia v logických výrazoch – pruh nad písmenom alebo celým výrazom. */
+.ovl {
+  display: inline-block;
+  border-top: 1px solid currentColor;
+  padding: 0.04em 0.05em 0;
+  line-height: 1.1;
+}
+
 .formula {
   background: var(--surface);
   border: 1px solid var(--rule);
@@ -947,6 +955,140 @@ dt .frac {
   stroke: var(--ink-2);
   stroke-width: 1.3;
   stroke-dasharray: 5 4;
+}
+
+.chart .line.green {
+  stroke: var(--good);
+}
+
+.chart .line.violet {
+  stroke: #8a4fd0;
+}
+
+.chart .line.red {
+  stroke: var(--bad);
+}
+
+.chart .line.thin {
+  stroke-width: 1.6;
+}
+
+/* Fázy trojfázovej sústavy: L1 hnedá, L2 čierna, L3 sivá. */
+.chart .line.l1 {
+  stroke: #9a5a24;
+}
+
+.chart .line.l2 {
+  stroke: var(--ink);
+}
+
+.chart .line.l3 {
+  stroke: #8f98a3;
+}
+
+.chart .legend-swatch {
+  stroke-width: 3;
+}
+
+.chart .legend-text {
+  font: 12px var(--font-body);
+  fill: var(--ink-2);
+}
+
+/* ------------------------------------------------------------------ interaktívne grafy v lekciách */
+
+.explorer {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.explorer-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.explorer-head h3 {
+  font: 600 1.2rem/1.2 var(--font-display);
+}
+
+.explorer-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px 18px;
+}
+
+.explorer-param {
+  display: grid;
+  gap: 4px;
+}
+
+.explorer-param-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.explorer-param output {
+  font: 500 14px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.explorer-param input[type='range'] {
+  width: 100%;
+  accent-color: var(--copper);
+}
+
+.explorer-readouts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 6px 14px;
+  margin: 0;
+}
+
+.explorer-readouts div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.explorer-readouts dd {
+  margin: 0;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.explorer-note {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.chip.chapter-grade {
+  margin-left: 6px;
+  font: 600 12px var(--font-body);
+  vertical-align: middle;
+}
+
+.chapter-grade-inline {
+  display: block;
+  font: 500 12px var(--font-body);
+  color: var(--ink-2);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* Číselník analógového prístroja a displej číslicového prístroja. */
@@ -4446,4 +4588,128 @@ input[type='checkbox'] {
   .lab-buzzer.is-sounding .buzz-wave {
     animation: none;
   }
+}
+
+/* Fázorové diagramy. */
+.sch .phasor {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.sch .phasor-head {
+  stroke: none;
+}
+
+.sch .phasor.is-dashed {
+  stroke-dasharray: 5 4;
+  stroke-width: 1.6;
+}
+
+.sch .phasor-ink {
+  stroke: var(--ink);
+  fill: var(--ink);
+}
+
+.sch .phasor-trace {
+  stroke: var(--trace);
+  fill: var(--trace);
+}
+
+.sch .phasor-copper {
+  stroke: var(--copper);
+  fill: var(--copper);
+}
+
+.sch .phasor-good {
+  stroke: var(--good);
+  fill: var(--good);
+}
+
+.sch text.phasor-label {
+  stroke: none;
+}
+
+/* Pomocné triedy pre obrázky v lekciách 3. ročníka (stroje, elektronika, číslicová technika, bezpečnosť). */
+.sch .w.trace {
+  stroke: var(--trace);
+}
+
+.sch .w.copper {
+  stroke: var(--copper);
+}
+
+.sch .w.good {
+  stroke: var(--good);
+}
+
+.sch .w.bad {
+  stroke: var(--bad);
+}
+
+.sch .w.ink2 {
+  stroke: var(--ink-2);
+}
+
+.sch .w.thick {
+  stroke-width: 3;
+}
+
+.sch .fill-soft {
+  fill: var(--trace-soft);
+  stroke: none;
+}
+
+.sch .fill-copper {
+  fill: var(--copper-soft);
+  stroke: none;
+}
+
+.sch .fill-good {
+  fill: var(--good-soft);
+  stroke: none;
+}
+
+.sch .fill-bad {
+  fill: var(--bad-soft);
+  stroke: none;
+}
+
+.sch .fill-warn {
+  fill: var(--warn-soft);
+  stroke: none;
+}
+
+.sch .core {
+  fill: var(--surface-2);
+  stroke: var(--ink-2);
+  stroke-width: 1.2;
+}
+
+.sch text.small {
+  font-family: var(--font-body);
+  font-size: 12px;
+}
+
+.sch text.label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sch text.mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.sch text.copper {
+  fill: var(--copper);
+}
+
+.sch text.good {
+  fill: var(--good);
+}
+
+.sch text.bad {
+  fill: var(--bad);
 }

@@ -36,7 +36,7 @@ export function practiceView(topic?: string): HTMLElement {
     };
     const summary = h('p', { class: 'muted', 'aria-live': 'polite' });
 
-    const topicGroups = CHAPTERS.map((ch) => h('div', { class: 'chip-group' },
+    const topicGroups = CHAPTERS.filter((ch) => LESSONS.some((l) => l.chapter === ch.id)).map((ch) => h('div', { class: 'chip-group' },
       h('p', { class: 'chip-group-title' }, ch.title),
       h('div', { class: 'chips' }, LESSONS.filter((l) => l.chapter === ch.id).map((l) => {
         const chip = h('button', { type: 'button', class: 'chip-toggle', id: `topic-${l.id}` }, l.title);

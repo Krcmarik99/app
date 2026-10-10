@@ -4,6 +4,7 @@
  *   _{..} ^{..}  dolný a horný index (alebo _x, ^x pre jeden znak)
  *   @f{a}{b}  zlomok
  *   @s{a}     odmocnina
+ *   @o{a}     pruh nad výrazom (negácia v logike)
  * Jednotky a čísla sa píšu bežne, sú vzpriamené (podľa ISO 80000).
  */
 
@@ -62,6 +63,11 @@ function parseSeq(src: string, start: number, inGroup: boolean): [Node[], number
       const [den, afterDen] = parseArg(src, afterNum);
       out.push(wrap('span', 'frac', [wrap('span', 'num', num), wrap('span', 'den', den)]));
       i = afterDen;
+    } else if (ch === '@' && src[i + 1] === 'o') {
+      flush();
+      const [inner, next] = parseArg(src, i + 2);
+      out.push(wrap('span', 'ovl', inner));
+      i = next;
     } else if (ch === '@' && src[i + 1] === 's') {
       flush();
       const [rad, next] = parseArg(src, i + 2);

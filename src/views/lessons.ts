@@ -19,11 +19,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
 export function lessonsView(): HTMLElement {
   const p = getProgress();
   return h('div', { class: 'view view-lessons' },
-    pageHead('Kurz', 'Lekcie', 'Lekcie idú za sebou od základných veličín cez striedavé obvody až po elektrotechnické merania. Každá obsahuje teóriu, vzorce, riešené príklady a krátky test.'),
-    CHAPTERS.map((ch) =>
+    pageHead('Kurz', 'Lekcie', 'Lekcie idú za sebou od základných veličín cez striedavé obvody, elektrické stroje, elektroniku a číslicovú techniku až po elektroenergetiku a merania. Každá obsahuje teóriu, vzorce, schémy a grafy, riešené príklady a krátky test.'),
+    CHAPTERS.filter((ch) => LESSONS.some((l) => l.chapter === ch.id)).map((ch) =>
       h('section', { class: 'chapter-block', 'aria-labelledby': `ch-${ch.id}` },
         h('div', { class: 'chapter-block-head' },
-          h('h2', { id: `ch-${ch.id}` }, ch.title),
+          h('h2', { id: `ch-${ch.id}` }, ch.title, ' ', h('span', { class: 'chip chapter-grade' }, ch.grade)),
           h('p', { class: 'muted' }, ch.blurb),
         ),
         h('ol', { class: 'lesson-list' },
@@ -113,6 +113,11 @@ function renderBlock(b: Block): HTMLElement {
     case 'figure':
       return h('figure', { class: 'fig' },
         h('div', { class: 'sch-panel' }, typeof b.fig === 'function' ? b.fig() : FIGURES[b.fig]()),
+        b.caption ? h('figcaption', null, rich(b.caption)) : null,
+      );
+    case 'explore':
+      return h('figure', { class: 'fig fig-explore' },
+        b.build(),
         b.caption ? h('figcaption', null, rich(b.caption)) : null,
       );
     case 'colortable':

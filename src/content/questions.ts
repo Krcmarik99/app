@@ -1,4 +1,4 @@
-import { MEAS_MODULES } from './meas';
+import { MODULES } from './all-modules';
 
 /** Otázky s výberom odpovede. Prvá možnosť je vždy správna – pri zobrazení sa zamiešajú. */
 export interface StaticQuestion {
@@ -408,4 +408,4 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   },
 ];
 
-export const QUESTIONS: readonly StaticQuestion[] = [...BASE_QUESTIONS, ...MEAS_MODULES.flatMap((m) => m.questions)];
+export const QUESTIONS: readonly StaticQuestion[] = [...BASE_QUESTIONS, ...MODULES.flatMap((m) => m.questions)];

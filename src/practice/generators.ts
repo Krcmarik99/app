@@ -2,7 +2,7 @@
  * Generátory číselných príkladov. Každé volanie vytvorí príklad s inými hodnotami
  * a s postupom riešenia. Hodnoty súčiastok sa berú z rady E12, aby boli realistické.
  */
-import { MEAS_MODULES } from '../content/meas';
+import { MODULES } from '../content/all-modules';
 import { bandNames, colorById, encodeBands } from '../lib/colorcode';
 import { E12, nearestStandard } from '../lib/electro';
 import { pick, shuffle, type Rng } from '../lib/random';
@@ -660,7 +660,7 @@ const diodes: Generator[] = [
 ];
 
 export const GENERATORS: Record<string, Generator[]> = {
-  ...Object.fromEntries(MEAS_MODULES.map((m) => [m.lesson.id, m.generators])),
+  ...Object.fromEntries(MODULES.map((m) => [m.lesson.id, m.generators])),
   zaklady,
   'ohmov-zakon': ohm,
   'odpor-vodica': wire,

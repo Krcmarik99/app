@@ -24,7 +24,7 @@ const PERP: Record<CompKind, number> = {
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
-function arrowHead(x: number, y: number, angleDeg: number, size = 5, cls = 'f'): SVGPolygonElement {
+export function arrowHead(x: number, y: number, angleDeg: number, size = 5, cls = 'f'): SVGPolygonElement {
   const a = (angleDeg * Math.PI) / 180;
   const p = (dx: number, dy: number): string => {
     const rx = x + dx * Math.cos(a) - dy * Math.sin(a);

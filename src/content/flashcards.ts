@@ -1,4 +1,5 @@
 import type { CompKind } from '../ui/schematic';
+import { Y3_DECKS } from './y3/cards';
 
 export interface Card {
   id: string;
@@ -16,7 +17,7 @@ export interface Deck {
   cards: Card[];
 }
 
-export const DECKS: readonly Deck[] = [
+const BASE_DECKS: readonly Deck[] = [
   {
     id: 'veliciny',
     title: 'Veličiny a jednotky',
@@ -144,5 +145,7 @@ export const DECKS: readonly Deck[] = [
     ],
   },
 ];
+
+export const DECKS: readonly Deck[] = [...BASE_DECKS, ...Y3_DECKS];
 
 export const ALL_CARDS: readonly Card[] = DECKS.flatMap((d) => d.cards);
