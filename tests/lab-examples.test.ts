@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { Simulator, meterReading } from '../src/lab/engine';
 import { DEMO_FOR, EXAMPLES, exampleById } from '../src/lab/examples';
-import { PALETTE } from '../src/lab/parts';
+import { COLS, G, ROWS } from '../src/lab/draw';
+import { ARD_ROW, PALETTE, parseCircuit, terminalsOf, type Pt } from '../src/lab/parts';
+import { hitBox } from '../src/lab/symbols';
 import { buildNets } from '../src/lab/netlist';
 import type { Circuit, Part } from '../src/lab/parts';
 
@@ -195,5 +197,58 @@ describe('ukážkové zapojenia', () => {
     expect(show(sim, byName('MM1'))).toBeCloseTo(i, 5);
     expect(show(sim, byName('MM2'))).toBeCloseTo(i * 1000, 2);
     expect(show(sim, byName('MM3'))).toBeCloseTo(4700, -1);
+  });
+});
+
+describe('ukážky s Arduinom na ploche', () => {
+  const ardExamples = EXAMPLES.filter((e) => e.id.startsWith('ard-'));
+
+  it('sa celé zmestia na plochu a nič neprechádza cez dosku', () => {
+    for (const ex of ardExamples) {
+      const circuit = ex.build();
+      for (const part of circuit.parts) {
+        const b = hitBox(part);
+        expect(b.x, `${ex.id} ${part.name}`).toBeGreaterThanOrEqual(0);
+        expect(b.y, `${ex.id} ${part.name}`).toBeGreaterThanOrEqual(-G);
+        expect(b.x + b.width, `${ex.id} ${part.name}`).toBeLessThanOrEqual(COLS * G);
+        expect(b.y + b.height, `${ex.id} ${part.name}`).toBeLessThanOrEqual(ROWS * G + G);
+      }
+      const board = circuit.parts.find((p) => p.kind === 'arduino')!;
+      const box = hitBox(board);
+      // Vnútro dosky (bez okrajov s pinmi).
+      const inside = (x: number, y: number) => x > box.x + 6 && x < box.x + box.width - 6 && y > box.y + 14 && y < box.y + box.height - 14;
+      for (const w of circuit.wires) {
+        for (let k = 0; k <= 20; k++) {
+          const x = (w.a[0] + ((w.b[0] - w.a[0]) * k) / 20) * G;
+          const y = (w.a[1] + ((w.b[1] - w.a[1]) * k) / 20) * G;
+          expect(inside(x, y), `${ex.id}: vodič ${w.a} – ${w.b} prechádza cez dosku`).toBe(false);
+        }
+      }
+      for (const part of circuit.parts.filter((p) => p !== board)) {
+        for (const [x, y] of terminalsOf(part)) expect(inside(x * G, y * G), `${ex.id} ${part.name}`).toBe(false);
+      }
+    }
+  });
+
+  it('staršie uložené zapojenie s plochejšou doskou sa pripojí na nové piny', () => {
+    const circuit = exampleById('ard-ldr')!.build();
+    const board = circuit.parts.find((p) => p.kind === 'arduino')!;
+    // Zapojenie, ako by bolo uložené pred zmenou dosky: dolné piny o 9 políčok pod horným radom.
+    const oldRow = board.y + 9;
+    const newRow = board.y + ARD_ROW;
+    const moved = (p: Pt): Pt => (p[1] === newRow && p[0] >= board.x && p[0] <= board.x + 15 ? [p[0], oldRow] : p);
+    const saved = JSON.parse(JSON.stringify({
+      parts: circuit.parts.map((p) => (p === board ? { ...p, props: { code: p.props.code } } : p)),
+      wires: circuit.wires.map((w) => ({ ...w, a: moved(w.a), b: moved(w.b) })),
+    }));
+    const restored = parseCircuit(saved)!;
+    expect(restored.parts.find((p) => p.kind === 'arduino')!.props.layout).toBe(2);
+    expect(buildNets(restored).openTerminals).toEqual([]);
+    const sim = new Simulator(restored);
+    run(sim, 0.5);
+    const led = restored.parts.find((p) => p.kind === 'led')!;
+    expect(Math.abs(sim.states.get(led.id)!.i)).toBeLessThan(1e-6);
+    // Po opätovnom načítaní sa nič ďalšie nepridá.
+    expect(parseCircuit(JSON.parse(JSON.stringify(restored)))!.wires).toHaveLength(restored.wires.length);
   });
 });

@@ -7,6 +7,9 @@ import { formatSI } from '../lib/units';
 import { num, rotate, type Part, type Pt } from './parts';
 
 export const G = 20;
+/** Veľkosť plochy na zapájanie v políčkach mriežky. */
+export const COLS = 48;
+export const ROWS = 34;
 
 export const px = ([x, y]: Pt): Pt => [x * G, y * G];
 export const r1 = (n: number) => Math.round(n * 10) / 10;

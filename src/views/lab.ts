@@ -20,11 +20,10 @@ import {
 import { circuitPreview } from '../lab/preview';
 import { scopePanel, type ScopePanel } from '../lab/scope';
 import { G, drawPart, hitBox, partIcon, type PartDrawing } from '../lab/symbols';
+import { COLS, ROWS } from '../lab/draw';
 import { icon } from '../ui/icons';
 import { pageHead } from './common';
 
-const COLS = 48;
-const ROWS = 28;
 const W = COLS * G;
 const H = ROWS * G;
 const SPEEDS: [number, string][] = [[1, '1× (skutočný čas)'], [0.1, '0,1× (spomalene)'], [0.01, '0,01×'], [0.001, '0,001×']];

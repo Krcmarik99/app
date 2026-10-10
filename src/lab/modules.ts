@@ -8,7 +8,7 @@ import { lcdCursor, lcdVisible } from '../arduino/vm';
 import { s } from '../lib/dom';
 import { G, arrow, labels, line, px, rotated, twoPole } from './draw';
 import { segmentLevel } from './engine';
-import type { Part } from './parts';
+import { ARD_ROW, type Part } from './parts';
 import type { PartDrawing } from './symbols';
 
 const LED_RGB: Record<string, string> = { red: '#ff3b2f', yellow: '#ffc21a', green: '#22d65a', blue: '#3d7bff', white: '#e8f0ff' };
@@ -40,67 +40,120 @@ export function drawModule(part: Part, iconOnly: boolean): PartDrawing | null {
 
 // ------------------------------------------------------------------ Arduino UNO
 
-const TOP_PINS: [number, string][] = [
-  [0, 'GND'], [1, '13'], [2, '12'], [3, '~11'], [4, '~10'], [5, '~9'], [6, '8'],
-  [8, '7'], [9, '~6'], [10, '~5'], [11, '4'], [12, '~3'], [13, '2'], [14, 'TX 1'], [15, 'RX 0'],
+/*
+ * Doska nakreslená podľa skutočného Arduina UNO (pomer strán, poloha konektorov, logo).
+ * (0, 0) je pin GND v hornom rade, dolný rad pinov je o ARD_ROW políčok nižšie.
+ * Nepripojiteľné otvory (SCL, SDA, AREF, IOREF, RESET, Vin) sú len nakreslené.
+ */
+const B = ARD_ROW * G;
+
+/** Horný rad: x v políčkach, popis (prázdny = otvor bez popisu), či je to vývod. */
+const TOP_PINS: [number, string, boolean][] = [
+  [-3, '', false], [-2, '', false], [-1, 'AREF', false], [0, 'GND', true], [1, '13', true], [2, '12', true], [3, '~11', true],
+  [4, '~10', true], [5, '~9', true], [6, '8', true],
+  [8, '7', true], [9, '~6', true], [10, '~5', true], [11, '4', true], [12, '~3', true], [13, '2', true], [14, 'TX→1', true], [15, 'RX←0', true],
 ];
-const BOTTOM_PINS: [number, string][] = [
-  [4, '3.3V'], [5, '5V'], [6, 'GND'], [7, 'GND'], [10, 'A0'], [11, 'A1'], [12, 'A2'], [13, 'A3'], [14, 'A4'], [15, 'A5'],
+const BOTTOM_PINS: [number, string, boolean][] = [
+  [1, '', false], [2, 'IOREF', false], [3, 'RESET', false], [4, '3.3V', true], [5, '5V', true], [6, 'GND', true], [7, 'GND', true], [8, 'Vin', false],
+  [10, 'A0', true], [11, 'A1', true], [12, 'A2', true], [13, 'A3', true], [14, 'A4', true], [15, 'A5', true],
 ];
 
-function header(x0: number, x1: number, y: number, pins: number[]): SVGElement[] {
+/** Lišta konektora s otvormi (x0, x1 sú krajné otvory v políčkach, yc stred lišty). */
+function header(x0: number, x1: number, yc: number): SVGElement[] {
+  const holes: SVGElement[] = [];
+  for (let x = x0; x <= x1; x++) holes.push(s('rect', { x: x * G - 3.5, y: yc - 3.5, width: 7, height: 7, class: 'ard-hole' }));
+  return [s('rect', { x: x0 * G - 9, y: yc - 7, width: (x1 - x0) * G + 18, height: 14, rx: 1, class: 'ard-hdr' }), ...holes];
+}
+
+/** Konektor ICSP (cols × rows kolíkov s roztečou 12 px). */
+function icsp(x: number, y: number, cols: number, rows: number): SVGElement[] {
+  const out: SVGElement[] = [s('rect', { x: x - 7, y: y - 7, width: (cols - 1) * 12 + 14, height: (rows - 1) * 12 + 14, rx: 1, class: 'ard-icsp' })];
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      out.push(s('rect', { x: x + i * 12 - 4, y: y + j * 12 - 4, width: 8, height: 8, class: 'ard-icsp-pin' }));
+    }
+  }
+  return out;
+}
+
+/** Logo Arduino: dve slučky (∞) s mínusom a plusom. */
+function logo(cx: number, cy: number): SVGElement[] {
+  const rx = 19;
+  const ry = 14;
+  const d = 17;
   return [
-    s('rect', { x: x0 * G - 9, y, width: (x1 - x0) * G + 18, height: 12, rx: 1.5, class: 'ard-hdr' }),
-    ...pins.map((p) => s('rect', { x: p * G - 2.5, y: y + 3.5, width: 5, height: 5, class: 'ard-hole' })),
+    s('ellipse', { cx: cx - d, cy, rx, ry, class: 'ard-logo-ring' }),
+    s('ellipse', { cx: cx + d, cy, rx, ry, class: 'ard-logo-ring' }),
+    s('rect', { x: cx - d - 7, y: cy - 1.8, width: 14, height: 3.6, class: 'ard-logo-sign' }),
+    s('rect', { x: cx + d - 7, y: cy - 1.8, width: 14, height: 3.6, class: 'ard-logo-sign' }),
+    s('rect', { x: cx + d - 1.8, y: cy - 7, width: 3.6, height: 14, class: 'ard-logo-sign' }),
   ];
 }
 
+/** Zvislý popis pinu (číta sa zdola nahor); pri hornom rade visí pod lištou, pri dolnom stojí nad ňou. */
+const pinLabel = (x: number, y: number, text: string, top: boolean) =>
+  s('text', { x: 0, y: 0, transform: `translate(${x + 2.6} ${y}) rotate(-90)`, 'text-anchor': top ? 'end' : 'start', class: 'ard-txt' }, text);
+
 function arduino(part: Part, iconOnly: boolean): PartDrawing {
-  const ledL = s('rect', { x: 34, y: 54, width: 9, height: 5, rx: 1, class: 'ard-led ard-led-l' });
-  const glowL = s('circle', { cx: 38.5, cy: 56.5, r: 11, class: 'ard-glow ard-glow-l', opacity: 0 });
-  const ledTx = s('rect', { x: 34, y: 64, width: 9, height: 5, rx: 1, class: 'ard-led ard-led-tx' });
-  const ledRx = s('rect', { x: 34, y: 74, width: 9, height: 5, rx: 1, class: 'ard-led ard-led-tx' });
-  const ledOn = s('rect', { x: 292, y: 62, width: 9, height: 5, rx: 1, class: 'ard-led ard-led-on' });
-  const chipLegs: SVGElement[] = [];
+  const ledL = s('rect', { x: -4, y: 74, width: 13, height: 6, rx: 1, class: 'ard-led ard-led-l' });
+  const glowL = s('circle', { cx: 2.5, cy: 77, r: 12, class: 'ard-glow ard-glow-l', opacity: 0 });
+  const ledTx = s('rect', { x: -4, y: 100, width: 13, height: 6, rx: 1, class: 'ard-led ard-led-tx' });
+  const ledRx = s('rect', { x: -4, y: 112, width: 13, height: 6, rx: 1, class: 'ard-led ard-led-tx' });
+  const ledOn = s('rect', { x: 250, y: 100, width: 13, height: 6, rx: 1, class: 'ard-led ard-led-on' });
+  // Čip ATmega328P v puzdre DIP-28: vývody ako biele čiarky na okrajoch, dva otlačky a výrez.
+  const chip: SVGElement[] = [s('rect', { x: 12, y: 194, width: 298, height: 50, rx: 2, class: 'ard-chip' })];
   for (let k = 0; k < 14; k++) {
-    chipLegs.push(s('rect', { x: 176 + k * 10, y: 89, width: 4, height: 4, class: 'ard-leg' }));
-    chipLegs.push(s('rect', { x: 176 + k * 10, y: 120, width: 4, height: 4, class: 'ard-leg' }));
+    const x = 18 + k * 21.2;
+    chip.push(s('rect', { x, y: 195.5, width: 10, height: 3, class: 'ard-leg' }), s('rect', { x, y: 239.5, width: 10, height: 3, class: 'ard-leg' }));
   }
+  chip.push(
+    s('circle', { cx: 36, cy: 219, r: 5, class: 'ard-dimple' }),
+    s('circle', { cx: 284, cy: 219, r: 5, class: 'ard-dimple' }),
+    s('path', { d: 'M310 211a8 8 0 0 0 0 16z', class: 'ard-notch' }),
+  );
   const g = at(part,
-    ...TOP_PINS.map(([x]) => line(x * G, 0, x * G, 11)),
-    ...BOTTOM_PINS.map(([x]) => line(x * G, 9 * G, x * G, 169)),
-    s('rect', { x: -36, y: 9, width: 372, height: 162, rx: 9, class: 'ard-board' }),
-    s('rect', { x: -46, y: 22, width: 40, height: 42, rx: 2, class: 'ard-usb' }),
-    s('rect', { x: -40, y: 28, width: 26, height: 30, rx: 2, class: 'ard-usb-in' }),
-    s('rect', { x: -44, y: 108, width: 36, height: 44, rx: 3, class: 'ard-jack' }),
-    s('circle', { cx: -26, cy: 130, r: 8, class: 'ard-jack-in' }),
-    s('rect', { x: -33, y: 74, width: 18, height: 18, rx: 2, class: 'ard-reset' }),
-    s('circle', { cx: -24, cy: 83, r: 5.5, class: 'ard-reset-btn' }),
-    ...[[-24, 160], [306, 20], [318, 158]].map(([cx, cy]) => s('circle', { cx, cy, r: 4.5, class: 'ard-mount' })),
-    ...header(0, 6, 11, [0, 1, 2, 3, 4, 5, 6]),
-    ...header(8, 15, 11, [8, 9, 10, 11, 12, 13, 14, 15]),
-    ...header(4, 7, 157, [4, 5, 6, 7]),
-    ...header(10, 15, 157, [10, 11, 12, 13, 14, 15]),
-    s('rect', { x: 170, y: 92, width: 154, height: 28, rx: 2, class: 'ard-chip' }),
-    s('circle', { cx: 177, cy: 106, r: 3, class: 'ard-notch' }),
-    ...chipLegs,
+    ...TOP_PINS.filter(([, , pin]) => pin).map(([x]) => line(x * G, 0, x * G, 10)),
+    ...BOTTOM_PINS.filter(([, , pin]) => pin).map(([x]) => line(x * G, B, x * G, B - 10)),
+    // Obrys dosky s typickým výstupkom na pravej strane.
+    s('path', { d: 'M-134 9H322V84L336 98V258L322 272V311H-134Q-140 311 -140 305V15Q-140 9 -134 9Z', class: 'ard-board' }),
+    // USB-B, napájací konektor a tlačidlo RESET.
+    s('rect', { x: -160, y: 58, width: 70, height: 58, rx: 1.5, class: 'ard-usb' }),
+    s('rect', { x: -156, y: 62, width: 62, height: 24, class: 'ard-usb-in' }),
+    s('rect', { x: -129, y: 115, width: 10, height: 6, rx: 2, class: 'ard-usb-tab' }),
+    s('rect', { x: -154, y: 238, width: 70, height: 48, rx: 2, class: 'ard-jack' }),
+    s('rect', { x: -94, y: 242, width: 8, height: 40, rx: 1.5, class: 'ard-jack-in' }),
+    s('rect', { x: -136, y: 15, width: 28, height: 28, rx: 1.5, class: 'ard-reset' }),
+    ...[[-139, 19], [-139, 33], [-108, 19], [-108, 33]].map(([x, y]) => s('rect', { x, y, width: 3, height: 6, class: 'ard-reset-pad' })),
+    s('circle', { cx: -122, cy: 29, r: 7.5, class: 'ard-reset-btn' }),
+    ...[[-86, 19], [322, 112], [321, 256], [-14, 296]].map(([cx, cy]) => s('circle', { cx, cy, r: 7, class: 'ard-mount' })),
+    ...header(-3, 6, 17),
+    ...header(8, 15, 17),
+    ...header(1, 8, B - 17),
+    ...header(10, 15, B - 17),
+    ...icsp(-62, 36, 3, 2),
+    ...icsp(304, 134, 2, 3),
+    ...chip,
+    ...logo(84, 90),
+    s('rect', { x: 146, y: 74, width: 74, height: 34, rx: 7, class: 'ard-uno-box' }),
     glowL, ledL, ledTx, ledRx, ledOn,
   );
   if (!iconOnly) {
     g.append(
-      ...TOP_PINS.map(([x, name]) => t(x * G, 32, name, 'ard-txt')),
-      ...BOTTOM_PINS.map(([x, name]) => t(x * G, 152, name, 'ard-txt')),
-      t(150, 45, 'DIGITAL (PWM ~)', 'ard-cap'),
-      t(110, 140, 'POWER', 'ard-cap'),
-      t(250, 140, 'ANALOG IN', 'ard-cap'),
-      t(28, 59, 'L', 'ard-tiny', 'end'),
-      t(28, 69, 'TX', 'ard-tiny', 'end'),
-      t(28, 79, 'RX', 'ard-tiny', 'end'),
-      t(312, 67, 'ON', 'ard-tiny', 'start'),
-      t(96, 82, 'ARDUINO', 'ard-logo'),
-      t(96, 112, 'UNO', 'ard-uno'),
-      t(247, 110, 'ATMEGA328P', 'ard-chip-txt'),
-      t(-4, 104, part.name, 'lab-name ard-name', 'start'),
+      ...TOP_PINS.filter(([, name]) => name).map(([x, name]) => pinLabel(x * G, 27, name, true)),
+      ...BOTTOM_PINS.filter(([, name]) => name).map(([x, name]) => pinLabel(x * G, B - 27, name, false)),
+      s('line', { x1: 14, y1: 52, x2: 306, y2: 52, class: 'ard-rule' }),
+      t(190, 62, 'DIGITAL (PWM ~)', 'ard-cap'),
+      s('line', { x1: 108, y1: 270, x2: 168, y2: 270, class: 'ard-rule' }),
+      t(138, 266, 'POWER', 'ard-cap'),
+      s('line', { x1: 192, y1: 270, x2: 308, y2: 270, class: 'ard-rule' }),
+      t(250, 266, 'ANALOG IN', 'ard-cap'),
+      t(-10, 80, 'L', 'ard-tiny', 'end'),
+      t(-10, 106, 'TX', 'ard-tiny', 'end'),
+      t(-10, 118, 'RX', 'ard-tiny', 'end'),
+      t(268, 106, 'ON', 'ard-tiny', 'start'),
+      t(84, 121, 'ARDUINO', 'ard-logo'),
+      t(183, 101, 'UNO', 'ard-uno'),
+      t(-132, 176, part.name, 'lab-name ard-name', 'start'),
     );
   }
   return {

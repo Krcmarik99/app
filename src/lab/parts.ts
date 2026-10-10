@@ -72,10 +72,15 @@ export interface KindInfo {
 
 const TWO: Pt[] = [[0, 0], [3, 0]];
 
+/** O koľko políčok je dolný rad pinov Arduina pod horným (doska v pomere strán ako skutočné UNO). */
+export const ARD_ROW = 16;
+/** Dolný rad pinov v starších uložených zapojeniach (plochejšia doska). */
+const ARD_ROW_V1 = 9;
+
 /** Vývody Arduina UNO: horný rad (GND, D13 až D0) a spodný rad (3V3, 5V, GND, GND, A0 až A5). */
 const ARDUINO_TERMS: Pt[] = [
   [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [8, 0], [9, 0], [10, 0], [11, 0], [12, 0], [13, 0], [14, 0], [15, 0],
-  [4, 9], [5, 9], [6, 9], [7, 9], [10, 9], [11, 9], [12, 9], [13, 9], [14, 9], [15, 9],
+  ...[4, 5, 6, 7, 10, 11, 12, 13, 14, 15].map((x): Pt => [x, ARD_ROW]),
 ];
 export const ARDUINO_TERM_NAMES = [
   'GND', 'D13', 'D12', 'D11', 'D10', 'D9', 'D8', 'D7', 'D6', 'D5', 'D4', 'D3', 'D2', 'D1/TX', 'D0/RX',
@@ -215,8 +220,8 @@ export const KINDS: Record<PartKind, KindInfo> = {
   },
   arduino: {
     name: 'Arduino UNO', prefix: 'U', terminals: ARDUINO_TERMS, terminalNames: ARDUINO_TERM_NAMES,
-    props: [], defaults: { code: BLINK_SKETCH },
-    bridges: [[0, 17, 18]], fixedRot: true, body: [-2.3, 0.45, 16.8, 8.55], optionalPins: true,
+    props: [], defaults: { code: BLINK_SKETCH, layout: 2 },
+    bridges: [[0, 17, 18]], fixedRot: true, body: [-8, 0.45, 16.8, ARD_ROW - 0.45], optionalPins: true,
   },
   button: {
     name: 'Tlačidlo', prefix: 'S', terminals: TWO, terminalNames: ['1', '2'],
@@ -394,15 +399,28 @@ export function parseCircuit(raw: unknown): Circuit | null {
   const r = raw as { parts?: unknown; wires?: unknown };
   if (!Array.isArray(r.parts) || !Array.isArray(r.wires)) return null;
   const isPt = (p: unknown): p is Pt => Array.isArray(p) && p.length === 2 && p.every((n) => Number.isInteger(n));
-  const parts = r.parts.filter((p): p is Part => {
+  const valid = r.parts.filter((p): p is Part => {
     const q = p as Partial<Part> | null;
     return !!q && typeof q.id === 'string' && typeof q.kind === 'string' && q.kind in KINDS
       && Number.isInteger(q.x) && Number.isInteger(q.y) && [0, 1, 2, 3].includes(q.rot as number)
       && typeof q.name === 'string' && !!q.props && typeof q.props === 'object';
-  }).map((p) => ({ ...p, props: { ...KINDS[p.kind].defaults, ...p.props } }));
+  });
   const wires = r.wires.filter((w): w is Wire => {
     const q = w as Partial<Wire> | null;
     return !!q && typeof q.id === 'string' && isPt(q.a) && isPt(q.b);
   });
+  // Arduino uložené so staršou (plochejšou) doskou: vodiče z dolného radu pinov sa predĺžia na nové miesto pinov.
+  for (const p of valid) {
+    if (p.kind !== 'arduino' || p.props.layout === 2) continue;
+    for (const [x] of ARDUINO_TERMS.slice(15)) {
+      const old: Pt = [p.x + x, p.y + ARD_ROW_V1];
+      if (wires.some((w) => samePt(w.a, old) || samePt(w.b, old))) {
+        wires.push({ id: newId('w'), a: old, b: [p.x + x, p.y + ARD_ROW] });
+      }
+    }
+  }
+  const parts = valid.map((p) => ({ ...p, props: { ...KINDS[p.kind].defaults, ...p.props, ...(p.kind === 'arduino' ? { layout: 2 } : {}) } }));
   return { parts, wires };
 }
+
+const samePt = (a: Pt, b: Pt) => a[0] === b[0] && a[1] === b[1];
