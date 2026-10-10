@@ -196,7 +196,7 @@ const mod: LessonModule = {
         tex: ['$Z_{s} · $I_{a} ≤ $U_{0}', '$Z_{s,max} = @f{$U_{0}}{$I_{a}}'],
         legend: [
           ['$Z_{s}', 'impedancia poruchovej slučky (zdroj, fázový vodič, ochranný vodič)', 'Ω'],
-          ['$I_{a}', 'prúd, ktorý zaistí odpojenie v predpísanom čase – istič B: 5 · In, C: 10 · In, D: 20 · In', 'A'],
+          ['$I_{a}', 'prúd, ktorý zaistí odpojenie v predpísanom čase – istič B: 5 · `$I_{n}`, C: 10 · `$I_{n}`, D: 20 · `$I_{n}`', 'A'],
           ['$U_{0}', 'menovité napätie fázového vodiča proti zemi', '230 V'],
         ],
       },

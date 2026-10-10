@@ -58,8 +58,8 @@ function formulaBlock(tex: string | string[], legend?: [string, string, string][
       ? h('table', { class: 'legend' },
         h('tbody', null, legend.map(([sym, meaning, unit]) => h('tr', null,
           h('td', { class: 'fx legend-sym' }, formula(sym)),
-          h('td', null, meaning),
-          h('td', { class: 'legend-unit' }, unit),
+          h('td', null, rich(meaning)),
+          h('td', { class: 'legend-unit' }, rich(unit)),
         ))),
       )
       : null,

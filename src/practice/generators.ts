@@ -400,7 +400,7 @@ const capacitor: Generator[] = [
     const factor = 1 - Math.exp(-k);
     const u = U * factor;
     return numeric('kondenzator', `Vybitý kondenzátor začneš nabíjať cez rezistor zo zdroja ${q(U, 'V')}. Aké napätie bude na kondenzátore po čase ${k === 1 ? 'τ' : `${k}τ`}?`, u, 'V', [
-      `\`$u_{C} = $U · (1 − e^{−$t/$τ})\` = ${n(U)} · (1 − e^{−${k}}) = ${n(U)} · ${n(factor, 4)} = **${q(u, 'V')}**`,
+      `\`$u_{C} = $U · (1 − e^{−$t/$τ})\` = \`${n(U)} · (1 − e^{−${k}})\` = ${n(U)} · ${n(factor, 4)} = **${q(u, 'V')}**`,
     ]);
   },
 ];

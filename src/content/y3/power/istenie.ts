@@ -22,17 +22,17 @@ function timeText(t: number): string {
 /** Ktorá spúšť zareaguje pri násobku k menovitého prúdu a v akom čase. */
 export function tripAt(ch: TripChar, k: number): { release: string; range?: [number, number]; text: string } {
   const [m1, m2] = MAGNETIC[ch];
-  if (k < 1.13) return { release: 'žiadna', text: 'Istič nevypne – prúd neprekročil dohovorený nevypínací prúd 1,13 · In.' };
+  if (k < 1.13) return { release: 'žiadna', text: 'Istič nevypne – prúd neprekročil dohovorený nevypínací prúd 1,13 · `$I_{n}`.' };
   if (k < 1.45) {
-    return { release: 'tepelná', range: [thermalMin(k), Math.min(10000, thermalMax(k))], text: 'Mierne preťaženie: istič môže vypnúť až po dlhom čase, do jednej hodiny vypnúť nemusí. Pri 1,45 · In už vypne zaručene do 1 h.' };
+    return { release: 'tepelná', range: [thermalMin(k), Math.min(10000, thermalMax(k))], text: 'Mierne preťaženie: istič môže vypnúť až po dlhom čase, do jednej hodiny vypnúť nemusí. Pri 1,45 · `$I_{n}` už vypne zaručene do 1 h.' };
   }
   if (k < m1) {
-    return { release: 'tepelná', range: [thermalMin(k), thermalMax(k)], text: `Preťaženie: bimetal sa zohrieva a istič vypne s oneskorením ${timeText(thermalMin(k))} až ${timeText(thermalMax(k))}. Elektromagnetická spúšť ešte nereaguje (pod ${m1} · In).` };
+    return { release: 'tepelná', range: [thermalMin(k), thermalMax(k)], text: `Preťaženie: bimetal sa zohrieva a istič vypne s oneskorením ${timeText(thermalMin(k))} až ${timeText(thermalMax(k))}. Elektromagnetická spúšť ešte nereaguje (pod ${m1} · \`$I_{n}\`).` };
   }
   if (k < m2) {
-    return { release: 'elmag. alebo tepelná', range: [0.01, thermalMax(k)], text: `Pásmo elektromagnetickej spúšte ${m1} až ${m2} · In: istič môže vypnúť okamžite, ale zaručené to nie je. Inak vypne tepelná spúšť najneskôr za ${timeText(thermalMax(k))}.` };
+    return { release: 'elmag. alebo tepelná', range: [0.01, thermalMax(k)], text: `Pásmo elektromagnetickej spúšte ${m1} až ${m2} · \`$I_{n}\`: istič môže vypnúť okamžite, ale zaručené to nie je. Inak vypne tepelná spúšť najneskôr za ${timeText(thermalMax(k))}.` };
   }
-  return { release: 'elektromagnetická', range: [0.01, 0.1], text: `Skrat: prúd je aspoň ${m2} · In, elektromagnetická spúšť vypne okamžite (do 0,1 s).` };
+  return { release: 'elektromagnetická', range: [0.01, 0.1], text: `Skrat: prúd je aspoň ${m2} · \`$I_{n}\`, elektromagnetická spúšť vypne okamžite (do 0,1 s).` };
 }
 
 function tripExplorer(): HTMLElement {
@@ -149,10 +149,10 @@ const generators: Generator[] = [
   (rng) => {
     const v = pick(rng, [
       { load: 'zásuvkový obvod v byte', a: 'B', why: 'Bežné domové zásuvkové a svetelné obvody nemajú veľké záberové prúdy – istia sa ističmi B.' },
-      { load: 'svetelný obvod v rodinnom dome so žiarovkami a LED svietidlami', a: 'B', why: 'Svetelné obvody v domácnosti sa istia ističmi B, okamžitá spúšť vypína už od 3 až 5 · In.' },
+      { load: 'svetelný obvod v rodinnom dome so žiarovkami a LED svietidlami', a: 'B', why: 'Svetelné obvody v domácnosti sa istia ističmi B, okamžitá spúšť vypína už od 3 až 5 · `$I_{n}`.' },
       { load: 'trojfázový asynchrónny motor čerpadla', a: 'C', why: 'Motor má pri rozbehu záberový prúd asi 5- až 7-násobok menovitého – istič B by pri rozbehu vypínal, preto C.' },
-      { load: 'dielenský kompresor s motorom a skupina žiarivkových svietidiel', a: 'C', why: 'Motory a svietidlá s väčším záberovým prúdom sa istia charakteristikou C (5 až 10 · In).' },
-      { load: 'transformátor alebo zváračka s veľmi veľkým nárazovým prúdom pri zapnutí', a: 'D', why: 'Pri zapnutí transformátora vzniká nárazový prúd aj viac ako 10 · In – treba charakteristiku D (10 až 20 · In).' },
+      { load: 'dielenský kompresor s motorom a skupina žiarivkových svietidiel', a: 'C', why: 'Motory a svietidlá s väčším záberovým prúdom sa istia charakteristikou C (5 až 10 · `$I_{n}`).' },
+      { load: 'transformátor alebo zváračka s veľmi veľkým nárazovým prúdom pri zapnutí', a: 'D', why: 'Pri zapnutí transformátora vzniká nárazový prúd aj viac ako 10 · `$I_{n}` – treba charakteristiku D (10 až 20 · `$I_{n}`).' },
     ]);
     const options = [v.a, ...['B', 'C', 'D'].filter((x) => x !== v.a), 'gG'].map((x) => (x === 'gG' ? 'poistka aM namiesto ističa' : `charakteristika ${x}`)) as [string, string, string, string];
     return choice(ID, `Akú vypínaciu charakteristiku ističa zvolíš pre tento obvod: ${v.load}?`, options, v.why, rng);
@@ -174,8 +174,8 @@ const generators: Generator[] = [
       `Pomer \`@f{$I}{$I_{n}} = @f{${I}}{${In}}\` = ${n(I / In, 3)}. ${kind === 'none'
         ? 'Prúd neprekračuje menovitý prúd ističa – istič nevypne.'
         : kind === 'thermal'
-          ? `Je to preťaženie (väčšie ako 1,45 · In, ale menšie ako ${m1} · In) – zareaguje tepelná spúšť s oneskorením.`
-          : `Prúd je väčší ako ${m2} · In – ide o skrat a elektromagnetická spúšť vypne okamžite.`}`,
+          ? `Je to preťaženie (väčšie ako 1,45 · \`$I_{n}\`, ale menšie ako ${m1} · \`$I_{n}\`) – zareaguje tepelná spúšť s oneskorením.`
+          : `Prúd je väčší ako ${m2} · \`$I_{n}\` – ide o skrat a elektromagnetická spúšť vypne okamžite.`}`,
       rng);
   },
 ];
@@ -241,7 +241,7 @@ const mod: LessonModule = {
           ['$I_{B}', 'prevádzkový (výpočtový) prúd obvodu, napr. `@f{$P}{$U · cos $φ}`', 'A'],
           ['$I_{n}', 'menovitý prúd istiaceho prvku', 'A'],
           ['$I_{z}', 'dovolené trvalé zaťaženie vodiča (závisí od prierezu, izolácie a uloženia)', 'A'],
-          ['$I_{2}', 'prúd, pri ktorom istiaci prvok zaručene vypne (istič 1,45 · In) – pri ističoch je podmienka splnená automaticky', 'A'],
+          ['$I_{2}', 'prúd, pri ktorom istiaci prvok zaručene vypne (istič `1,45 · $I_{n}`) – pri ističoch je podmienka splnená automaticky', 'A'],
         ],
       },
       {
@@ -313,7 +313,7 @@ const mod: LessonModule = {
       lessonId: ID,
       prompt: 'V akom rozsahu prúdov vypína okamžite istič s charakteristikou C?',
       options: ['5 až 10-násobok menovitého prúdu', '3 až 5-násobok menovitého prúdu', '10 až 20-násobok menovitého prúdu', '1,13 až 1,45-násobok menovitého prúdu'],
-      explanation: 'B: 3 až 5 · In, C: 5 až 10 · In, D: 10 až 20 · In. Hodnoty 1,13 a 1,45 · In patria tepelnej spúšti.',
+      explanation: 'B: 3 až 5 · `$I_{n}`, C: 5 až 10 · `$I_{n}`, D: 10 až 20 · `$I_{n}`. Hodnoty 1,13 a 1,45 · `$I_{n}` patria tepelnej spúšti.',
     },
     {
       lessonId: ID,
@@ -357,7 +357,7 @@ const mod: LessonModule = {
         'istič B sa smie použiť len pre jednosmerný prúd',
         'istič B má príliš veľkú vypínaciu schopnosť',
       ],
-      explanation: 'Záberový prúd motora býva 5- až 7-násobok menovitého, čo je v pásme okamžitého vypnutia ističa B (3 až 5 · In). Preto sa používa charakteristika C alebo D.',
+      explanation: 'Záberový prúd motora býva 5- až 7-násobok menovitého, čo je v pásme okamžitého vypnutia ističa B (3 až 5 · `$I_{n}`). Preto sa používa charakteristika C alebo D.',
     },
     {
       lessonId: ID,

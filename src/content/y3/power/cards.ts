@@ -22,7 +22,7 @@ export const DECKS: readonly Deck[] = [
       { id: 'bz-chranic', front: 'Doplnková ochrana', back: 'prúdový chránič s `$I_{Δn}` ≤ 30 mA', note: 'Musí vypnúť pri `$I_{Δn}`, nesmie pod `0,5 · $I_{Δn}`.' },
       { id: 'bz-triedy', front: 'Triedy ochrany I, II, III', back: 'I – ochranný vodič PE · II – dvojitá izolácia (dva štvorce) · III – napájanie SELV/PELV (kosoštvorec)' },
       { id: 'bz-selv', front: 'SELV a PELV', back: 'malé napätie do 50 V AC / 120 V DC z bezpečného zdroja', note: 'SELV nesmie byť uzemnený, PELV môže byť.' },
-      { id: 'bz-bcd', front: 'Okamžité vypnutie ističov B, C, D', back: 'B 3–5 · In · C 5–10 · In · D 10–20 · In', note: 'B – zásuvky a svetlá, C – motory, D – transformátory a zváračky.' },
+      { id: 'bz-bcd', front: 'Okamžité vypnutie ističov B, C, D', back: 'B 3–5 · `$I_{n}` · C 5–10 · `$I_{n}` · D 10–20 · `$I_{n}`', note: 'B – zásuvky a svetlá, C – motory, D – transformátory a zváračky.' },
       { id: 'bz-dimenz', front: 'Dimenzovanie vedenia', back: '`$I_{B} ≤ $I_{n} ≤ $I_{z}`', note: 'Prevádzkový prúd ≤ menovitý prúd istiaceho prvku ≤ dovolené zaťaženie vodiča.' },
       { id: 'bz-ubytok', front: 'Úbytok napätia jednofázového vedenia', back: '`Δ$U = @f{2 · $l · $I · $ρ}{$S}`', note: 'Dovolené 3 % pre svetelné a 5 % pre ostatné obvody.' },
       { id: 'bz-wattmeter', front: 'Konštanta wattmetra', back: '`$K_{W} = @f{MR_{U} · MR_{I} · cos $φ_{n}}{$α_{max}}`', note: 'Nameraný výkon `$P = $α · $K_{W}`.' },
