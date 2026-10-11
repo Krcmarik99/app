@@ -3,7 +3,7 @@
 -- z aplikácie (malými písmenami) a spusti tento príkaz. Môžeš ho zopakovať pre ďalších správcov.
 
 insert into public.admins (user_id)
-select id from auth.users where email = lower('TVOJE_MENO') || '@ucty.elektrolab.sk'
+select id from auth.users where email = lower('tadeas') || '@ucty.elektrolab.sk'
 on conflict do nothing;
 
 -- Kontrola – mal by sa vypísať tvoj účet:
