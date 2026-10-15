@@ -289,6 +289,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Tranzistor má `$β` = 200 a bázou tečie 30 µA. Aký je kolektorový prúd v aktívnom režime?',
+      calc: true,
       options: ['6 mA', '0,15 mA', '6,03 mA', '200 mA'],
       explanation: '`$I_{C} = $β · $I_{B}` = 200 · 30 µA = 6 mA. Hodnota 6,03 mA je prúd emitora `$I_{B} + $I_{C}`.',
     },
@@ -313,6 +314,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Zosilňovač má napäťové zosilnenie 40 dB. Koľkokrát zosilňuje napätie?',
+      calc: true,
       options: ['100-krát', '40-krát', '10 000-krát', '20-krát'],
       explanation: '`$A_{u} = 10^{40/20} = 10^{2}` = 100. Pre výkon by 40 dB znamenalo 10 000-krát.',
     },

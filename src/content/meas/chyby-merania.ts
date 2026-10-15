@@ -366,6 +366,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Voltmeter ukazuje 10,2 V, skutočná hodnota je 10,0 V. Aká je korekcia?',
+      calc: true,
       options: ['−0,2 V', '+0,2 V', '−2 %', '+2 %'],
       explanation: 'Absolútna chyba `Δ$X` = 10,2 − 10,0 = +0,2 V, korekcia `$K = −Δ$X` = −0,2 V. Hodnota 2 % je relatívna chyba, nie korekcia.',
     },

@@ -234,6 +234,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Ampérmeter má vnútorný odpor 1 Ω a voltmeter 10 kΩ. Aká je kritická hodnota odporu?',
+      calc: true,
       options: ['100 Ω', '10 kΩ', '5 kΩ', '10 Ω'],
       explanation: '`$R_{krit} = @s{$R_{A} · $R_{V}} = @s{1 · 10 000}` = 100 Ω.',
     },

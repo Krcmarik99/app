@@ -322,6 +322,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Aké otáčky má turboalternátor s jednou pólovou dvojicou pri 50 Hz?',
+      calc: true,
       options: ['3 000 ot/min', '1 500 ot/min', '50 ot/min', '6 000 ot/min'],
       explanation: '`$n = @f{60 · $f}{$p} = @f{60 · 50}{1}` = 3 000 ot/min.',
     },

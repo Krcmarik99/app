@@ -256,6 +256,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Činiteľ akosti paralelného obvodu je 50 a prúd zo zdroja pri rezonancii 0,2 mA. Aký prúd tečie cievkou?',
+      calc: true,
       options: ['približne 10 mA', '0,2 mA', '0,004 mA', '50 mA'],
       explanation: 'Pri rezonancii prúdov je prúd cievky aj kondenzátora približne `$Q`-krát väčší ako prúd zo zdroja: 50 · 0,2 mA = 10 mA.',
     },

@@ -261,6 +261,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Aká je stredná hodnota napätia za dvojcestným usmerňovačom bez filtra, ak je efektívne napätie transformátora 20 V? (Úbytky na diódach zanedbaj.)',
+      calc: true,
       options: ['18 V', '9 V', '28,3 V', '20 V'],
       explanation: '`$U_{d} = 0,9 · $U` = 0,9 · 20 = 18 V. Hodnota 9 V platí pre jednocestný usmerňovač a 28,3 V je vrcholová hodnota.',
     },
@@ -279,6 +280,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Na aké napätie sa naprázdno nabije filtračný kondenzátor za mostíkom, ak je sekundárne napätie 9 V?',
+      calc: true,
       options: ['asi 11,3 V', '9 V', '8,1 V', '12,7 V'],
       explanation: 'Kondenzátor sa nabije na vrcholovú hodnotu mínus úbytok na dvoch diódach: `@s{2}` · 9 − 1,4 = 12,73 − 1,4 ≈ 11,3 V. Hodnota 12,7 V by platila pre ideálne diódy, 8,1 V je stredná hodnota bez filtra.',
     },

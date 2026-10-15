@@ -16,6 +16,7 @@ import { calculatorView, calculatorsView, CALCULATORS } from '../src/views/calcu
 import { flashcardsView } from '../src/views/flashcards';
 import { homeView } from '../src/views/home';
 import { lessonView, lessonsView } from '../src/views/lessons';
+import { theoryCount } from '../src/practice/session';
 import { practiceView } from '../src/views/practice';
 
 function mount(el: HTMLElement): HTMLElement {
@@ -170,6 +171,35 @@ describe('stránky sa vykreslia bez chyby', () => {
     }
     expect(run.querySelector('.summary-big')?.textContent).toMatch(/\d+ \/ 5/);
     expect(JSON.parse(localStorage.getItem('elektrolab:v1')!).stats['farebny-kod'].answered).toBe(5);
+  });
+
+  it('test z teórie – voľba v nastavení, len otázky s výberom a známka', () => {
+    const el = mount(practiceView());
+    el.querySelector<HTMLInputElement>('#mode-theory')!.click();
+    expect(el.querySelector('.setup-hint')?.textContent).toContain('bez počítania');
+    expect(el.querySelector('.setup-submit .muted')?.textContent).toMatch(/teoretických otázok: \d+/);
+    el.querySelector<HTMLButtonElement>('.setup-tools .btn:last-child')!.click();
+    el.querySelector<HTMLButtonElement>('#topic-osciloskop')!.click();
+    el.querySelector<HTMLInputElement>('#count-5')!.click();
+    el.querySelector<HTMLFormElement>('form.setup')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    expect(el.querySelector('.run-tag')?.textContent).toBe('Teória');
+    expect(el.querySelector('.run-counter')?.textContent).toBe('Otázka 1 z 5');
+    for (let i = 0; i < 5; i++) {
+      expect(el.querySelector('.numeric-form')).toBeNull();
+      el.querySelector<HTMLButtonElement>('.option')!.click();
+      el.querySelector<HTMLButtonElement>('.run-next')!.click();
+    }
+    expect(el.querySelector('.summary-big')?.textContent).toMatch(/\d+ \/ 5/);
+    expect(el.querySelector('.summary-grade')?.textContent).toMatch(/Orientačná známka [1-5]/);
+    expect(el.querySelectorAll('.summary-theory .summary-prompt')).toHaveLength(5);
+    const bad = el.querySelectorAll('.summary-theory .bad').length;
+    expect(el.querySelectorAll('.summary-answer')).toHaveLength(bad);
+    const saved = JSON.parse(localStorage.getItem('elektrolab:v1')!);
+    expect(saved.sessions.at(-1)).toMatchObject({ total: 5, theory: true, topics: ['osciloskop'] });
+
+    const preset = mount(practiceView('transformator', true));
+    expect(preset.querySelector('.run-counter')?.textContent).toBe(`Otázka 1 z ${Math.min(10, theoryCount(['transformator']))}`);
+    expect(mount(practiceView('transformator')).querySelector('.run-tag')).toBeNull();
   });
 
   it('všetky kalkulačky', () => {

@@ -6,7 +6,7 @@ export type Route =
   | { name: 'home' }
   | { name: 'lessons' }
   | { name: 'lesson'; id: string }
-  | { name: 'practice'; topic?: string }
+  | { name: 'practice'; topic?: string; theory?: boolean }
   | { name: 'calcs' }
   | { name: 'calc'; id: string }
   | { name: 'cards'; deck?: string }
@@ -22,6 +22,8 @@ export function parseHash(hash: string): Route {
   if (h.startsWith('lekcia-')) return { name: 'lesson', id: h.slice(7) };
   if (h === 'cvicenie') return { name: 'practice' };
   if (h.startsWith('cvicenie-')) return { name: 'practice', topic: h.slice(9) };
+  if (h === 'teoria') return { name: 'practice', theory: true };
+  if (h.startsWith('teoria-')) return { name: 'practice', topic: h.slice(7), theory: true };
   if (h === 'kalkulacky') return { name: 'calcs' };
   if (h.startsWith('kalk-')) return { name: 'calc', id: h.slice(5) };
   if (h === 'karticky') return { name: 'cards' };
@@ -39,7 +41,10 @@ export function routeHash(r: Route): string {
     case 'home': return '#domov';
     case 'lessons': return '#lekcie';
     case 'lesson': return `#lekcia-${r.id}`;
-    case 'practice': return r.topic ? `#cvicenie-${r.topic}` : '#cvicenie';
+    case 'practice': {
+      const base = r.theory ? '#teoria' : '#cvicenie';
+      return r.topic ? `${base}-${r.topic}` : base;
+    }
     case 'calcs': return '#kalkulacky';
     case 'calc': return `#kalk-${r.id}`;
     case 'cards': return r.deck ? `#karticky-${r.deck}` : '#karticky';

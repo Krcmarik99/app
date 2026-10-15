@@ -283,6 +283,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Transformátor má `$N_{1}` = 1 000 a `$N_{2}` = 50 závitov. Aké napätie je na sekundári pri `$U_{1}` = 230 V?',
+      calc: true,
       options: ['11,5 V', '4 600 V', '23 V', '46 V'],
       explanation: 'Prevod je `$p` = 1 000 / 50 = 20, teda `$U_{2}` = 230 / 20 = 11,5 V. Hodnota 4 600 V by vyšla pri zámene vinutí.',
     },
@@ -295,6 +296,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Reproduktor 4 Ω je pripojený cez transformátor s prevodom 10. Akú impedanciu „vidí“ zdroj na primári?',
+      calc: true,
       options: ['400 Ω', '40 Ω', '0,4 Ω', '0,04 Ω'],
       explanation: 'Impedancia sa prepočíta druhou mocninou prevodu: `$Z_{1} = $p^{2} · $Z_{2}` = 100 · 4 = 400 Ω.',
     },

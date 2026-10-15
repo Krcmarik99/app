@@ -259,6 +259,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'O aký čas sú posunuté fázové napätia siete 50 Hz?',
+      calc: true,
       options: ['o 6,67 ms (tretina periódy)', 'o 20 ms', 'o 10 ms', 'o 120 ms'],
       explanation: 'Perióda je 20 ms, posun 120° je tretina periódy: 20 / 3 = 6,67 ms.',
     },

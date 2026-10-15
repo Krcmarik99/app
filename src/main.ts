@@ -30,7 +30,7 @@ function view(route: Route): HTMLElement {
     case 'home': return homeView();
     case 'lessons': return lessonsView();
     case 'lesson': return lessonView(route.id);
-    case 'practice': return practiceView(route.topic);
+    case 'practice': return practiceView(route.topic, route.theory);
     case 'calcs': return calculatorsView();
     case 'calc': return calculatorView(route.id);
     case 'cards': return flashcardsView(route.deck);
@@ -46,7 +46,7 @@ function pageTitle(route: Route): string {
     case 'home': return base;
     case 'lessons': return `Lekcie · ${base}`;
     case 'lesson': return `${lessonById(route.id)?.title ?? 'Lekcia'} · ${base}`;
-    case 'practice': return `Cvičenie · ${base}`;
+    case 'practice': return `${route.theory ? 'Test z teórie' : 'Cvičenie'} · ${base}`;
     case 'calcs': return `Kalkulačky · ${base}`;
     case 'calc': return `${CALCULATORS.find((c) => c.id === route.id)?.title ?? 'Kalkulačka'} · ${base}`;
     case 'cards': return `Kartičky · ${base}`;

@@ -264,6 +264,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Aké napätie je na výstupe LM317, ak `$R_{1}` = 240 Ω a `$R_{2}` = 720 Ω?',
+      calc: true,
       options: ['5 V', '3,75 V', '1,25 V', '4 V'],
       explanation: '`$U_{2} = 1,25 · (1 + @f{720}{240})` = 1,25 · 4 = 5 V.',
     },

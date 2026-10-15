@@ -16,11 +16,29 @@ export function fromStatic(sq: StaticQuestion, rng: Rng): ChoiceQuestion {
   };
 }
 
+/** Podiel číselných príkladov v bežnom cvičení (ak ich téma má). */
+const NUMERIC_SHARE = 0.6;
+
+/** Druh cvičenia: výpočty spolu s teóriou, alebo len teoretické otázky bez počítania. */
+export type QuizMode = 'mixed' | 'theory';
+
+/** Otázka do testu z teórie – s výberom odpovede a bez výpočtu so zadanými číslami. */
+export const isTheory = (sq: StaticQuestion) => !sq.calc;
+
+/** Koľko teoretických otázok majú vybrané témy spolu. */
+export function theoryCount(lessonIds: readonly string[]): number {
+  const ids = new Set(lessonIds);
+  return QUESTIONS.filter((q) => ids.has(q.lessonId) && isTheory(q)).length;
+}
+
 /**
  * Zostaví sadu otázok z vybraných tém. Témy sa striedajú dookola,
  * v rámci témy sa náhodne strieda číselný príklad a otázka s výberom.
+ * V režime `theory` sú v sade len teoretické otázky, žiadna sa neopakuje
+ * a sada môže byť kratšia, ak ich vybrané témy nemajú dosť.
  */
-export function buildQuiz(lessonIds: readonly string[], count: number, rng: Rng, numericShare = 0.6): Question[] {
+export function buildQuiz(lessonIds: readonly string[], count: number, rng: Rng, mode: QuizMode = 'mixed'): Question[] {
+  if (mode === 'theory') return buildTheoryQuiz(lessonIds, count, rng);
   const ids = lessonIds.filter((id) => GENERATORS[id]?.length || QUESTIONS.some((q) => q.lessonId === id));
   if (ids.length === 0) return [];
   const pools = new Map(ids.map((id) => [id, shuffle(rng, QUESTIONS.filter((q) => q.lessonId === id))]));
@@ -32,7 +50,7 @@ export function buildQuiz(lessonIds: readonly string[], count: number, rng: Rng,
     const id = order[i % order.length];
     const pool = pools.get(id)!;
     const gens = GENERATORS[id] ?? [];
-    const numeric = gens.length > 0 && (pool.length === 0 || rng() < numericShare);
+    const numeric = gens.length > 0 && (pool.length === 0 || rng() < NUMERIC_SHARE);
     if (numeric) {
       const used = usedGenerators.get(id) ?? new Set<number>();
       let candidates = gens.map((_, k) => k).filter((k) => !used.has(k));
@@ -46,6 +64,25 @@ export function buildQuiz(lessonIds: readonly string[], count: number, rng: Rng,
       out.push(gens[k](rng));
     } else if (pool.length > 0) {
       out.push(fromStatic(pool.pop()!, rng));
+    }
+  }
+  return out;
+}
+
+function buildTheoryQuiz(lessonIds: readonly string[], count: number, rng: Rng): Question[] {
+  const pools = new Map<string, StaticQuestion[]>();
+  for (const id of lessonIds) {
+    const pool = QUESTIONS.filter((q) => q.lessonId === id && isTheory(q));
+    if (pool.length) pools.set(id, shuffle(rng, pool));
+  }
+  const out: Question[] = [];
+  // Témy sa striedajú dookola, kým je otázok dosť; vyčerpaná téma vypadne.
+  while (out.length < count && pools.size > 0) {
+    for (const id of shuffle(rng, [...pools.keys()])) {
+      if (out.length >= count) break;
+      const pool = pools.get(id)!;
+      out.push(fromStatic(pool.pop()!, rng));
+      if (pool.length === 0) pools.delete(id);
     }
   }
   return out;

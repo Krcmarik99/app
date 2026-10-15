@@ -290,6 +290,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Činiteľ akosti obvodu je 25 a napätie zdroja 4 V. Aké napätie je pri rezonancii na cievke?',
+      calc: true,
       options: ['100 V', '4 V', '0,16 V', '29 V'],
       explanation: '`$U_{L0} = $Q · $U` = 25 · 4 = 100 V. Napätie na cievke je pri rezonancii `$Q`-krát väčšie ako napätie zdroja.',
     },

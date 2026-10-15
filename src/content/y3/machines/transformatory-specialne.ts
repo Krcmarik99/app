@@ -313,12 +313,14 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Aký je menovitý prúd na strane NN transformátora 400 kVA, 22 / 0,4 kV?',
+      calc: true,
       options: ['približne 577 A', 'približne 1 000 A', 'približne 10,5 A', 'približne 333 A'],
       explanation: '`$I_{n} = @f{400 000}{@s{3} · 400}` ≈ 577 A. Prúd 10,5 A tečie na strane 22 kV; 1 000 A by vyšlo bez `@s{3}`.',
     },
     {
       lessonId: ID,
       prompt: 'Ampérmeter pripojený cez MTP 300/5 A ukazuje 4 A. Aký prúd tečie vedením?',
+      calc: true,
       options: ['240 A', '4 A', '75 A', '1 500 A'],
       explanation: 'Prevod je 300 / 5 = 60, skutočný prúd 60 · 4 = 240 A.',
     },

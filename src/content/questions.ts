@@ -4,6 +4,8 @@ import { MODULES } from './all-modules';
 export interface StaticQuestion {
   lessonId: string;
   prompt: string;
+  /** Otázka vyžaduje výpočet so zadanými číslami – test „len teória“ ju vynechá. */
+  calc?: boolean;
   options: [string, string, string, string];
   explanation: string;
 }
@@ -25,6 +27,7 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   {
     lessonId: 'zaklady',
     prompt: 'Koľko ohmov je 4,7 kΩ?',
+    calc: true,
     options: ['4 700 Ω', '470 Ω', '47 000 Ω', '0,0047 Ω'],
     explanation: 'Predpona kilo znamená 10³, teda 4,7 · 1 000 = 4 700 Ω.',
   },
@@ -103,6 +106,7 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   {
     lessonId: 'spajanie-rezistorov',
     prompt: 'Tri rezistory po 300 Ω sú zapojené paralelne. Aký je výsledný odpor?',
+    calc: true,
     options: ['100 Ω', '900 Ω', '300 Ω', '150 Ω'],
     explanation: '`$n` rovnakých rezistorov paralelne má odpor `@f{$R}{$n}` = 300 / 3 = 100 Ω.',
   },
@@ -127,6 +131,7 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   {
     lessonId: 'spajanie-rezistorov',
     prompt: 'Rezistory 1 kΩ a 1 kΩ sú zapojené sériovo. Výsledný odpor je…',
+    calc: true,
     options: ['2 kΩ', '500 Ω', '1 kΩ', '1 MΩ'],
     explanation: 'V sérii sa odpory sčítajú: 1 kΩ + 1 kΩ = 2 kΩ.',
   },
@@ -135,6 +140,7 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   {
     lessonId: 'kirchhoffove-zakony',
     prompt: 'Do uzla vtekajú prúdy 2 A a 3 A a vyteká z neho jediný prúd. Aký veľký?',
+    calc: true,
     options: ['5 A', '1 A', '6 A', '1,5 A'],
     explanation: 'Podľa 1. Kirchhoffovho zákona je súčet vtekajúcich prúdov rovný súčtu vytekajúcich: 2 + 3 = 5 A.',
   },
@@ -147,6 +153,7 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   {
     lessonId: 'kirchhoffove-zakony',
     prompt: 'Delič z dvoch rovnakých rezistorov pripojíš na 10 V. Aké je výstupné napätie naprázdno?',
+    calc: true,
     options: ['5 V', '10 V', '2,5 V', '20 V'],
     explanation: 'Rovnaké rezistory rozdelia napätie na polovicu.',
   },
@@ -199,6 +206,7 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   {
     lessonId: 'vykon-a-praca',
     prompt: 'Koľko joulov je 1 kWh?',
+    calc: true,
     options: ['3,6 MJ', '1 000 J', '3 600 J', '360 kJ'],
     explanation: '1 kWh = 1 000 W · 3 600 s = 3 600 000 J = 3,6 MJ.',
   },
@@ -211,6 +219,7 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   {
     lessonId: 'vykon-a-praca',
     prompt: 'Motor má príkon 2 kW a výkon 1,6 kW. Aká je jeho účinnosť?',
+    calc: true,
     options: ['80 %', '125 %', '60 %', '20 %'],
     explanation: '`$η = @f{1,6}{2}` · 100 % = 80 %. Účinnosť nikdy nemôže presiahnuť 100 %.',
   },
@@ -231,6 +240,7 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   {
     lessonId: 'kondenzator',
     prompt: 'Dva kondenzátory 10 µF zapojíš paralelne. Výsledná kapacita je…',
+    calc: true,
     options: ['20 µF', '5 µF', '10 µF', '100 µF'],
     explanation: 'Paralelné kapacity sa sčítajú – presne naopak ako pri rezistoroch.',
   },
@@ -301,6 +311,7 @@ const BASE_QUESTIONS: readonly StaticQuestion[] = [
   {
     lessonId: 'striedavy-prud',
     prompt: 'Aká je perióda napätia s frekvenciou 50 Hz?',
+    calc: true,
     options: ['20 ms', '50 ms', '2 ms', '0,5 s'],
     explanation: '`$T = @f{1}{$f} = @f{1}{50}` = 0,02 s = 20 ms.',
   },

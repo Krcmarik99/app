@@ -330,6 +330,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Aké sú synchrónne otáčky štvorpólového motora pri 50 Hz?',
+      calc: true,
       options: ['1 500 ot/min', '3 000 ot/min', '750 ot/min', '1 440 ot/min'],
       explanation: 'Štyri póly sú dve pólové dvojice: `$n_{s} = @f{60 · 50}{2}` = 1 500 ot/min. Hodnota 1 440 ot/min sú typické skutočné otáčky so sklzom.',
     },
@@ -360,6 +361,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Akú frekvenciu má prúd v rotore pri sklze 4 % a frekvencii siete 50 Hz?',
+      calc: true,
       options: ['2 Hz', '50 Hz', '48 Hz', '0 Hz'],
       explanation: '`$f_{2} = $s · $f` = 0,04 · 50 = 2 Hz. Pole sa voči rotoru otáča len rozdielom otáčok.',
     },

@@ -42,7 +42,7 @@ export function describeActivity(a: Pick<ActivityRow, 'kind' | 'detail'>): strin
     case 'quiz': {
       const topics = Array.isArray(d.topics) ? d.topics.map(lessonTitle) : [];
       const list = topics.length ? ` · ${topics.slice(0, 3).join(', ')}${topics.length > 3 ? ` a ďalšie (${topics.length - 3})` : ''}` : '';
-      return `Cvičenie: ${Number(d.correct) || 0} z ${Number(d.total) || 0} správne${list}`;
+      return `${d.theory ? 'Test z teórie' : 'Cvičenie'}: ${Number(d.correct) || 0} z ${Number(d.total) || 0} správne${list}`;
     }
     default: return String(a.kind);
   }

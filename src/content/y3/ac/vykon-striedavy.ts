@@ -251,6 +251,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Zdanlivý výkon je 1 000 VA a činný 600 W. Aký je jalový výkon?',
+      calc: true,
       options: ['800 var', '400 var', '1 600 var', '1 166 var'],
       explanation: '`$Q = @s{$S^{2} − $P^{2}} = @s{1 000^{2} − 600^{2}}` = 800 var. Výkony sa nesčítavajú aritmeticky, ale ako strany pravouhlého trojuholníka.',
     },

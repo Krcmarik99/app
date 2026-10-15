@@ -37,7 +37,7 @@ export function initActivity(): void {
   started = true;
   onLearningEvent((e) => {
     if (e.kind === 'lesson') logActivity('lesson', { lesson: e.lesson });
-    else logActivity('quiz', { total: e.total, correct: e.correct, topics: e.topics.slice(0, MAX_TOPICS) });
+    else logActivity('quiz', { total: e.total, correct: e.correct, topics: e.topics.slice(0, MAX_TOPICS), ...(e.theory ? { theory: true } : {}) });
   });
   const s = loadCloudSession();
   if (s && markVisit(s.user.id)) logActivity('visit', {}, s);

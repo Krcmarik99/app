@@ -292,6 +292,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Wattmeter má rozsahy 150 V a 5 A, `cos $φ_{n}` = 1 a stupnicu so 150 dielikmi. Aká je jeho konštanta?',
+      calc: true,
       options: ['5 W/dielik', '1 W/dielik', '750 W/dielik', '0,2 W/dielik'],
       explanation: '`$K_{W} = @f{150 · 5 · 1}{150}` = 5 W/dielik.',
     },
@@ -327,6 +328,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Elektromer s konštantou 2 000 imp/kWh vyslal za 1 minútu 50 impulzov. Aký je odoberaný výkon?',
+      calc: true,
       options: ['1,5 kW', '25 W', '3 kW', '0,75 kW'],
       explanation: '`$P = @f{3 600 · 50}{2 000 · 60}` = 1,5 kW.',
     },

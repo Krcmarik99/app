@@ -5,7 +5,9 @@ import { streak } from '../src/lib/progress';
 import { createRng } from '../src/lib/random';
 import { fmt } from '../src/lib/units';
 import { GENERATORS } from '../src/practice/generators';
-import { buildQuiz, checkNumeric, fromStatic } from '../src/practice/session';
+import { buildQuiz, checkNumeric, fromStatic, isTheory, theoryCount } from '../src/practice/session';
+import { parseHash, routeHash } from '../src/router';
+import { gradeFor } from '../src/views/practice';
 
 describe('generátory príkladov', () => {
   it('každá lekcia má generátory aj otázky s výberom', () => {
@@ -72,6 +74,58 @@ describe('zostavenie kvízu', () => {
     const quiz = buildQuiz(['zaklady'], 10, createRng(3));
     expect(quiz.some((q) => q.kind === 'numeric')).toBe(true);
     expect(quiz.some((q) => q.kind === 'choice')).toBe(true);
+  });
+
+  it('test z teórie obsahuje len otázky bez výpočtov a žiadnu dvakrát', () => {
+    const topics = ['ohmov-zakon', 'transformator', 'osciloskop'];
+    for (let seed = 0; seed < 20; seed++) {
+      const n = Math.min(20, theoryCount(topics));
+      const quiz = buildQuiz(topics, n, createRng(seed), 'theory');
+      expect(quiz).toHaveLength(n);
+      expect(quiz.every((q) => q.kind === 'choice' && topics.includes(q.lessonId))).toBe(true);
+      expect(new Set(quiz.map((q) => q.prompt)).size).toBe(n);
+      for (const q of quiz) {
+        const sq = QUESTIONS.find((s) => s.prompt === q.prompt && s.lessonId === q.lessonId)!;
+        expect(isTheory(sq), q.prompt).toBe(true);
+      }
+      // Témy sa striedajú – v prvých troch otázkach je každá téma raz.
+      expect(new Set(quiz.slice(0, 3).map((q) => q.lessonId)).size).toBe(3);
+    }
+  });
+
+  it('test z teórie je kratší, ak témy nemajú dosť otázok', () => {
+    const available = theoryCount(['zaklady']);
+    const quiz = buildQuiz(['zaklady'], available + 5, createRng(7), 'theory');
+    expect(quiz).toHaveLength(available);
+    expect(buildQuiz(['neexistuje'], 5, createRng(1), 'theory')).toEqual([]);
+  });
+
+  it('otázky s výberom nemajú rovnaké možnosti ani duplicitné znenie', () => {
+    const seen = new Set<string>();
+    for (const q of QUESTIONS) {
+      expect(new Set(q.options).size, q.prompt).toBe(4);
+      const key = `${q.lessonId}|${q.prompt}`;
+      expect(seen.has(key), key).toBe(false);
+      seen.add(key);
+    }
+  });
+
+  it('orientačná známka podľa percent', () => {
+    expect(gradeFor(100)).toEqual([1, 'výborný']);
+    expect(gradeFor(90)).toEqual([1, 'výborný']);
+    expect(gradeFor(89)[0]).toBe(2);
+    expect(gradeFor(75)[0]).toBe(2);
+    expect(gradeFor(50)[0]).toBe(3);
+    expect(gradeFor(30)[0]).toBe(4);
+    expect(gradeFor(29)[0]).toBe(5);
+  });
+
+  it('adresa testu z teórie', () => {
+    expect(parseHash('#teoria')).toEqual({ name: 'practice', theory: true });
+    expect(parseHash('#teoria-filtre')).toEqual({ name: 'practice', topic: 'filtre', theory: true });
+    expect(routeHash({ name: 'practice', topic: 'filtre', theory: true })).toBe('#teoria-filtre');
+    expect(routeHash({ name: 'practice', theory: true })).toBe('#teoria');
+    expect(parseHash('#cvicenie-filtre')).toEqual({ name: 'practice', topic: 'filtre' });
   });
 
   it('neznáme témy ignoruje', () => {

@@ -242,6 +242,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Monostabilný 555 má `$R` = 100 kΩ a `$C` = 10 µF. Ako dlho trvá výstupný impulz?',
+      calc: true,
       options: ['1,1 s', '0,69 s', '1 s', '11 s'],
       explanation: '`$t = 1,1 · $R · $C` = 1,1 · 100 kΩ · 10 µF = 1,1 · 1 s = 1,1 s.',
     },

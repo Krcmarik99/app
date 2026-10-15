@@ -200,6 +200,7 @@ export function lessonView(id: string): HTMLElement {
     h('div', { class: 'lesson-actions' },
       doneBtn,
       linkButton(`#cvicenie-${lesson.id}`, 'Precvičiť tému', 'secondary'),
+      linkButton(`#teoria-${lesson.id}`, 'Test z teórie', 'secondary'),
     ),
     h('nav', { class: 'lesson-nav', 'aria-label': 'Ďalšie lekcie' },
       prev ? h('a', { href: `#lekcia-${prev.id}`, class: 'lesson-nav-link prev' }, h('span', { class: 'eyebrow' }, 'Predchádzajúca'), h('span', null, prev.title)) : h('span', null),

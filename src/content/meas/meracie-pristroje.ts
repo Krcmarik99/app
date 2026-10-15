@@ -387,6 +387,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Voltmeter má rozsah 60 V a stupnicu so 120 dielikmi. Ručička ukazuje 90 dielikov. Aká je nameraná hodnota?',
+      calc: true,
       options: ['45 V', '90 V', '180 V', '0,75 V'],
       explanation: '`$K` = 60 V / 120 dielikov = 0,5 V/dielik, `NH = $α · $K` = 90 · 0,5 V = 45 V.',
     },
@@ -421,6 +422,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Voltmeter má údaj 20 kΩ/V. Aký je jeho vnútorný odpor na rozsahu 10 V?',
+      calc: true,
       options: ['200 kΩ', '20 kΩ', '2 kΩ', '2 MΩ'],
       explanation: '`$R_{V} = $R_{iV} · MR` = 20 000 Ω/V · 10 V = 200 000 Ω = 200 kΩ.',
     },

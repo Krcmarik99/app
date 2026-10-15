@@ -244,6 +244,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Mostík je vyvážený pri `$R_{2}` = 2 500 Ω, `$R_{3}` = 10 Ω a `$R_{4}` = 1 000 Ω. Aký je meraný odpor?',
+      calc: true,
       options: ['25 Ω', '250 kΩ', '2 500 Ω', '4 Ω'],
       explanation: '`$R_{x} = $R_{2} · @f{$R_{3}}{$R_{4}} = 2 500 · @f{10}{1 000}` = 25 Ω.',
     },

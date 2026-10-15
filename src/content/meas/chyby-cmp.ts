@@ -457,12 +457,14 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: '3½-miestny voltmeter je prepnutý na rozsah 20 V. Akú hodnotu má jeden digit na poslednom mieste?',
+      calc: true,
       options: ['0,01 V', '0,1 V', '1 mV', '1 V'],
       explanation: 'Najväčší údaj je 19,99 V, posledné miesto sú stotiny voltu. Aj výpočtom: `@f{$X_{N}}{$N_{max}} = @f{20 V}{2 000}` = 0,01 V.',
     },
     {
       lessonId: ID,
       prompt: 'Výrobca udáva chybu ±(0,5 % + 2 digity), maximálny počet indikovaných jednotiek je 2 000. Akej chybe v % z rozsahu zodpovedajú 2 digity?',
+      calc: true,
       options: ['0,1 %', '0,2 %', '1 %', '0,01 %'],
       explanation: '`$δ_{a} = @f{$d}{$N_{max}} · 100 % = @f{2}{2 000} · 100 %` = 0,1 %.',
     },
@@ -481,6 +483,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Číslicový voltmeter na rozsahu 200 V (rdg 0,9 %, FS 0,1 %) ukazuje 100 V. Aká je celková absolútna chyba?',
+      calc: true,
       options: ['±1,1 V', '±0,9 V', '±0,2 V', '±2 V'],
       explanation: '`Δ_{m}` = 0,9 % zo 100 V = 0,9 V, `Δ_{a}` = 0,1 % z 200 V = 0,2 V, spolu ±1,1 V. Chyba ±2 V by platila až pri údaji na konci rozsahu.',
     },

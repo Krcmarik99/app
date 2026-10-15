@@ -292,6 +292,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Zosilňovač má zosilnenie +20 dB a za ním je filter s útlmom 6 dB. Aký je celkový prenos?',
+      calc: true,
       options: ['+14 dB (asi päťnásobok napätia)', '−120 dB', '+26 dB', '+3,3 dB'],
       explanation: 'Prenosy v decibeloch sa pri reťazení sčítajú: 20 − 6 = 14 dB. Napäťovo je to 10 · 0,5 = 5-násobok.',
     },

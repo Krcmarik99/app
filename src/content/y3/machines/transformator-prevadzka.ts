@@ -276,6 +276,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Transformátor má menovitý prúd 100 A a napätie nakrátko 5 %. Aký je ustálený skratový prúd pri skrate na svorkách?',
+      calc: true,
       options: ['2 000 A', '500 A', '5 000 A', '105 A'],
       explanation: '`$I_{k} = $I_{n} · @f{100}{$u_{k}}` = 100 · 20 = 2 000 A.',
     },
@@ -294,6 +295,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Straty naprázdno sú 0,4 kW a straty nakrátko 1,6 kW. Pri akom činiteli zaťaženia je účinnosť najväčšia?',
+      calc: true,
       options: ['0,5', '0,25', '1', '4'],
       explanation: '`$β_{opt} = @s{@f{0,4}{1,6}} = @s{0,25}` = 0,5. Pri polovičnom zaťažení sú straty vo vinutí 0,25 · 1,6 = 0,4 kW – rovnaké ako v železe.',
     },

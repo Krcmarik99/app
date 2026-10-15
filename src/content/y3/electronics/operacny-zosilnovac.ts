@@ -246,12 +246,14 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Invertujúci zosilňovač má `$R_{1}` = 2,2 kΩ a `$R_{2}` = 22 kΩ. Aké je jeho zosilnenie?',
+      calc: true,
       options: ['−10', '11', '10', '−11'],
       explanation: '`$A_{u} = −@f{$R_{2}}{$R_{1}} = −@f{22}{2,2}` = −10. Hodnota 11 by platila pre neinvertujúce zapojenie (1 + 10).',
     },
     {
       lessonId: ID,
       prompt: 'Neinvertujúci zosilňovač má `$R_{1}` = 10 kΩ a `$R_{2}` = 47 kΩ. Aké je jeho zosilnenie?',
+      calc: true,
       options: ['5,7', '4,7', '−4,7', '0,21'],
       explanation: '`$A_{u} = 1 + @f{47}{10}` = 5,7. Neinvertujúci zosilňovač má zosilnenie vždy aspoň 1 a nemení fázu.',
     },

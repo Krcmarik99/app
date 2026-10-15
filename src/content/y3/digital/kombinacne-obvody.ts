@@ -331,6 +331,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Komparátor porovnáva 4-bitové čísla `$A` = 0110 a `$B` = 0101. Ktorý výstup bude aktívny?',
+      calc: true,
       options: ['`$A > $B`', '`$A < $B`', '`$A = $B`', 'žiadny, čísla majú rovnaký počet jednotiek'],
       explanation: 'Porovnáva sa od najvyššieho bitu. Prvé dva bity sú rovnaké (01), v treťom má `$A` 1 a `$B` 0, preto `$A > $B` (6 > 5).',
     },

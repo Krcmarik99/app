@@ -250,6 +250,7 @@ const mod: LessonModule = {
     {
       lessonId: ID,
       prompt: 'Akú frekvenciu má výstup klopného obvodu T s trvalo T = 1, ak naň privádzaš hodiny 10 kHz?',
+      calc: true,
       options: ['5 kHz', '10 kHz', '20 kHz', '2,5 kHz'],
       explanation: 'Preklápač mení stav pri každej aktívnej hrane, celá perióda výstupu trvá dve periódy hodín. Frekvencia sa vydelí dvoma: 10 kHz / 2 = 5 kHz.',
     },

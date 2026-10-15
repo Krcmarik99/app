@@ -301,6 +301,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Voltmeter triedy presnosti 1,5 je prepnutý na rozsah 100 V. Aká je jeho najväčšia absolútna chyba?',
+      calc: true,
       options: ['±1,5 V', '±0,15 V', '±15 V', 'závisí od nameranej hodnoty'],
       explanation: '`Δ$X_{max} = @f{1,5 · 100}{100}` = 1,5 V. Táto chyba je rovnaká v celom rozsahu, nezávisí od údaja.',
     },
@@ -331,12 +332,14 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Prístroj triedy presnosti 1 na rozsahu 30 V ukazuje 10 V. Aká je relatívna chyba merania?',
+      calc: true,
       options: ['±3 %', '±1 %', '±0,3 %', '±10 %'],
       explanation: '`Δ$X_{max} = @f{1 · 30}{100}` = 0,3 V, `$δ = @f{0,3}{10} · 100 %` = 3 %. Iba na konci stupnice by bola relatívna chyba 1 %.',
     },
     {
       lessonId: ID,
       prompt: 'Voltmeter triedy presnosti 1 s rozsahom 60 V ukazuje 40 V. V akom intervale leží skutočná hodnota?',
+      calc: true,
       options: ['39,4 V až 40,6 V', '39,6 V až 40,4 V', '39 V až 41 V', '38,8 V až 41,2 V'],
       explanation: '`Δ$X_{max} = @f{1 · 60}{100}` = 0,6 V, preto `$X_{S}` = (40 ± 0,6) V. Interval 39,6 V až 40,4 V vychádza pri chybnom výpočte 1 % z nameranej hodnoty.',
     },

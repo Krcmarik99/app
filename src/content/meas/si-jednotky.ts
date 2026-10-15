@@ -428,6 +428,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Vinutie sa zohrialo z 20 °C na 75 °C. Aké je oteplenie v kelvinoch?',
+      calc: true,
       options: ['55 K', '328,15 K', '348,15 K', '293,15 K'],
       explanation: 'Rozdiel teplôt má v °C aj v K rovnakú číselnú hodnotu: 75 − 20 = 55 °C, teda 55 K. Konštanta 273,15 sa v rozdiele vyruší: (75 + 273,15) K − (20 + 273,15) K = 55 K.',
     },

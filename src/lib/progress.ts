@@ -17,6 +17,8 @@ export interface SessionRecord {
   total: number;
   correct: number;
   topics: string[];
+  /** Test z teórie (len otázky bez výpočtov). */
+  theory?: boolean;
 }
 
 export interface Progress {
@@ -186,7 +188,7 @@ export function onProgressChange(fn: () => void): () => void {
 /** Významné udalosti učenia (pre záznam aktivity online účtu). */
 export type LearningEvent =
   | { kind: 'lesson'; lesson: string }
-  | { kind: 'quiz'; total: number; correct: number; topics: string[] };
+  | { kind: 'quiz'; total: number; correct: number; topics: string[]; theory?: boolean };
 
 const eventListeners = new Set<(e: LearningEvent) => void>();
 
@@ -244,7 +246,7 @@ export function recordSession(rec: Omit<SessionRecord, 'date'>): void {
   p.sessions.push({ ...rec, date: dayKey() });
   p.sessions = p.sessions.slice(-50);
   save();
-  emit({ kind: 'quiz', total: rec.total, correct: rec.correct, topics: rec.topics });
+  emit({ kind: 'quiz', total: rec.total, correct: rec.correct, topics: rec.topics, ...(rec.theory ? { theory: true } : {}) });
 }
 
 export function setCardKnown(id: string, known: boolean): void {

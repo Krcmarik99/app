@@ -2249,6 +2249,13 @@ input[type='range'] {
   outline-offset: -3px;
 }
 
+.setup-hint {
+  max-width: 62ch;
+  margin-top: 10px;
+  color: var(--ink-2);
+  font-size: 14.5px;
+}
+
 .setup-submit {
   display: flex;
   flex-wrap: wrap;
@@ -2271,9 +2278,20 @@ input[type='range'] {
 
 .run-info {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 12px;
+  gap: 2px 12px;
   font: 13.5px var(--font-mono);
+}
+
+.run-tag {
+  padding: 2px 8px;
+  background: var(--copper-soft);
+  border-radius: 999px;
+  color: var(--copper-strong);
+  font: 600 12px var(--font-body);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .run-score {
@@ -2381,6 +2399,57 @@ input[type='range'] {
 .summary-kind {
   font: 12.5px var(--font-mono);
   color: var(--ink-2);
+}
+
+.summary-theory {
+  max-width: 760px;
+}
+
+.summary-theory li {
+  grid-template-columns: 26px 26px minmax(0, 1fr);
+  align-items: start;
+  padding: 10px 2px;
+}
+
+.summary-theory li::before,
+.summary-theory .summary-mark {
+  margin-top: 1px;
+}
+
+.summary-q {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.summary-q .summary-topic {
+  font: 12.5px var(--font-mono);
+  color: var(--ink-2);
+}
+
+.summary-prompt {
+  font-size: 15px;
+}
+
+.summary-answer {
+  color: var(--good);
+  font-weight: 600;
+}
+
+.summary-grade {
+  margin-bottom: 6px;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.summary-grade strong {
+  font-size: 1.7rem;
+}
+
+.summary-scale {
+  max-width: 760px;
+  margin-top: 10px;
+  font-size: 13.5px;
 }
 
 .summary-actions {

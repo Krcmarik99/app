@@ -276,6 +276,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Signál meriaš sondou 10:1, osciloskop ju nezohľadňuje. Na obrazovke odčítaš amplitúdu 0,6 V. Aká je skutočná amplitúda?',
+      calc: true,
       options: ['6 V', '0,06 V', '0,6 V', '60 V'],
       explanation: 'Sonda 10:1 privedie na vstup desatinu napätia, preto treba údaj vynásobiť desiatimi.',
     },
@@ -288,6 +289,7 @@ const mod: MeasModule = {
     {
       lessonId: ID,
       prompt: 'Perióda zaberá na obrazovke 5 dielikov pri časovej základni 0,2 ms/dielik. Aká je frekvencia?',
+      calc: true,
       options: ['1 kHz', '200 Hz', '5 kHz', '100 Hz'],
       explanation: '`$T` = 5 · 0,2 ms = 1 ms, `$f = @f{1}{$T}` = 1 kHz.',
     },
