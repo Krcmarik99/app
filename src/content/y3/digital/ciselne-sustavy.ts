@@ -265,6 +265,18 @@ const mod: LessonModule = {
       options: ['65 (0x41)', '1 (0x01)', '97 (0x61)', '48 (0x30)'],
       explanation: 'Veľké písmená začínajú kódom 65 (A), malé kódom 97 (a), číslice kódom 48 (znak 0). Malé a veľké písmeno sa líšia iba bitom s váhou 32.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Aká je hlavná výhoda zápisu záporných čísel v dvojkovom doplnku?',
+      options: ['odčítanie zvládne sčítačka ako pripočítanie záporného čísla', 'záporné čísla v ňom zaberajú menej bitov ako kladné čísla', 'číslo sa dá priamo zobraziť na 7-segmentovom displeji', 'nula má dva rôzne zápisy, kladnú a zápornú nulu'],
+      explanation: 'Platí `$a − $b = $a + (−$b)`, preto obvod nepotrebuje osobitnú odčítačku. Nula má v dvojkovom doplnku iba jeden zápis.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Akú váhu má číslica na pozícii `$i` (počítanej sprava od nuly) v pozičnej sústave so základom `$z`?',
+      options: ['`$z^{$i}`', '`$i^{$z}`', '`$z · $i`', '`$z^{$i + 1}`'],
+      explanation: 'Najnižšia pozícia má váhu `$z^{0}` = 1 a každá ďalšia `$z`-krát väčšiu. V desiatkovej sústave sú to jednotky, desiatky, stovky…, v dvojkovej 1, 2, 4, 8…',
+    },
   ],
   generators,
 };

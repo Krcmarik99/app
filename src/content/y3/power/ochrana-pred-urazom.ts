@@ -303,6 +303,18 @@ const mod: LessonModule = {
       options: ['prerušíš prúd – vypneš istič alebo vytiahneš vidlicu', 'chytíš postihnutého za ruku a odtiahneš ho', 'polieš ho vodou', 'začneš hneď KPR, aj keď je ešte pod napätím'],
       explanation: 'Kým je postihnutý pod napätím, záchranca by sa stal ďalšou obeťou. Najprv prerušiť prúd, potom volať 112 a poskytnúť prvú pomoc.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Čím sa líši obvod SELV od obvodu PELV?',
+      options: ['obvod SELV nesmie byť spojený so zemou, PELV môže byť uzemnený', 'obvod SELV smie mať napätie až 230 V, PELV iba 50 V', 'obvod SELV sa napája z akumulátora, PELV priamo zo siete', 'obvod SELV je vždy jednosmerný, obvod PELV striedavý'],
+      explanation: 'Oba obvody majú malé napätie (najviac 50 V striedavých alebo 120 V jednosmerných) z bezpečného zdroja. Líšia sa len spojením so zemou.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ktorý prostriedok patrí do základnej ochrany (predtým „ochrana pred priamym dotykom“)?',
+      options: ['základná izolácia živých častí, zábrany a kryty', 'samočinné odpojenie napájania ističom pri poruche', 'prúdový chránič s rozdielovým prúdom 30 mA', 'pripojenie kovového krytu na ochranný vodič PE'],
+      explanation: 'Základná ochrana bráni dotyku živých častí v bežnom stave. Samočinné odpojenie s ochranným vodičom patrí k ochrane pri poruche a chránič 30 mA je doplnková ochrana.',
+    },
   ],
   generators,
 };

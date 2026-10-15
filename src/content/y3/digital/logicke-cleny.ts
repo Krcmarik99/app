@@ -266,6 +266,18 @@ const mod: LessonModule = {
       options: ['1', '`$A`', '0', '`@o{$A}`'],
       explanation: 'Ak je jeden vstup člena OR v stave 1, výstup je 1 bez ohľadu na druhý vstup – jednotka je pri súčte nulový (agresívny) prvok. Naopak `$A · 1 = $A`.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Aký symbol je v obdĺžnikovej značke člena OR podľa STN EN 60617-12?',
+      options: ['≥1', '&', '=1', '1'],
+      explanation: 'Symbol ≥1 hovorí, že výstup je 1, keď je aspoň jeden vstup v stave 1. Symbol & má AND, =1 má XOR a samotná 1 s krúžkom na výstupe je invertor.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ktorá vlastnosť je typická pre obvody CMOS 74HC v porovnaní s obvodmi TTL 74LS?',
+      options: ['odber v pokoji rádovo µA, rastie s frekvenciou prepínania', 'menšia citlivosť vstupov na poškodenie statickou elektrinou', 'napájacie napätie musí byť presne 5 V ± 5 %', 'nezapojený vstup sa správa spoľahlivo ako H'],
+      explanation: 'CMOS odoberá prúd najmä pri prepínaní, v pokoji len mikroampéry. Vstupy CMOS sú hradlá tranzistorov MOSFET, preto sú citlivejšie na statickú elektrinu a nezapojené sa nechávať nesmú.',
+    },
   ],
   generators,
 };

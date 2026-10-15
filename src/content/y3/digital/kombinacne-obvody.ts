@@ -335,6 +335,24 @@ const mod: LessonModule = {
       options: ['`$A > $B`', '`$A < $B`', '`$A = $B`', 'žiadny, čísla majú rovnaký počet jednotiek'],
       explanation: 'Porovnáva sa od najvyššieho bitu. Prvé dva bity sú rovnaké (01), v treťom má `$A` 1 a `$B` 0, preto `$A > $B` (6 > 5).',
     },
+    {
+      lessonId: ID,
+      prompt: 'Ako zostavíš úplnú sčítačku z jednoduchších obvodov?',
+      options: ['z dvoch polovičných sčítačiek a člena OR', 'z dvoch členov XOR a jedného invertora', 'z jednej polovičnej sčítačky a člena NAND', 'z dvoch multiplexorov a člena AND'],
+      explanation: 'Prvá polovičná sčítačka sčíta `$A` a `$B`, druhá k výsledku pripočíta `$C_{in}`. Prenos do vyššieho rádu vznikne, ak ho vytvorí aspoň jedna z nich – preto člen OR.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ktorý logický člen v komparátore zistí, že sa dva bity rovnajú?',
+      options: ['XNOR', 'XOR', 'NAND', 'OR'],
+      explanation: 'XNOR (ekvivalencia) má výstup 1, keď sú oba vstupy rovnaké: `$Y = @o{$A ⊕ $B}`. XOR naopak zistí, že sa bity líšia.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako pri minimalizácii použiješ bunku Karnaughovej mapy označenú X (na výstupe nezáleží)?',
+      options: ['zahrnieš ju do skupiny, len ak tým skupinu zväčšíš', 'vždy ju musíš zahrnúť do niektorej skupiny', 'vždy ju považuješ za nulu a vynecháš ju', 'vytvoríš z nej samostatnú skupinu s jednou bunkou'],
+      explanation: 'Bunka X patrí kombinácii, ktorá nenastane alebo pri ktorej na výstupe nezáleží (napr. kódy 1010 až 1111 pri vstupe BCD). Ako 1 ju použiješ len vtedy, keď vďaka nej vznikne väčšia skupina a jednoduchší výraz.',
+    },
   ],
   generators,
 };

@@ -308,6 +308,30 @@ const mod: LessonModule = {
       options: ['paralelne k záťaži, za usmerňovač', 'do série so záťažou', 'pred transformátor priamo do siete', 'paralelne k jednej z diód'],
       explanation: 'Kondenzátor je zásobník náboja na jednosmernej strane – pripája sa medzi kladný a záporný výstup usmerňovača, teda paralelne k záťaži.',
     },
+    {
+      lessonId: ID,
+      prompt: 'V akom poradí sú zapojené bloky sieťového napájacieho zdroja od siete po výstup?',
+      options: ['transformátor – usmerňovač – filter – stabilizátor', 'usmerňovač – transformátor – filter – stabilizátor', 'transformátor – filter – usmerňovač – stabilizátor', 'transformátor – stabilizátor – usmerňovač – filter'],
+      explanation: 'Transformátor zníži napätie a galvanicky oddelí obvod od siete, usmerňovač z neho urobí pulzujúce jednosmerné napätie, filter ho vyhladí a stabilizátor udrží výstupné napätie stále.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ktorú hodnotu usmerneného napätia bez filtra ukáže jednosmerný (magnetoelektrický) voltmeter?',
+      options: ['strednú hodnotu', 'efektívnu hodnotu', 'vrcholovú hodnotu', 'okamžitú hodnotu'],
+      explanation: 'Magnetoelektrický prístroj ukazuje jednosmernú zložku napätia, teda strednú hodnotu – za dvojcestným usmerňovačom asi `0,9 · $U`. Vrcholová hodnota je `$U_{m} = @s{2} · $U`.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Aká je nevýhoda dvojcestného usmerňovača so stredným vývodom oproti mostíkovému zapojeniu?',
+      options: ['sekundárne vinutie musí mať dvojnásobný počet závitov', 'zvlnenie na výstupe má frekvenciu iba 50 Hz', 'v každej polvlne vedú naraz dve diódy v sérii', 'stredná hodnota napätia je iba polovičná'],
+      explanation: 'Každá polovica sekundárneho vinutia musí dávať celé napätie `$U` a pracuje len počas jednej polvlny, preto je transformátor väčší. Dve diódy v sérii a s nimi úbytok 1,4 V má naopak mostík.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa pri výstupnom napätí okolo 5 V a menej často nepoužíva mostík z kremíkových diód?',
+      options: ['úbytok asi 1,4 V na dvoch vodivých diódach je citeľná strata', 'mostík pri nízkom napätí neusmerní zápornú polvlnu', 'kremíkové diódy nevedú pri napätí menšom ako 5 V', 'zvlnenie za mostíkom má pri nízkom napätí iba 50 Hz'],
+      explanation: 'V mostíku vedú naraz dve diódy v sérii. Pri nízkom napätí sa preto volí zapojenie so stredným vývodom (vedie jedna dióda) alebo Schottkyho diódy s menším úbytkom.',
+    },
   ],
   generators,
 };

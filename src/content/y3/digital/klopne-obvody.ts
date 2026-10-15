@@ -272,6 +272,24 @@ const mod: LessonModule = {
       options: ['kontakt pri stlačení niekoľkokrát odskočí a čítač by napočítal viac impulzov', 'tlačidlo by sa inak prehrievalo', 'čítač by začal počítať nadol', 'bez ošetrenia by sa zmenila frekvencia hodín'],
       explanation: 'Mechanický kontakt počas niekoľkých milisekúnd viackrát zopne a rozopne. Rýchly čítač každé zopnutie započíta. Pomôže klopný obvod RS s prepínacím tlačidlom, člen RC so Schmittovým obvodom alebo programové ošetrenie.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Čím sa synchrónny čítač líši od asynchrónneho?',
+      options: ['hodinový signál je privedený na všetky klopné obvody naraz', 'každý klopný obvod je riadený výstupom predchádzajúceho', 'nepotrebuje na svoju činnosť žiadny hodinový signál', 'môže počítať iba v kóde BCD od nuly do deviatich'],
+      explanation: 'V synchrónnom čítači sa všetky klopné obvody prepnú pri tej istej hrane, a tak nevznikajú chybné medzistavy zo sčítaných oneskorení. Riadenie výstupom predchádzajúceho stupňa je vlastnosť asynchrónneho čítača.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako vytvoríš preklápač T z hranového klopného obvodu D?',
+      options: ['vstup D spojíš s výstupom `@o{$Q}`', 'vstup D spojíš s výstupom `$Q`', 'vstup D pripojíš trvalo na log. 1', 'vstup D pripojíš trvalo na log. 0'],
+      explanation: 'Pri každej hrane obvod prevezme negáciu svojho stavu, a tak sa preklopí – na výstupe je polovičná frekvencia hodín. Pri spojení D s `$Q` by stav zostal stále rovnaký.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo znamená krúžok pred hodinovým vstupom v značke klopného obvodu?',
+      options: ['obvod reaguje na dobežnú (zostupnú) hranu', 'obvod reaguje na nábežnú (vzostupnú) hranu', 'hodinový vstup je trvalo odpojený od obvodu', 'obvod je hladinový a sleduje vstup D'],
+      explanation: 'Krúžok znamená negáciu – obvod reaguje na prechod hodín z 1 na 0. Hranový obvod bez krúžku reaguje na nábežnú hranu.',
+    },
   ],
   generators,
 };

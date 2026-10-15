@@ -303,6 +303,18 @@ const mod: LessonModule = {
       options: ['synchrónnym alternátorom', 'asynchrónnym motorom', 'transformátorom', 'jednosmerným dynamom'],
       explanation: 'Synchrónny alternátor má otáčky viazané s frekvenciou siete `$n = @f{60 · $f}{$p}`. Transformátor energiu nevyrába, len mení napätie.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Čo sa stane s frekvenciou v elektrizačnej sústave, keď spotreba prevýši výrobu?',
+      options: ['frekvencia klesne, lebo sa alternátory brzdia', 'frekvencia stúpne, lebo sa alternátory zrýchlia', 'frekvencia sa nezmení, mení sa len napätie', 'frekvencia klesne na nulu a sústava sa vypne'],
+      explanation: 'Väčšie zaťaženie brzdí synchrónne alternátory, a tak klesajú ich otáčky aj frekvencia. Dispečing preto zvýši výkon elektrární, aby sa frekvencia vrátila na 50 Hz.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa vodič PEN nesmie prerušiť ani istiť?',
+      options: ['po prerušení by sa na kryty spotrebičov mohlo dostať napätie', 'po prerušení by sa zvýšila frekvencia siete nad 50 Hz', 'istič by na ňom spôsobil skrat medzi fázovými vodičmi', 'po prerušení by vzrástli straty vo vedení vysokého napätia'],
+      explanation: 'PEN je zároveň ochranný vodič – spája kryty spotrebičov s uzemneným bodom zdroja. Po jeho prerušení by sa fázové napätie mohlo cez zapnuté spotrebiče dostať na kryty a ochrana by nefungovala.',
+    },
   ],
   generators,
 };

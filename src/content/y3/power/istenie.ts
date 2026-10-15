@@ -371,6 +371,18 @@ const mod: LessonModule = {
       options: ['zmenší sa na polovicu', 'zdvojnásobí sa', 'nezmení sa', 'zmenší sa na štvrtinu'],
       explanation: '`Δ$U = @f{2 · $l · $I · $ρ}{$S}` – úbytok je nepriamo úmerný prierezu.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Čím nahradíš vypálenú tavnú poistku?',
+      options: ['novou poistkou s rovnakým menovitým prúdom', 'poistkou s väčším menovitým prúdom', 'kúskom medeného drôtu s rovnakým prierezom', 'opravenou poistkou s novým tavným vodičom'],
+      explanation: 'Poistka chráni vedenie pred preťažením a skratom len vtedy, keď jej menovitý prúd zodpovedá vodičom. Väčšia poistka alebo drôt by vodiče nechránili a hrozil by požiar.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo je vo vzorci úbytku napätia jednofázového vedenia `Δ$U = @f{2 · $l · $I · $ρ}{$S}` činiteľ 2?',
+      options: ['prúd tečie fázovým vodičom tam a stredným vodičom späť', 'úbytok sa počíta z vrcholovej, nie efektívnej hodnoty', 'odpor vodiča sa pri zohriatí približne zdvojnásobí', 'vedenie musí mať dvojnásobnú bezpečnostnú rezervu'],
+      explanation: 'Jednofázové vedenie má dva pracovné vodiče, takže prúdová dráha je dlhá `2 · $l`. Činiteľ 2 to zohľadňuje, preto do vzorca dosadzuješ jednoduchú dĺžku vedenia `$l`.',
+    },
   ],
   generators,
 };

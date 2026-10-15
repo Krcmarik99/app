@@ -281,6 +281,36 @@ const mod: LessonModule = {
       options: ['nemá spätnú väzbu, výstup je vždy v kladnej alebo zápornej saturácii', 'má zápornú spätnú väzbu cez rezistor', 'má zosilnenie presne 1', 'na vstupe má vždy kondenzátor'],
       explanation: 'Bez spätnej väzby sa využíva celé zosilnenie naprázdno – výstup sa preklopí do saturácie podľa toho, ktorý vstup je kladnejší.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Na ktorý vstup operačného zosilňovača sa privádza záporná spätná väzba?',
+      options: ['na invertujúci vstup (−)', 'na neinvertujúci vstup (+)', 'na kladný napájací vývod', 'na záporný napájací vývod'],
+      explanation: 'Signál vrátený na invertujúci vstup pôsobí proti zmene výstupu, a tak ju tlmí. Spätná väzba na neinvertujúci vstup by bola kladná – využíva sa napríklad v oscilátoroch.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Aký vstupný odpor má invertujúci zosilňovač s operačným zosilňovačom?',
+      options: ['`$R_{1}`', '`$R_{2}`', '`@f{$R_{1} · $R_{2}}{$R_{1} + $R_{2}}`', '`$R_{1} + $R_{2}`'],
+      explanation: 'Invertujúci vstup je na virtuálnej nule, takže zdroj signálu vidí iba rezistor `$R_{1}` pripojený na 0 V. Veľmi veľký vstupný odpor má neinvertujúci zosilňovač a sledovač.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa na meracích vedeniach používa rozdielový zosilňovač?',
+      options: ['zosilní iba rozdiel napätí a potlačí napätie spoločné obom vstupom', 'zosilní súčet napätí oboch vstupov a tým zväčší užitočný signál', 'zosilní iba napätie spoločné obom vstupom a rozdiel potlačí', 'odfiltruje zo signálu všetky frekvencie vyššie ako 50 Hz'],
+      explanation: 'Rušenie sa indukuje do oboch vodičov rovnako, takže sa v rozdiele vyruší. Užitočný signál je rozdiel napätí medzi vodičmi a ten sa zosilní `@f{$R_{2}}{$R_{1}}`-krát.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Aké napätie dáva sčítací zosilňovač s rovnakými rezistormi na vstupoch aj v spätnej väzbe?',
+      options: ['`$U_{2} = −($U_{a} + $U_{b})`', '`$U_{2} = $U_{a} + $U_{b}`', '`$U_{2} = $U_{b} − $U_{a}`', '`$U_{2} = −$U_{a} · $U_{b}`'],
+      explanation: 'Prúdy zo vstupov sa sčítajú v uzle na invertujúcom vstupe a spolu tečú cez `$R_{2}`. Zapojenie vychádza z invertujúceho zosilňovača, preto je pred súčtom mínus.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čím sa vyznačuje operačný zosilňovač typu rail-to-rail?',
+      options: ['výstup dosiahne takmer celé napájacie napätie', 'má zosilnenie naprázdno presne 1', 'má nulový vstupný odpor oboch vstupov', 'výstup môže prekročiť napájacie napätie'],
+      explanation: 'Bežné OZ majú výstup asi o 1 až 2 V menší, ako je napájacie napätie. Typ rail-to-rail sa priblíži k obom napájacím „koľajniciam“, ale ani on ich neprekročí.',
+    },
   ],
   generators,
 };

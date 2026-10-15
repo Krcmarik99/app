@@ -286,6 +286,30 @@ const mod: LessonModule = {
       options: ['dióda prestane stabilizovať a výstupné napätie klesne', 'dióda sa zničí', 'výstupné napätie stúpne na hodnotu vstupného', 'nič, stabilizácia funguje ďalej'],
       explanation: 'Pod `$I_{Z min}` dióda nie je v oblasti prierazu a obvod sa správa ako obyčajný delič `$R`, `$R_{L}` – výstupné napätie závisí od záťaže.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Pre aké podmienky navrhuješ predradný rezistor parametrického stabilizátora?',
+      options: ['pre najmenšie vstupné napätie a najväčší prúd záťaže', 'pre najväčšie vstupné napätie a odpojenú záťaž', 'pre najväčšie vstupné napätie a najväčší prúd záťaže', 'pre menovité vstupné napätie a skrat na výstupe'],
+      explanation: 'Vtedy tečie rezistorom najmenší prúd a záťaž si z neho berie najviac – Zenerova dióda musí aj tak viesť aspoň `$I_{Z min}`. Najväčšie vstupné napätie a odpojenú záťaž použiješ až na kontrolu výkonu diódy.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Na čo slúžia malé kondenzátory zapojené tesne pri vstupe a výstupe stabilizátora 7805?',
+      options: ['zabraňujú rozkmitaniu stabilizátora', 'nastavujú výstupné napätie stabilizátora', 'obmedzujú prúd pri skrate na výstupe', 'nahrádzajú veľký filtračný kondenzátor'],
+      explanation: 'Kondenzátory `$C_{1}` a `$C_{2}` blízko vývodov potláčajú rušenie a zabránia tomu, aby sa stabilizátor rozkmital. Zvlnenie za usmerňovačom však musí vyhladiť samostatný veľký filtračný kondenzátor.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Aké napätie udržiava stabilizátor LM317 medzi vývodmi OUT a ADJ?',
+      options: ['1,25 V', '0,7 V', '5 V', '2,5 V'],
+      explanation: 'Referenčné napätie 1,25 V je na rezistore `$R_{1}`. Delič `$R_{1}`, `$R_{2}` potom určí výstupné napätie `$U_{2} = 1,25 · (1 + @f{$R_{2}}{$R_{1}})`.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako sa v spínanom zdroji reguluje výstupné napätie?',
+      options: ['zmenou šírky impulzov (PWM), ktorými sa spína tranzistor', 'zmenou odporu predradného rezistora v sérii so záťažou', 'zmenou počtu závitov sieťového transformátora 50 Hz', 'zmenou Zenerovho napätia diódy na výstupe zdroja'],
+      explanation: 'Čím dlhšie je tranzistor v každej perióde zopnutý, tým viac energie prenesie na výstup. Impulzy potom vyhladí filter LC.',
+    },
   ],
   generators,
 };
