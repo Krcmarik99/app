@@ -100,6 +100,10 @@ describe('zostavenie kvízu', () => {
     expect(buildQuiz(['neexistuje'], 5, createRng(1), 'theory')).toEqual([]);
   });
 
+  it('každá lekcia má aspoň 10 otázok na test z teórie', () => {
+    for (const l of LESSONS) expect(theoryCount([l.id]), l.id).toBeGreaterThanOrEqual(10);
+  });
+
   it('otázky s výberom nemajú rovnaké možnosti ani duplicitné znenie', () => {
     const seen = new Set<string>();
     for (const q of QUESTIONS) {

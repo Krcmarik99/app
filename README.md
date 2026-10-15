@@ -25,8 +25,12 @@ funguje v prehliadači na počítači aj na mobile a nepotrebuje žiadny server.
   či časovača 555, prúd stredným vodičom a podobne. Číslicová technika má klikateľné logické členy,
   prevodník bitov a klopné obvody s časovým diagramom.
 - **Cvičenie** – vyberieš témy a počet otázok. Číselné príklady (vyše 280 typov) sa generujú
-  s novými hodnotami pri každom pokuse a pri chybe ukážu celý postup riešenia. K tomu vyše 300 otázok
+  s novými hodnotami pri každom pokuse a pri chybe ukážu celý postup riešenia. K tomu takmer 500 otázok
   s výberom odpovede.
+- **Test z teórie** – voľba „Len teória“ v cvičení (alebo tlačidlo v lekcii) vyskúša len teóriu
+  bez počítania: 450 otázok, ku každej lekcii aspoň 10. Otázky sa v teste neopakujú, vyhodnotenie
+  ukáže orientačnú známku a pri chybách správnu odpoveď. Otázky s výpočtom majú v obsahu príznak
+  `calc: true` a test ich vynechá.
 - **Kalkulačky** – Ohmov zákon a výkon, sériové a paralelné spájanie rezistorov aj kondenzátorov,
   delič napätia (aj s návrhom rezistora z rady E24), farebný kód rezistorov oboma smermi,
   časová konštanta RC/RL s grafom, striedavý obvod RLC s trojuholníkom impedancií,
