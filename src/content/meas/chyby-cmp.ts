@@ -499,6 +499,39 @@ const mod: MeasModule = {
       options: ['odchýlkami odporov vstupného deliča a nepresnosťou referenčného napätia', 'zosilňovačmi, prevodníkmi, komparátormi a spínačmi', 'paralaxou pri odčítaní údaja', 'trením v ložiskách otočného systému'],
       explanation: 'Multiplikatívnu chybu spôsobujú odchýlky odporov vstupného deliča a nepresnosť referenčného napätia, aditívnu zosilňovače, prevodníky, komparátory a spínače. Paralaxa a trenie v ložiskách sa týkajú analógových prístrojov.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Kde nájdeš údaj o chybe číslicového meracieho prístroja (ČMP)?',
+      options: [
+        'v technickej dokumentácii, osobitne pre veličiny a rozsahy',
+        'na prístroji ako vytlačené číslo triedy presnosti',
+        'na číselníku vedľa značky meracej sústavy',
+        'na štítku ako jednu chybu pre všetky rozsahy',
+      ],
+      explanation: 'Chyba ČMP nie je vyznačená na prístroji ako trieda presnosti. Výrobca ju udáva v technickej dokumentácii ako dvojzložkovú chybu, osobitne pre jednotlivé veličiny a rozsahy.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako sa mení celková absolútna chyba `Δ_{ČMP}`, keď na tom istom rozsahu rastie nameraná hodnota?',
+      options: [
+        'lineárne rastie od `Δ_{a}` po `Δ_{m} + Δ_{a}`',
+        'lineárne klesá od `Δ_{m} + Δ_{a}` po `Δ_{a}`',
+        'je v celom rozsahu rovnaká ako pri AMP',
+        'klesá po hyperbole a na konci rozsahu je najmenšia',
+      ],
+      explanation: 'Aditívna zložka `Δ_{a}` je stála, multiplikatívna `Δ_{m}` rastie úmerne s údajom. Celková absolútna chyba preto lineárne rastie, kým celková relatívna chyba ku koncu rozsahu klesá.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Na ktorom rozsahu je výhodné merať číslicovým meracím prístrojom?',
+      options: [
+        'na najmenšom, ktorý meranú hodnotu ešte obsiahne',
+        'na najväčšom, lebo aditívna chyba je tam najmenšia',
+        'na ľubovoľnom, chyba ČMP od rozsahu nezávisí',
+        'na takom, aby bol údaj v polovici rozsahu',
+      ],
+      explanation: 'Člen `$δ_{a} · @f{$X_{N}}{$X_{m}}` je tým menší, čím bližšie je nameraná hodnota k rozsahu. Na väčšom rozsahu je aditívna chyba `Δ_{a} = ±@f{$δ_{a}}{100} · $X_{N}` naopak väčšia.',
+    },
   ],
   generators,
 };

@@ -272,6 +272,35 @@ const mod: MeasModule = {
       options: ['rovnováha musí nastať pre veľkosť aj pre fázu impedancií', 'lebo má dva zdroje', 'aby sa skrátil čas merania', 'striedavý mostík sa vyvažuje jediným prvkom'],
       explanation: 'Impedancie sú komplexné čísla – rovnica `$Z_{1} · $Z_{4} = $Z_{2} · $Z_{3}` predstavuje dve podmienky (reálnu a imaginárnu časť, resp. veľkosť a fázu).',
     },
+    {
+      lessonId: ID,
+      prompt: 'Do ktorej skupiny meracích metód patria mostíkové metódy?',
+      options: ['porovnávacie (nulové) metódy', 'priame výchylkové metódy', 'nepriame metódy z napätia a prúdu', 'rezonančné metódy'],
+      explanation: 'Neznámy odpor sa porovnáva so známymi presnými odpormi a prístroj slúži len ako nulový indikátor. Nepriamou metódou z napätia a prúdu je Ohmova (VA) metóda.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ktorý snímač mení svoj odpor pri mechanickej deformácii?',
+      options: ['tenzometer', 'termistor', 'snímač Pt100', 'fotorezistor'],
+      explanation: 'Odpor tenzometra sa mení s deformáciou, preto sa ním v mostíku meria sila alebo tlak. Termistor a Pt100 menia odpor s teplotou, fotorezistor s osvetlením.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa snímače zapájajú do dvoch alebo do všetkých štyroch ramien mostíka (polovičný a plný mostík)?',
+      options: [
+        'stúpne citlivosť a vykompenzuje sa vplyv teploty',
+        'mostík sa dá vyvážiť bez nulového indikátora',
+        'výstupné napätie nezávisí od napájacieho napätia',
+        'mostík sa môže napájať aj striedavým napätím',
+      ],
+      explanation: 'Pri polovičnom a plnom mostíku stúpne citlivosť dva- až štyrikrát. Rovnaké teplotné zmeny odporu snímačov v susedných ramenách sa navzájom vyrušia.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo môže slúžiť ako nulový indikátor striedavého mostíka?',
+      options: ['slúchadlá alebo osciloskop', 'magnetoelektrický prístroj bez usmerňovača', 'elektromer s impulzným výstupom', 'wattmeter medzi uzlami B a D'],
+      explanation: 'Striedavý mostík potrebuje indikátor striedavého napätia – slúchadlá, striedavý nulový indikátor alebo osciloskop. Magnetoelektrický prístroj bez usmerňovača ukazuje strednú hodnotu, ktorá je pri striedavom napätí nulová.',
+    },
   ],
   generators,
 };

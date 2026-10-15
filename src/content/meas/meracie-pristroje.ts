@@ -454,6 +454,34 @@ const mod: MeasModule = {
       ],
       explanation: 'Úbytok `Δ$U_{A} = $R_{A} · $I` aj príkon `$P_{A} = $I^{2} · $R_{A}` sú úmerné vnútornému odporu. Ideálny ampérmeter by mal `$R_{A}` = 0 Ω.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Čo je preťažiteľnosť meracieho prístroja?',
+      options: [
+        'odolnosť voči krátkodobému preťaženiu bez zmeny triedy presnosti',
+        'najväčšia hodnota meranej veličiny, ktorú ukáže stupnica',
+        'schopnosť reagovať na čo najmenšiu zmenu meranej veličiny',
+        'príkon, ktorý prístroj spotrebuje pri plnej výchylke',
+      ],
+      explanation: 'Preťažiteľnosť je odolnosť voči preťaženiu prúdom alebo napätím, ktoré prístroj vydrží za krátky čas bez poškodenia, teda bez zmeny triedy presnosti. Ostatné možnosti opisujú merací rozsah, citlivosť a vlastnú spotrebu.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Na číselníku prístroja je značka ⊓. Ako musí byť prístroj pri meraní uložený?',
+      options: ['vo vodorovnej polohe', 'vo zvislej polohe', 'šikmo pod uhlom 60°', 'v ľubovoľnej polohe'],
+      explanation: 'Značka ⊓ predpisuje vodorovnú pracovnú polohu, ⊥ zvislú a ∠60° šikmú. V inej polohe prístroj nemusí merať vo svojej triede presnosti.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo hrozí, keď ampérmeter omylom pripojíš paralelne k zdroju napätia?',
+      options: [
+        'potečie ním veľký prúd, lebo má veľmi malý vnútorný odpor',
+        'ukáže napätie zdroja, lebo sa správa ako voltmeter',
+        'neukáže nič, lebo má veľmi veľký vnútorný odpor',
+        'ukáže prúd spotrebiča, len s väčšou chybou',
+      ],
+      explanation: 'Ampérmeter má veľmi malý vnútorný odpor, takže paralelne k zdroju vytvorí takmer skrat. Veľký prúd môže prístroj zničiť, preto sa ampérmeter zapája vždy do série.',
+    },
   ],
 
   generators,

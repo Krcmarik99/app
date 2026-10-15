@@ -261,6 +261,51 @@ const mod: MeasModule = {
       options: ['10⁻³ až 10⁹ Ω', 'len od 1 Ω do 1 MΩ', 'len nad 1 MΩ', 'len do 1 Ω'],
       explanation: 'Ohmova metóda má široký rozsah použitia – odpory všetkých veľkostí od 10⁻³ do 10⁹ Ω. Treba len zvoliť správne zapojenie.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Ktorú veličinu meriaš v zapojení VA bez metodickej chyby?',
+      options: ['prúd cez meraný odpor', 'napätie na meranom odpore', 'napätie aj prúd meraného odporu', 'prúd tečúci voltmetrom'],
+      explanation: 'V zapojení VA je ampérmeter v sérii priamo s `$R_{x}`, preto meria presne jeho prúd. Voltmeter však meria okrem napätia na `$R_{x}` aj úbytok napätia na ampérmetri.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo je kritická hodnota odporu pri Ohmovej metóde?',
+      options: [
+        'odpor, pri ktorom obe zapojenia vnášajú rovnako veľkú metodickú chybu',
+        'najväčší odpor, ktorý sa dá Ohmovou metódou ešte zmerať',
+        'odpor, pri ktorom sa ampérmeter alebo voltmeter preťaží',
+        'odpor, pri ktorom je metodická chyba oboch zapojení nulová',
+      ],
+      explanation: 'Pri kritickej hodnote platí `|$δ_{AV}| = $δ_{VA}`. Odpory menšie ako `$R_{krit}` meriaš v zapojení AV, väčšie v zapojení VA.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako vypočítaš skutočný odpor `$R_{x}` z údajov prístrojov v zapojení VA?',
+      options: ['`$R_{x} = @f{$U}{$I} − $R_{A}`', '`$R_{x} = @f{$U}{$I} + $R_{A}`', '`$R_{x} = @f{$U}{$I − @f{$U}{$R_{V}}}`', '`$R_{x} = @f{$U}{$I} − $R_{V}`'],
+      explanation: 'Voltmeter meria aj úbytok na ampérmetri, preto `@f{$U}{$I} = $R_{x} + $R_{A}` a vnútorný odpor ampérmetra treba odčítať. Vzťah s `$I − @f{$U}{$R_{V}}` je korekcia pre zapojenie AV.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Voltmeter s vnútorným odporom udaným v Ω/V prepneš v zapojení AV na menší rozsah. Ako sa zmení metodická chyba?',
+      options: [
+        'zväčší sa, lebo sa zmenší `$R_{V}`',
+        'zmenší sa, lebo sa zmenší `$R_{V}`',
+        'zmenší sa, lebo sa zväčší `$R_{V}`',
+        'nezmení sa, `$R_{V}` od rozsahu nezávisí',
+      ],
+      explanation: '`$R_{V} = $R_{iV} · MR`, takže na menšom rozsahu má voltmeter menší vnútorný odpor a odoberá väčší prúd. Chyba zapojenia AV `≈ −@f{$R_{x}}{$R_{V}}` sa tým zväčší.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo patrí Ohmova metóda medzi nepriame metódy merania odporu?',
+      options: [
+        'odpor sa vypočíta z nameraného napätia a prúdu',
+        'odpor sa porovnáva so známymi odpormi v mostíku',
+        'prístroj ukáže odpor priamo na stupnici v ohmoch',
+        'odpor sa meria striedavým prúdom cez transformátor',
+      ],
+      explanation: 'Pri Ohmovej metóde zmeriaš napätie a prúd a odpor vypočítaš z Ohmovho zákona `$R = @f{$U}{$I}`. Priamo na stupnici ukazuje odpor ohmmeter, porovnanie so známymi odpormi je mostíková metóda.',
+    },
   ],
   generators,
 };

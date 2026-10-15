@@ -450,6 +450,23 @@ const mod: MeasModule = {
       options: ['kelvin (K)', 'stupeň Celzia (°C)', 'kelvin aj stupeň Celzia', 'stupeň Fahrenheita (°F)'],
       explanation: 'Základnou jednotkou SI je kelvin – jednotka termodynamickej teploty `$T`. Stupeň Celzia je jednotka teploty podľa Celzia `$t = $T − 273,15` K.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Kapacitu akumulátora udáva výrobca v ampérhodinách (A·h). Akú veličinu táto jednotka vyjadruje?',
+      options: ['elektrický náboj', 'elektrickú energiu', 'elektrický výkon', 'elektrický prúd'],
+      explanation: 'A·h je súčin prúdu a času, teda jednotka náboja `$Q = $I · $t` (1 A·h = 3 600 C). Energiu by vyjadrovala jednotka W·h, ktorá zahŕňa aj napätie.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa násobky a diely jednotky hmotnosti tvoria od gramu (1 mg), a nie od kilogramu (1 µkg)?',
+      options: [
+        'kilogram už obsahuje predponu a dve predpony sa nespájajú',
+        'gram je základnou jednotkou hmotnosti v sústave SI',
+        'kilogram nepatrí medzi zákonné meracie jednotky',
+        'predpony sa pridávajú len k jednopísmenovým jednotkám',
+      ],
+      explanation: 'Základnou jednotkou SI je kilogram, ktorý už má predponu kilo. Keďže dve predpony sa nespájajú, násobky a diely hmotnosti vznikajú pridaním predpony ku gramu.',
+    },
   ],
 
   generators,

@@ -394,6 +394,34 @@ const mod: MeasModule = {
       options: ['chybu meracej metódy – je systematická a dá sa korigovať', 'osobnú chybu – je náhodná', 'chybu spôsobenú rušivým vplyvom', 'žiadnu, prúd voltmetra je vždy nulový'],
       explanation: 'Metóda kvôli zjednodušeniu neuvažuje s vlastnou spotrebou voltmetra. Táto chyba má pri opakovaní rovnakú veľkosť, je teda systematická a dá sa vypočítať a korigovať.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Ako sa zmení štandardná neistota typu A, keď zväčšíš počet opakovaných meraní?',
+      options: [
+        'zmenší sa, lebo sa spriemeruje vplyv náhodných chýb',
+        'zväčší sa, lebo s každým meraním pribudne ďalšia chyba',
+        'nezmení sa, lebo závisí len od triedy presnosti prístroja',
+        'nezmení sa, lebo opakovanie odstraňuje len systematické chyby',
+      ],
+      explanation: 'Opakovaním merania a spriemerovaním sa zmenšuje vplyv náhodných chýb, preto `$u_{A}` s rastúcim počtom meraní klesá. Od triedy presnosti závisí neistota typu B a systematické chyby sa opakovaním neodstránia.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Aký je vzťah medzi korekciou a absolútnou chybou merania?',
+      options: [
+        'korekcia má rovnakú veľkosť ako chyba, ale opačné znamienko',
+        'korekcia má rovnakú veľkosť aj rovnaké znamienko ako chyba',
+        'korekcia je absolútna chyba vyjadrená v percentách',
+        'korekcia je prevrátená hodnota absolútnej chyby',
+      ],
+      explanation: '`$K = −Δ$X` a skutočnú hodnotu dostaneš ako `$X_{S} = $X_{N} + $K`. Chyba vyjadrená v percentách je relatívna chyba, nie korekcia.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako vypočítaš kombinovanú štandardnú neistotu `$u_{C}` z neistôt typu A a B?',
+      options: ['`$u_{C} = @s{$u_{A}^{2} + $u_{B}^{2}}`', '`$u_{C} = $u_{A} + $u_{B}`', '`$u_{C} = @f{$u_{A} + $u_{B}}{2}`', '`$u_{C} = @s{$u_{A} · $u_{B}}`'],
+      explanation: 'Neistoty typu A a B sa skladajú geometricky – odmocninou zo súčtu ich štvorcov. Kombinovaná neistota je preto menšia ako jednoduchý súčet `$u_{A} + $u_{B}`.',
+    },
   ],
   generators,
 };

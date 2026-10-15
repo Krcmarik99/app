@@ -343,6 +343,41 @@ const mod: MeasModule = {
       options: ['39,4 V až 40,6 V', '39,6 V až 40,4 V', '39 V až 41 V', '38,8 V až 41,2 V'],
       explanation: '`Δ$X_{max} = @f{1 · 60}{100}` = 0,6 V, preto `$X_{S}` = (40 ± 0,6) V. Interval 39,6 V až 40,4 V vychádza pri chybnom výpočte 1 % z nameranej hodnoty.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Ako sa zmení relatívna chyba analógového prístroja, keď je výchylka ručičky v polovici stupnice namiesto na jej konci?',
+      options: ['bude dvojnásobná', 'bude polovičná', 'zostane rovnaká', 'bude štvornásobná'],
+      explanation: '`$δ = TP · @f{MR}{$X_{N}}` – absolútna chyba `Δ$X_{max}` zostáva rovnaká, ale vzťahuje sa na polovičný údaj. Na konci stupnice sa relatívna chyba rovná TP, v polovici je dvojnásobná.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ktorý vzťah vyjadruje relatívnu chybu analógového prístroja pomocou triedy presnosti TP?',
+      options: ['`$δ = TP · @f{MR}{$X_{N}}`', '`$δ = TP · @f{$X_{N}}{MR}`', '`$δ = @f{TP}{MR · $X_{N}}`', '`$δ = TP · @f{MR}{Δ$X_{max}}`'],
+      explanation: 'Dosadením `Δ$X_{max} = @f{TP · MR}{100}` do `$δ = @f{Δ$X_{max}}{$X_{N}} · 100 %` dostaneš `$δ = TP · @f{MR}{$X_{N}}`. Na konci stupnice (`$X_{N}` = MR) sa relatívna chyba rovná triede presnosti.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Aká podmienka musí platiť, aby analógový prístroj meral vo svojej triede presnosti?',
+      options: ['`Δ$X ≤ Δ$X_{max}`', '`Δ$X ≥ Δ$X_{max}`', '`$X_{N} ≤ Δ$X_{max}`', '`$X_{S} ≤ Δ$X_{max}`'],
+      explanation: 'Skutočná chyba údaja `Δ$X`, zistená porovnaním s oveľa presnejším prístrojom, nesmie prekročiť najväčšiu dovolenú chybu `Δ$X_{max}`, ktorú určuje trieda presnosti a merací rozsah.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Analógový prístroj prepneš na desaťkrát väčší merací rozsah. Ako sa zmení jeho najväčšia absolútna chyba `Δ$X_{max}`?',
+      options: ['zväčší sa desaťkrát', 'zmenší sa desaťkrát', 'nezmení sa', 'zväčší sa stokrát'],
+      explanation: '`Δ$X_{max} = @f{TP · MR}{100}` – trieda presnosti je na všetkých rozsahoch rovnaká, preto je najväčšia absolútna chyba priamo úmerná meraciemu rozsahu.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo vyjadruje zápis `$X_{S} = $X_{N} ± Δ$X_{max}`?',
+      options: [
+        'interval, v ktorom leží skutočná hodnota meranej veličiny',
+        'interval, v ktorom sa smie pohybovať ručička prístroja',
+        'rozsah, na ktorý treba prístroj prepnúť pri meraní',
+        'relatívnu chybu merania vyjadrenú v percentách',
+      ],
+      explanation: 'Prístroj meria s chybou ±`Δ$X_{max}`, preto skutočná hodnota `$X_{S}` leží v intervale od `$X_{N} − Δ$X_{max}` do `$X_{N} + Δ$X_{max}` okolo nameranej hodnoty `$X_{N}`.',
+    },
   ],
   generators,
 };

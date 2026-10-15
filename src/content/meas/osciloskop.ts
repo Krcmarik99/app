@@ -311,6 +311,45 @@ const mod: MeasModule = {
       options: ['`$U_{pp} = 2 · $U_{m}`', '`$U_{pp} = @f{$U_{m}}{@s{2}}`', '`$U_{pp} = $U_{m}`', '`$U_{pp} = @s{2} · $U_{m}`'],
       explanation: 'Napätie špička – špička je rozdiel medzi kladným a záporným vrcholom, pri symetrickom sínusovom priebehu dvojnásobok amplitúdy.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Čo vychyľuje lúč analógového osciloskopu vo vodorovnom smere?',
+      options: ['pílovité napätie časovej základne', 'zosilnený meraný signál', 'obdĺžnikové napätie kalibrátora', 'sínusové napätie siete 50 Hz'],
+      explanation: 'Pílovité napätie časovej základne posúva lúč rovnomerne zľava doprava, takže vodorovná os predstavuje čas. Meraný signál po zosilnení vychyľuje lúč zvislo.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Aká má byť šírka pásma osciloskopu vzhľadom na frekvenciu meraného signálu?',
+      options: [
+        'aspoň 3- až 5-krát väčšia ako frekvencia signálu',
+        'presne rovnaká ako frekvencia signálu',
+        'stačí polovica frekvencie signálu',
+        'pri digitálnom osciloskope na nej nezáleží',
+      ],
+      explanation: 'Signál s frekvenciou blízkou šírke pásma osciloskop zobrazí so zmenšenou amplitúdou a zaoblenými hranami. Preto má byť šírka pásma aspoň 3- až 5-krát väčšia ako frekvencia meraného signálu.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sonda 10:1 menej zaťažuje meraný obvod ako sonda 1:1?',
+      options: [
+        'zaťažuje obvod väčším odporom a menšou kapacitou',
+        'zosilňuje meraný signál desaťkrát',
+        'oddeľuje jednosmernú zložku kondenzátorom',
+        'odoberá prúd len pri spúšťaní osciloskopu',
+      ],
+      explanation: 'Rezistor 9 MΩ v hrote tvorí so vstupným odporom osciloskopu 1 MΩ delič 10 : 1, takže obvod zaťažuje odpor 10 MΩ a menšia kapacita. Na obrazovku sa však dostane len desatina napätia.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo sa stane s časovou základňou, keď osciloskop prepneš do režimu XY?',
+      options: [
+        'vypne sa a stopu vodorovne vychyľuje kanál 1',
+        'vypne sa a stopu vodorovne vychyľuje kanál 2',
+        'zostane zapnutá a kanál 2 sa pripočíta ku kanálu 1',
+        'zrýchli sa, aby sa Lissajousov obrazec nekmital',
+      ],
+      explanation: 'V režime XY sa časová základňa vypne: signál kanála 1 vychyľuje stopu vodorovne a signál kanála 2 zvislo. Tak vznikajú Lissajousove obrazce.',
+    },
   ],
   generators,
 };

@@ -332,6 +332,40 @@ const mod: MeasModule = {
       options: ['1,5 kW', '25 W', '3 kW', '0,75 kW'],
       explanation: '`$P = @f{3 600 · 50}{2 000 · 60}` = 1,5 kW.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Ako je vyhotovená napäťová cievka wattmetra?',
+      options: ['veľa závitov tenkého drôtu, s predradným odporom', 'málo závitov hrubého drôtu, s predradným odporom', 'málo závitov hrubého drôtu, s bočníkom', 'veľa závitov tenkého drôtu, s bočníkom'],
+      explanation: 'Napäťová cievka sa zapája paralelne ako voltmeter, preto musí mať veľký odpor – veľa závitov tenkého drôtu a predradný odpor. Málo závitov hrubého drôtu má prúdová cievka zapojená do série.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ručička wattmetra sa po zapnutí vychýli opačným smerom. Ako to napravíš?',
+      options: [
+        'prepóluješ jednu z cievok, obvykle napäťovú',
+        'prepóluješ naraz prúdovú aj napäťovú cievku',
+        'prepneš wattmeter na väčší prúdový rozsah',
+        'zameníš poradie fáz napájacieho zdroja',
+      ],
+      explanation: 'Obe svorky s hviezdičkou majú byť na strane zdroja. Prepólovaním oboch cievok naraz by sa smer výchylky nezmenil, preto sa prepóluje len jedna, obvykle napäťová.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo je varmeter?',
+      options: [
+        'wattmeter s napätím na napäťovej cievke posunutým o 90°',
+        'wattmeter s dvoma prúdovými cievkami pre trojfázovú sieť',
+        'voltmeter a ampérmeter v spoločnom puzdre',
+        'elektromer, ktorý meria činnú energiu v kWh',
+      ],
+      explanation: 'Varmeter meria jalový výkon `$Q`. Je to wattmeter, ktorého napäťová cievka dostáva napätie posunuté o 90°, takže jeho výchylka je úmerná `$U · $I · sin $φ`.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'V akých jednotkách sa udáva konštanta elektronického elektromera?',
+      options: ['imp/kWh', 'ot/kWh', 'W/dielik', 'kWh/imp'],
+      explanation: 'Elektronický elektromer vyšle za každú dávku energie impulz a blikne LED, preto sa jeho konštanta udáva v impulzoch na kWh. Otáčky na kWh sa udávajú pri staršom indukčnom elektromere s kotúčom.',
+    },
   ],
   generators,
 };

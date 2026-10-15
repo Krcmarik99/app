@@ -391,6 +391,34 @@ const mod: MeasModule = {
       options: ['na konci stupnice, pri plnej výchylke', 'na začiatku stupnice, pri mechanickej nule', 'v strede stupnice', 'značka 0 Ω na stupnici nie je'],
       explanation: 'Pri 0 Ω tečie najväčší prúd, ručička sa vychýli na koniec stupnice. Stupnica je preto obrátená – ∞ je vľavo, 0 vpravo.',
     },
+    {
+      lessonId: ID,
+      prompt: 'V ktorej časti stupnice sériového ohmmetra je relatívna chyba odčítania najmenšia?',
+      options: ['okolo stredu stupnice', 'pri značke ∞ na začiatku stupnice', 'pri značke 0 Ω na konci stupnice', 'všade rovnaká, stupnica je lineárna'],
+      explanation: 'Smerom k ∞ sa značky zhusťujú a pri 0 Ω sú odčítané hodnoty malé. Najpresnejšie sa odčítava okolo stredu stupnice, kde `$R_{x} = $R_{i}`. Stupnica ohmmetra je nelineárna.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako sa zmení odpor medeného vinutia motora, keď sa vinutie počas chodu zohreje?',
+      options: [
+        'zväčší sa, meď má kladný teplotný súčiniteľ odporu',
+        'zmenší sa, meď má záporný teplotný súčiniteľ odporu',
+        'nezmení sa, odpor kovov nezávisí od teploty',
+        'zmenší sa, lebo sa vinutie teplom roztiahne',
+      ],
+      explanation: 'Odpor kovov s teplotou rastie: `$R_{x} = $R_{20} · [1 + $α · ($ϑ_{x} − $ϑ_{20})]` s kladným `$α`. Preto sa odpor zmeraný za tepla prepočítava na 20 °C.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Pred meraním malého odporu skratuješ meracie hroty a zapamätáš si údaj. Prečo?',
+      options: [
+        'aby sa dal odčítať odpor šnúr a prechodový odpor svoriek',
+        'aby sa vybili kondenzátory v meranom obvode',
+        'aby sa nastavila mechanická nula prístroja',
+        'aby sa prístroj prepol na najmenší rozsah',
+      ],
+      explanation: 'Pri malých odporoch sa prejaví aj odpor meracích šnúr a prechodový odpor svoriek (desatiny ohmu). Údaj pri skratovaných hrotoch preto odčítaš od nameranej hodnoty.',
+    },
   ],
   generators,
 };
