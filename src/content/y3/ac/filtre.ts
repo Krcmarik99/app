@@ -296,6 +296,36 @@ const mod: LessonModule = {
       options: ['+14 dB (asi päťnásobok napätia)', '−120 dB', '+26 dB', '+3,3 dB'],
       explanation: 'Prenosy v decibeloch sa pri reťazení sčítajú: 20 − 6 = 14 dB. Napäťovo je to 10 · 0,5 = 5-násobok.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Aký filter tvorí väzbový kondenzátor medzi dvoma stupňami zosilňovača spolu so vstupným odporom ďalšieho stupňa?',
+      options: ['hornú priepusť – nepustí jednosmerné napätie, signál prepustí', 'dolnú priepusť – prepustí jednosmerné napätie a potlačí signál', 'pásmovú zádrž – potlačí len frekvenciu siete 50 Hz', 'pásmovú priepusť – prepustí len rezonančnú frekvenciu'],
+      explanation: 'Kondenzátor je v pozdĺžnej vetve a vstupný odpor ďalšieho stupňa v priečnej, to je horná priepusť RC. Jednosmerné pracovné napätia stupňov sa tak navzájom neovplyvňujú.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Cez aký filter dostáva signál hlbokotónový reproduktor v reproduktorovej výhybke?',
+      options: ['cez dolnú priepusť', 'cez hornú priepusť', 'cez pásmovú zádrž', 'priamo, bez filtra'],
+      explanation: 'Hlbokotónový reproduktor má dostať len nízke frekvencie, preto je pred ním dolná priepusť (napríklad cievka v sérii). Výškový reproduktor dostáva signál cez hornú priepusť.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Akú strmosť má ďaleko od medznej frekvencie filter druhého rádu (napríklad LC)?',
+      options: ['40 dB na dekádu', '20 dB na dekádu', '6 dB na dekádu', '3 dB na dekádu'],
+      explanation: 'Každý rád filtra pridá 20 dB na dekádu: prvý rád má 20 dB/dek, druhý 40 dB/dek a tretí 60 dB/dek. Hodnota 6 dB platí pre prvý rád na oktávu, nie na dekádu.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ktorý vzťah vyjadruje napäťový prenos v decibeloch?',
+      options: ['`$A_{dB} = 20 · log @f{$U_{2}}{$U_{1}}`', '`$A_{dB} = 10 · log @f{$U_{2}}{$U_{1}}`', '`$A_{dB} = 20 · log @f{$U_{1}}{$U_{2}}`', '`$A_{dB} = @f{$U_{2}}{$U_{1}} · 100`'],
+      explanation: 'Pre pomer napätí sa používa 20 · log, pre pomer výkonov 10 · log, lebo výkon je úmerný druhej mocnine napätia. Výstupné napätie je v čitateli, takže zoslabenie má záporné decibely.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Akú výhodu má aktívny filter s operačným zosilňovačom oproti pasívnemu filtru LC?',
+      options: ['nepotrebuje cievky a jeho výstup sa môže zaťažiť', 'nepotrebuje napájanie a nemá žiadny šum', 'prepúšťa všetky frekvencie bez útlmu', 'má vždy strmosť 20 dB na dekádu'],
+      explanation: 'Operačný zosilňovač s rezistormi a kondenzátormi nahradí veľké a drahé cievky. Jeho malý výstupný odpor zabezpečí, že záťaž nezmení charakteristiku filtra – napájanie však potrebuje.',
+    },
   ],
   generators,
 };

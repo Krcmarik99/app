@@ -312,6 +312,36 @@ const mod: LessonModule = {
       options: ['bez strát a bez rozptylového toku, takže `$S_{1} = $S_{2}`', 's prevodom presne 1', 'pracujúci na jednosmerné napätie', 'bez železného jadra'],
       explanation: 'Ideálny transformátor nemá straty v železe ani vo vinutí a celý tok prechádza oboma vinutiami. Skutočné veľké transformátory sa mu blížia – majú účinnosť nad 98 %.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Ktoré vinutie transformátora sa navíja bližšie k jadru?',
+      options: ['vinutie nižšieho napätia (NN)', 'vinutie vyššieho napätia (VN)', 'vždy primárne vinutie', 'vždy sekundárne vinutie'],
+      explanation: 'Medzi jadrom a vinutím NN stačí tenšia izolácia, preto je NN pri jadre. Vinutie VN je navonok, kde sa ľahšie izoluje aj vyvádza.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo nastane, keby magnetická indukcia v jadre transformátora výrazne prekročila hodnotu asi 1,6 T?',
+      options: ['jadro sa presýti a magnetizačný prúd prudko rastie', 'sekundárne napätie sa zväčší v pomere indukcií', 'zmenší sa prúd naprázdno aj straty v železe', 'zmení sa frekvencia sekundárneho napätia'],
+      explanation: 'V presýtenom jadre prudko klesá permeabilita, takže na ďalšie zväčšenie toku treba mnohonásobne väčší magnetizačný prúd. Preto sa indukcia volí približne 1 až 1,6 T.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Akú úlohu má olej vo veľkých transformátoroch?',
+      options: ['izoluje vinutia a odvádza z nich teplo', 'maže ložiská otáčajúceho sa jadra', 'zväčšuje permeabilitu jadra', 'znižuje prevod transformátora'],
+      explanation: 'Transformátorový olej má dobré izolačné vlastnosti a prúdením odvádza teplo z vinutí a jadra do stien nádoby a chladičov. Transformátor je netočivý stroj, ložiská nemá.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'V akom pomere sa prepočítava impedancia záťaže zo sekundárnej strany na primárnu?',
+      options: ['v pomere druhej mocniny prevodu', 'v pomere prevodu', 'v obrátenom pomere prevodu', 'v pomere odmocniny z prevodu'],
+      explanation: 'Napätie sa prepočíta prevodom `$p` a prúd jeho prevrátenou hodnotou, preto `$Z_{1} = $p^{2} · $Z_{2}`. Na tom je založené prispôsobenie impedancie, napríklad reproduktora k zosilňovaču.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Na čo slúži transformátor s prevodom 1 (napríklad 230 V / 230 V)?',
+      options: ['galvanicky oddelí spotrebič od siete', 'zvýši výkon odoberaný spotrebičom', 'zmení frekvenciu napätia pre spotrebič', 'nemá využitie, napätie sa nemení'],
+      explanation: 'Oddeľovací transformátor nemení napätie, ale spotrebič nie je vodivo spojený so sieťou. Pri dotyku jedného vodiča výstupu sa preto neuzavrie obvod cez zem (ochrana elektrickým oddelením).',
+    },
   ],
   generators,
 };

@@ -338,6 +338,30 @@ const mod: LessonModule = {
       options: ['nemenia sa – sú stále synchrónne, kým motor nevypadne zo synchronizmu', 'mierne klesajú ako pri asynchrónnom motore', 'prudko klesajú ako pri sériovom motore', 'rastú'],
       explanation: 'Rotor synchrónneho motora sa otáča presne s točivým poľom statora. Pri preťažení vypadne zo synchronizmu a zastaví sa.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Z akého materiálu sú kefy jednosmerného stroja?',
+      options: ['z uhlíka (grafitu)', 'z tvrdenej medi', 'z hliníkovej zliatiny', 'z pružinovej ocele'],
+      explanation: 'Uhlíkové kefy dobre vedú prúd, majú malé trenie a nepoškodzujú medený komutátor. Postupne sa opotrebúvajú, preto stroj potrebuje údržbu.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa sériový jednosmerný motor používa v trakcii (električky) a v štartéroch?',
+      options: ['má veľký záberový moment pri rozbehu', 'má stále otáčky nezávislé od zaťaženia', 'môže bezpečne bežať aj naprázdno', 'nepotrebuje komutátor ani kefy'],
+      explanation: 'Pri rozbehu tečie veľký prúd kotvou aj budiacim vinutím, takže tok aj moment sú veľké. Mäkká charakteristika – pri veľkom zaťažení pomalšie, pri malom rýchlejšie – trakcii vyhovuje.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo umožňuje prebudený synchrónny motor v priemyselnom závode?',
+      options: ['dodáva do siete jalový výkon a zlepšuje účinník', 'otáča sa rýchlejšie ako synchrónnymi otáčkami', 'odoberá zo siete jalový výkon ako tlmivka', 'mení frekvenciu siete podľa zaťaženia'],
+      explanation: 'Pri zväčšenom budiacom prúde sa synchrónny motor správa ako kondenzátor a dodáva jalový výkon pre ostatné induktívne spotrebiče. Jeho otáčky ostávajú presne synchrónne.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako sa rozbieha synchrónny motor napájaný priamo zo siete?',
+      options: ['pomocou rozbehovej klietky v póloch rotora', 'sám, hneď po pripojení statora na sieť', 'prepólovaním budiaceho vinutia počas rozbehu', 'rozbehovým odporom zaradeným do obvodu statora'],
+      explanation: 'Rotor nestihne nasledovať pole otáčajúce sa synchrónnymi otáčkami, preto sa sám nerozbehne. Rozbehová klietka ho roztočí ako asynchrónny motor a po zapnutí budenia sa vtiahne do synchronizmu.',
+    },
   ],
   generators,
 };

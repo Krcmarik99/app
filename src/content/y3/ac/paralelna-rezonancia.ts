@@ -266,6 +266,36 @@ const mod: LessonModule = {
       options: ['paralelný obvod má pri `$f_{0}` maximum impedancie, sériový minimum', 'oba majú pri `$f_{0}` minimum impedancie', 'paralelný obvod nemá rezonančnú frekvenciu', 'sériový obvod má pri `$f_{0}` nekonečnú impedanciu'],
       explanation: 'Sériový obvod má pri rezonancii impedanciu `$R` (minimum), paralelný `$R_{d}` (maximum). Preto sa sériový obvod používa na prepustenie jednej frekvencie a paralelný na jej zadržanie alebo ako selektívna záťaž.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Ktorý vzťah platí pre rezonančný (dynamický) odpor paralelného obvodu?',
+      options: ['`$R_{d} = @f{$L}{$R · $C}`', '`$R_{d} = @f{$R · $C}{$L}`', '`$R_{d} = @f{$R · $L}{$C}`', '`$R_{d} = @f{$C}{$R · $L}`'],
+      explanation: 'Rezonančný odpor je `$R_{d} = @f{$L}{$R$C} = $Q^{2} · $R`. Odpor vinutia je v menovateli – čím menšie straty v cievke, tým väčšia impedancia pri rezonancii.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo kryje malý prúd, ktorý odoberá paralelný obvod zo zdroja pri rezonancii?',
+      options: ['straty v odpore vinutia cievky', 'jalový výkon cievky', 'jalový výkon kondenzátora', 'rozdiel napätí na cievke a kondenzátore'],
+      explanation: 'Jalové prúdy cievky a kondenzátora sa pri rezonancii navzájom vyrušia – energia krúži medzi poľami vo vnútri obvodu. Zo zdroja tečie len činný prúd, ktorý kryje straty v odpore vinutia.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Kedy môžeš rezonančnú frekvenciu paralelného obvodu s reálnou cievkou počítať jednoduchým Thomsonovým vzťahom?',
+      options: ['keď má obvod veľký činiteľ akosti (`$Q` ≫ 1)', 'iba keď je odpor vinutia väčší ako reaktancia cievky', 'iba pri frekvenciách nižších ako 50 Hz', 'nikdy, pre paralelný obvod neplatí ani približne'],
+      explanation: 'Presný vzťah obsahuje člen `@f{$R^{2}}{$L^{2}}`, ktorý je pri malom odpore vinutia zanedbateľný. Pri `$Q` nad 10 sa výsledok líši od Thomsonovho vzťahu menej ako o 0,5 %.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa paralelný obvod LC používa ako záťaž tranzistora v selektívnom zosilňovači?',
+      options: ['pri `$f_{0}` má najväčšiu impedanciu, preto zosilní len úzke pásmo', 'pri `$f_{0}` má najmenšiu impedanciu, preto prepustí len túto frekvenciu', 'premieňa striedavý signál na jednosmerné napätie pre bázu', 'kompenzuje účinník tranzistora pri vysokých frekvenciách'],
+      explanation: 'Zosilnenie stupňa je úmerné impedancii záťaže. Paralelný obvod má veľkú impedanciu len v okolí `$f_{0}`, takže stupeň zosilní úzke pásmo – napríklad medzifrekvenciu 10,7 MHz v prijímači FM.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako sa zmenia činiteľ akosti a šírka pásma paralelného obvodu, keď použiješ cievku s menším odporom vinutia?',
+      options: ['činiteľ akosti stúpne a pásmo sa zúži', 'činiteľ akosti klesne a pásmo sa rozšíri', 'činiteľ akosti stúpne a pásmo sa rozšíri', 'nezmenia sa, mení sa len rezonančná frekvencia'],
+      explanation: 'Činiteľ akosti `$Q = @f{1}{$R}@s{@f{$L}{$C}}` je nepriamo úmerný odporu vinutia a šírka pásma je `$B = @f{$f_{0}}{$Q}`. Menší odpor preto znamená vyšší a užší vrchol rezonančnej krivky.',
+    },
   ],
   generators,
 };

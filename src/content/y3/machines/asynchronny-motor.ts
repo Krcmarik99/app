@@ -371,6 +371,36 @@ const mod: LessonModule = {
       options: ['aby magnetický tok v motore ostal stály', 'aby bol sklz nulový', 'aby sa nemenil smer otáčania', 'aby bol prúd vždy menovitý'],
       explanation: 'Podobne ako pri transformátore je tok úmerný `@f{$U}{$f}`. Pri nízkej frekvencii a plnom napätí by sa jadro presýtilo.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Aký veľký je zvyčajne záberový prúd asynchrónneho motora pri priamom rozbehu?',
+      options: ['4- až 8-násobok menovitého prúdu', '1,2- až 1,5-násobok menovitého prúdu', '20- až 40-násobok menovitého prúdu', 'približne rovnaký ako menovitý prúd'],
+      explanation: 'Pri rozbehu je sklz 1 – rotor stojí a pole ho pretína plnou rýchlosťou, preto sa v ňom indukuje veľký prúd. Väčšie motory sa rozbiehajú prepínačom hviezda – trojuholník, softštartérom alebo frekvenčným meničom.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo je vzduchová medzera medzi statorom a rotorom asynchrónneho motora čo najmenšia?',
+      options: ['aby bol malý magnetizačný prúd a lepší účinník', 'aby sa rotor lepšie chladil prúdiacim vzduchom', 'aby sa zväčšil sklz a záberový moment', 'aby sa rotor nemohol otáčať synchrónnymi otáčkami'],
+      explanation: 'Vzduch má oveľa menšiu permeabilitu ako oceľ a väčšina magnetizačného prúdu sa spotrebuje na pretlačenie toku cez medzeru. Menšia medzera znamená menší jalový prúd a lepší účinník.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sú stýkače na reverzáciu trojfázového motora navzájom blokované?',
+      options: ['aby pri súčasnom zopnutí nespojili dve fázy nakrátko', 'aby sa motor po zopnutí rozbehol rýchlejšie', 'aby sa motor prepol z hviezdy do trojuholníka', 'aby motor nemohol bežať naprázdno'],
+      explanation: 'Druhý stýkač zamieňa dve fázy, takže keby zopli oba naraz, vznikol by medzi týmito fázami skrat. Blokovanie pomocnými kontaktmi (prípadne aj mechanicky) súčasnému zopnutiu zabráni.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako sa zmení momentová charakteristika motora s vinutým rotorom, keď do obvodu rotora zaradíš väčší odpor?',
+      options: ['maximálny moment ostane rovnaký, ale posunie sa k nižším otáčkam', 'maximálny moment sa zväčší a posunie k synchrónnym otáčkam', 'maximálny moment klesne na polovicu a otáčky sa nezmenia', 'zväčšia sa synchrónne otáčky a sklz klesne na nulu'],
+      explanation: 'Kritický sklz `$s_{k}` je úmerný odporu rotora, veľkosť `$M_{max}` od neho nezávisí. Pri vhodnom odpore je maximálny moment už pri rozbehu, takže sa zväčší záberový moment.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo sa po rozbehu deje s rozbehovým kondenzátorom jednofázového asynchrónneho motora?',
+      options: ['odpojí ho odstredivý vypínač alebo relé', 'ostáva trvale pripojený k pomocnému vinutiu', 'prepne sa paralelne k hlavnému vinutiu', 'skratuje sa, aby sa nezahrieval'],
+      explanation: 'Rozbehový kondenzátor s veľkou kapacitou je určený len na krátky rozbeh, preto sa po ňom odpojí. Trvale pripojený ostáva prevádzkový kondenzátor.',
+    },
   ],
   generators,
 };

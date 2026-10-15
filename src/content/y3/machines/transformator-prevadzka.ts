@@ -305,6 +305,36 @@ const mod: LessonModule = {
       options: ['pri induktívnej', 'pri odporovej', 'pri kapacitnej', 'pri všetkých rovnako'],
       explanation: 'Úbytok `Δ$u ≈ $β · ($u_{R} cos $φ + $u_{X} sin $φ)` je najväčší pri induktívnom charaktere záťaže. Pri kapacitnej záťaži môže napätie dokonca stúpnuť.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Čím vznikajú hysterézne straty v jadre transformátora?',
+      options: ['neustálym premagnetovaním jadra', 'prúdom tečúcim cez odpor vinutí', 'vírivými prúdmi v plechoch jadra', 'rozptylovým tokom mimo jadra'],
+      explanation: 'V každej perióde jadro prejde celou hysteréznou slučkou a energia úmerná jej ploche sa zmení na teplo, preto sú tieto straty úmerné frekvencii. Spolu so stratami vírivými prúdmi tvoria straty v železe.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Aké napätie nakrátko majú zvyčajne distribučné transformátory?',
+      options: ['4 až 6 %', '0,1 až 0,5 %', '20 až 30 %', '50 až 60 %'],
+      explanation: 'Malé `$u_{k}` znamená malý úbytok napätia pri zaťažení, ale veľký skratový prúd. Distribučné transformátory majú kompromisnú hodnotu 4 až 6 %.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo znamená na štítku transformátora údaj o chladení ONAN?',
+      options: ['olej aj vzduch prúdia prirodzene, bez čerpadiel a ventilátorov', 'suchý transformátor chladený len prirodzeným prúdením vzduchu', 'olej je poháňaný čerpadlom a vzduch ventilátormi', 'olej sa chladí vodou z vonkajšieho chladiaceho okruhu'],
+      explanation: 'Prvé dve písmená sa týkajú vnútorného chladiva (O – olej, N – prirodzené prúdenie), ďalšie dve vonkajšieho (A – vzduch, N – prirodzené prúdenie). Nútené prúdenie by označovalo písmeno F.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa distribučné transformátory navrhujú s čo najmenšími stratami v železe?',
+      options: ['sú pripojené nepretržite a väčšinu času nie sú plne zaťažené', 'straty v železe rastú s druhou mocninou zaťaženia', 'pri malých stratách v železe je menšie napätie nakrátko', 'straty v železe vznikajú len pri plnom zaťažení'],
+      explanation: 'Straty v železe vznikajú stále, aj keď transformátor nič nenapája. Pri prevažne čiastočnom zaťažení preto tvoria veľkú časť ročných strát a maximum účinnosti sa posunie k menšiemu zaťaženiu.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Na čo slúžia odbočky vinutia VN, napríklad s údajom ± 2 × 2,5 % na štítku?',
+      options: ['na úpravu prevodu podľa napätia v sieti', 'na pripojenie meracích transformátorov prúdu', 'na zmenu skupiny spojenia z Dyn na Yzn', 'na odvádzanie tepla z vinutia do oleja'],
+      explanation: 'Prepínačom odbočiek sa zmení počet závitov vinutia VN o niekoľko percent, a tým aj prevod. Pri distribučných transformátoroch sa prepína bez napätia, keď je transformátor odpojený.',
+    },
   ],
   generators,
 };

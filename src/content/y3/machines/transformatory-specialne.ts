@@ -330,6 +330,36 @@ const mod: LessonModule = {
       options: ['50 V striedavých', '230 V', '120 V striedavých', '12 V'],
       explanation: 'Malé napätie (ELV) je najviac 50 V striedavých alebo 120 V jednosmerných bez zvlnenia. Bežne sa používa 12 V alebo 24 V.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa vinutie NN distribučných transformátorov niekedy zapája do lomenej hviezdy (zn)?',
+      options: ['dobre znáša nesymetrické zaťaženie jednotlivých fáz', 'nepotrebuje vyvedený uzol pre stredný vodič', 'má menší počet závitov ako hviezda', 'zmenšuje napätie nakrátko na nulu'],
+      explanation: 'Každá fáza lomenej hviezdy má dve polovice vinutia na dvoch rôznych stĺpoch, takže zaťaženie jednej fázy sa rozloží na dva stĺpy. Vyvedený uzol pritom umožní pripojiť stredný vodič.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo udáva hodinový uhol (číslo) v skupine spojenia trojfázového transformátora?',
+      options: ['o koľko násobkov 30° sa napätie NN oneskoruje za napätím VN', 'počet odbočiek prepínača na strane vinutia VN', 'o koľko percent je napätie NN menšie ako napätie VN', 'počet pólových dvojíc, na ktoré je vinutie navinuté'],
+      explanation: 'Fázor napätia VN si predstavíš na čísle 12 a fázor NN ukazuje na číslo hodinového uhla. Rovnaký hodinový uhol je jednou z podmienok paralelnej prevádzky transformátorov.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Kedy je úspora materiálu autotransformátora oproti transformátoru s dvoma vinutiami najväčšia?',
+      options: ['keď sa vstupné a výstupné napätie líšia len málo', 'keď je výstupné napätie oveľa menšie ako vstupné', 'keď sa používa ako bezpečnostný transformátor', 'keď je výstupné napätie jednosmerné'],
+      explanation: 'Typový výkon `$S_{t} = $S · (1 − @f{$U_{2}}{$U_{1}})` je tým menší, čím bližšie je `$U_{2}` k `$U_{1}`. Väčšinu výkonu potom autotransformátor prenáša galvanicky a jadro môže byť malé.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Koľko spotrebičov sa spravidla pripája k jednému oddeľovaciemu transformátoru pri ochrane elektrickým oddelením?',
+      options: ['iba jeden spotrebič', 'najviac tri spotrebiče, po jednom na fázu', 'ľubovoľný počet, ak sú v triede ochrany I', 'toľko, koľko dovolí jeho výkon'],
+      explanation: 'Pri jednom spotrebiči je oddelený obvod malý a dobre izolovaný. Pri viacerých spotrebičoch by porucha izolácie na dvoch z nich mohla vytvoriť nebezpečné dotykové napätie medzi ich krytmi.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'V akom prevádzkovom stave pracuje merací transformátor prúdu?',
+      options: ['takmer nakrátko, lebo ampérmeter má malý odpor', 'takmer naprázdno, lebo ampérmeter má veľký odpor', 'v menovitom stave ako výkonový transformátor', 'naprázdno, sekundár sa pripája len pri meraní'],
+      explanation: 'Sekundár MTP je uzavretý cez ampérmeter alebo prúdové cievky prístrojov s veľmi malým odporom. Merací transformátor napätia naopak pracuje takmer naprázdno, lebo voltmeter má veľký odpor.',
+    },
   ],
   generators,
 };

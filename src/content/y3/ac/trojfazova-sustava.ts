@@ -269,6 +269,30 @@ const mod: LessonModule = {
       options: ['zelenožltú', 'modrú', 'hnedú', 'čiernu'],
       explanation: 'Zelenožltá kombinácia je vyhradená iba pre ochranný vodič PE (a vodič PEN, ktorý má navyše modré označenie koncov). Stredný vodič je modrý.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Aký je vzťah medzi prúdom vo fázovom vodiči `$I` a prúdom jedným spotrebičom `$I_{f}` pri zapojení do trojuholníka?',
+      options: ['`$I = @s{3} · $I_{f}`', '`$I = $I_{f}`', '`$I = 3 · $I_{f}`', '`$I = @f{$I_{f}}{@s{3}}`'],
+      explanation: 'Prúd vo vodiči je fázorovým rozdielom prúdov dvoch spotrebičov posunutých o 120°, preto je `@s{3}`-krát väčší. Pri hviezde je prúd vo vodiči rovnaký ako prúd spotrebičom.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Aký je súčet okamžitých hodnôt troch fázových napätí súmernej trojfázovej sústavy?',
+      options: ['v každom okamihu nulový', 'rovná sa združenému napätiu', 'rovná sa trojnásobku fázového napätia', 'nulový len v okamihu prechodu L1 nulou'],
+      explanation: 'Tri sínusové napätia s rovnakou amplitúdou posunuté o 120° sa v každom okamihu sčítajú na nulu. Preto pri súmernej záťaži netečie stredným vodičom prúd.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo je výhodou trojfázovej sústavy oproti trom samostatným jednofázovým obvodom?',
+      options: ['vytvorí točivé magnetické pole pre motory', 'nepotrebuje ochranný vodič PE ani uzemnenie', 'všetky tri napätia v nej sú navzájom vo fáze', 'prenáša výkon jednosmerným prúdom bez strát'],
+      explanation: 'Tri prúdy posunuté o 120° vytvoria v statore točivé magnetické pole – základ asynchrónnych motorov. Ďalšie výhody sú menej vodičov (3 alebo 4 namiesto 6) a stály výkon súmerného spotrebiča.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Akú farbu izolácie majú v pevnom rozvode fázové vodiče L1, L2 a L3?',
+      options: ['hnedú, čiernu a sivú', 'modrú, hnedú a čiernu', 'červenú, žltú a modrú', 'čiernu, sivú a zelenožltú'],
+      explanation: 'Fázové vodiče sú hnedý, čierny a sivý. Modrá farba je vyhradená pre stredný vodič N a zelenožltá pre ochranný vodič PE.',
+    },
   ],
   generators,
 };

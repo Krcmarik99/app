@@ -294,6 +294,30 @@ const mod: LessonModule = {
       options: ['100 V', '4 V', '0,16 V', '29 V'],
       explanation: '`$U_{L0} = $Q · $U` = 25 · 4 = 100 V. Napätie na cievke je pri rezonancii `$Q`-krát väčšie ako napätie zdroja.',
     },
+    {
+      lessonId: ID,
+      prompt: 'Ktorý vzťah je Thomsonov vzťah pre rezonančnú frekvenciu?',
+      options: ['`$f_{0} = @f{1}{2π@s{$L · $C}}`', '`$f_{0} = 2π@s{$L · $C}`', '`$f_{0} = @f{1}{2π · $L · $C}`', '`$f_{0} = @f{@s{$L · $C}}{2π}`'],
+      explanation: 'Vychádza z podmienky rezonancie `$X_{L} = $X_{C}`, teda `2π$f_{0}$L = @f{1}{2π$f_{0}$C}`. Po úprave je súčin `$L · $C` pod odmocninou v menovateli.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čomu sa rovná charakteristická impedancia `$Z_{0}` sériového rezonančného obvodu?',
+      options: ['reaktancii cievky pri rezonančnej frekvencii', 'odporu `$R` pri rezonančnej frekvencii', 'súčtu reaktancií cievky a kondenzátora', 'impedancii obvodu pri nulovej frekvencii'],
+      explanation: 'Pri rezonancii sú obe reaktancie rovnaké: `$Z_{0} = 2π$f_{0}$L = @s{@f{$L}{$C}}`. Odpor `$R` je impedancia obvodu pri rezonancii, nie jeho charakteristická impedancia – to je častá zámena.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Prečo sa ku kompenzačným kondenzátorom v sieti zapájajú do série hradiace tlmivky?',
+      options: ['aby nevznikla rezonancia s vyššími harmonickými', 'aby sa zväčšil jalový výkon kondenzátorov', 'aby kondenzátory mohli pracovať aj na jednosmernom napätí', 'aby sa rezonančná frekvencia posunula presne na 50 Hz'],
+      explanation: 'Kondenzátory spolu s indukčnosťou siete tvoria rezonančný obvod, ktorý by pri niektorej vyššej harmonickej mohol rezonovať a kondenzátory preťažiť. Tlmivka v sérii nastaví rezonanciu tak, aby k tomu nedošlo.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ako naladíš vstupný rezonančný obvod prijímača na stanicu s inou frekvenciou?',
+      options: ['zmeníš kapacitu otočného kondenzátora', 'zmeníš napätie signálu z antény', 'zmeníš odpor rezistora v obvode', 'zmeníš hlasitosť zosilňovača za obvodom'],
+      explanation: 'Rezonančná frekvencia `$f_{0} = @f{1}{2π@s{$L$C}}` závisí len od indukčnosti a kapacity. Odpor mení iba šírku pásma a výšku rezonančnej krivky, nie jej polohu.',
+    },
   ],
   generators,
 };

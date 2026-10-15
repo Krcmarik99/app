@@ -255,6 +255,36 @@ const mod: LessonModule = {
       options: ['800 var', '400 var', '1 600 var', '1 166 var'],
       explanation: '`$Q = @s{$S^{2} − $P^{2}} = @s{1 000^{2} − 600^{2}}` = 800 var. Výkony sa nesčítavajú aritmeticky, ale ako strany pravouhlého trojuholníka.',
     },
+    {
+      lessonId: ID,
+      prompt: 'S akou frekvenciou sa mení okamžitý výkon v striedavom obvode?',
+      options: ['s dvojnásobnou frekvenciou napätia siete', 's rovnakou frekvenciou ako napätie siete', 's polovičnou frekvenciou napätia siete', 'nemení sa, okamžitý výkon je stály'],
+      explanation: 'Okamžitý výkon je súčinom dvoch sínusových priebehov s frekvenciou `$f`, preto kmitá s frekvenciou `2$f` – pri sieti 50 Hz je to 100 Hz. Stály je len jeho priemer, teda činný výkon.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ktorý výkon meria wattmeter v striedavom obvode?',
+      options: ['činný výkon `$P`', 'zdanlivý výkon `$S`', 'jalový výkon `$Q`', 'okamžitý výkon v okamihu odčítania'],
+      explanation: 'Wattmeter vyhodnocuje priemer súčinu `$u · $i`, teda činný výkon `$P = $U · $I · cos $φ` vo wattoch. Zdanlivý výkon by sa dal určiť z údajov voltmetra a ampérmetra.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Čo hrozí pri prekompenzovaní, keď kondenzátory dodávajú viac jalového výkonu, ako odoberajú motory?',
+      options: ['odber bude mať kapacitný charakter a napätie v sieti môže stúpnuť', 'kondenzátory vyrušia aj činný prúd a motory sa zastavia', 'účinník stúpne nad 1 a motory budú mať väčší výkon', 'odber bude mať naďalej induktívny charakter, len väčší prúd'],
+      explanation: 'Prekompenzovaný odber má opäť jalový, tentoraz kapacitný prúd a účinník je znova menší ako 1. Kondenzátory pri malom zaťažení zvyšujú napätie, preto sa kompenzuje len na 0,95 až 0,98.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Ktorý vzťah vyjadruje účinník?',
+      options: ['`cos $φ = @f{$P}{$S}`', '`cos $φ = @f{$S}{$P}`', '`cos $φ = @f{$Q}{$S}`', '`cos $φ = @f{$P}{$Q}`'],
+      explanation: 'Účinník je pomer činného a zdanlivého výkonu, preto nemôže byť väčší ako 1. Pomer `@f{$Q}{$S}` je `sin $φ`.',
+    },
+    {
+      lessonId: ID,
+      prompt: 'Kedy je okamžitý výkon spotrebiča záporný?',
+      options: ['keď sa energia z poľa cievky alebo kondenzátora vracia do zdroja', 'keď spotrebič odoberá zo siete najväčší činný výkon', 'keď je napätie aj prúd v rovnakom okamihu záporné', 'keď je spotrebič čisto odporový a prúd je vo fáze s napätím'],
+      explanation: 'Okamžitý výkon `$p = $u · $i` je záporný, keď majú napätie a prúd opačné znamienka, čo nastáva len pri fázovom posune. Energia sa vtedy vracia z magnetického alebo elektrického poľa do zdroja.',
+    },
   ],
   generators,
 };
